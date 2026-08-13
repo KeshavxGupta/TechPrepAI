@@ -4,7 +4,9 @@
  */
 (function () {
   try {
-    const storedTheme = localStorage.getItem('techprep_theme') || 'system';
+    const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const themeKey = user && user.email ? `techprep_theme_${user.email}` : 'techprep_theme';
+    const storedTheme = localStorage.getItem(themeKey) || 'system';
     let isDark = false;
     if (storedTheme === 'dark') {
       isDark = true;
