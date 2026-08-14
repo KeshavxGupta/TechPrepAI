@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login â€” TechPrep AI</title>
+  <script>
+    (function() {
+      const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      if (currentUser) {
+        if (currentUser.email === 'khushboo2006june@admin.com') {
+          window.location.href = '/pages/admin/admin-hub.html';
+          return;
+        } else {
+          window.location.href = '/pages/user/dashboard.html';
+          return;
+        }
+      }
+      const params = new URLSearchParams(window.location.search);
+      let url = "/index.html?modal=login";
+      const email = params.get('email');
+      const registered = params.get('registered');
+      if (email) url += "&email=" + encodeURIComponent(email);
+      if (registered) url += "&registered=" + encodeURIComponent(registered);
+      window.location.href = url;
+    })();
+  </script>
+</head>
+<body style="background-color: #f9fafb; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #4b5563; font-size: 14px;">
+  <div style="text-align: center;">
+    <p>Redirecting to student portal login modal...</p>
+  </div>
+</body>
+</html>
+
+
+
+
+

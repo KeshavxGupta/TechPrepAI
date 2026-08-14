@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal â€” TechPrep AI</title>
+  <meta name="description" content="Access technical quizzes, track DSA progress, and view performance history.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration for Custom Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- Initialize theme preference early -->
+  <script src="/js/core/theme.js"></script>
+</head>
+
+<body class="bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern">
+
+  <!-- Student Sidebar Component -->
+  <div id="component-user-sidebar"></div>
+  <script src="/js/components/user/user-sidebar.js"></script>
+
+  <!-- Right Dashboard Content Wrapper -->
+  <div class="flex-1 flex flex-col min-h-screen max-w-full overflow-x-hidden">
+    
+    <!-- Top Navbar -->
+    <header class="sticky top-0 z-20 bg-surface-primary/90 subtle-glass border-b border-neutral-200 dark:border-neutral-800 transition-colors w-full">
+      <div class="px-4 sm:px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <button onclick="toggleUserSidebar()" class="lg:hidden p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Sidebar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div class="text-xs font-semibold text-neutral-500">
+            Student Portal Dashboard
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- Home Link -->
+          <a href="/index.html" class="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            Home
+          </a>
+
+          <!-- Theme Toggle -->
+          <button class="theme-toggle-btn p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-neutral-200 dark:border-neutral-700 transition-colors flex items-center space-x-1" title="Toggle Light / Dark mode">
+            <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+
+          <!-- User initials Avatar click triggers Profile tab -->
+          <button onclick="switchDashboardTab('profile')" class="flex items-center space-x-2 pl-2 border-l border-neutral-200 dark:border-neutral-800 hover:opacity-80 transition-all">
+            <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center font-mono select-none">
+              ST
+            </div>
+            <span id="user-display-name" class="hidden sm:block text-xs font-semibold text-neutral-800 dark:text-neutral-200">Student</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="p-6 sm:p-8 flex-1 w-full text-left max-w-7xl mx-auto space-y-6">
+
+      <!-- Available Quizzes Component -->
+      <div id="component-user-quizzes"></div>
+      <script src="/js/components/user/user-quizzes.js"></script>
+
+      <!-- History Component -->
+      <div id="component-user-history"></div>
+      <script src="/js/components/user/user-history.js"></script>
+
+      <!-- Profile Component -->
+      <div id="component-user-profile"></div>
+      <script src="/js/components/user/user-profile.js"></script>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-6 text-center text-xs text-neutral-500 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary/95 transition-colors">
+      Â© 2026 TechPrep AI, Inc. All rights reserved. â€¢ Student Technical Hub
+    </footer>
+
+  </div>
+
+  <!-- Include Core Scripts -->
+  <script src="/js/features/quiz/quiz.js"></script>
+  <script src="/js/core/ui.js"></script>
+  <script src="/js/core/auth.js"></script>
+  <script src="/js/core/app.js"></script>
+  <script src="/js/features/user/dashboard.js"></script>
+</body>
+
+</html>
+
+
+
+
