@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TechPrep AI - Admin Resume Studio Component & Controller
  * Canva-style layout management & user-wise resume inspection.
  */
@@ -213,40 +213,64 @@
     const skills = target.skills || {};
 
     container.innerHTML = `
-      <div class="p-6 bg-white text-gray-900 rounded-lg shadow font-sans text-xs text-left leading-relaxed space-y-4">
+      <div class="p-6 bg-white text-gray-900 rounded-lg shadow font-sans text-xs text-left leading-relaxed space-y-4 max-h-[75vh] overflow-y-auto">
         <div class="border-b-2 border-blue-600 pb-3">
-          <h2 class="text-xl font-bold uppercase tracking-tight text-gray-900">${escapeHTML(info.name)}</h2>
-          <div class="text-xs font-semibold text-blue-600 uppercase font-mono">${escapeHTML(info.title)}</div>
+          <h2 class="text-xl font-bold uppercase tracking-tight text-gray-900">${escapeHTML(info.name || 'Candidate')}</h2>
+          <div class="text-xs font-semibold text-blue-600 uppercase font-mono">${escapeHTML(info.title || 'Engineer')}</div>
           <div class="flex flex-wrap gap-3 text-[11px] text-gray-600 font-mono mt-1">
-            <span>Email: ${escapeHTML(info.email)}</span>
-            <span>Phone: ${escapeHTML(info.phone)}</span>
-            <span>Location: ${escapeHTML(info.location)}</span>
+            <span>Email: ${escapeHTML(info.email || 'N/A')}</span>
+            <span>Phone: ${escapeHTML(info.phone || 'N/A')}</span>
+            <span>Location: ${escapeHTML(info.location || 'N/A')}</span>
           </div>
         </div>
 
+        ${info.summary ? `
         <div>
           <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Professional Summary</h3>
           <p class="text-[11px] text-gray-700 mt-1">${escapeHTML(info.summary)}</p>
-        </div>
+        </div>` : ''}
 
         <div>
           <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Technical Skills</h3>
-          <div class="text-[11px] text-gray-700 mt-1">
-            <div><strong>Languages:</strong> ${escapeHTML(skills.languages)}</div>
-            <div><strong>Frameworks:</strong> ${escapeHTML(skills.frameworks)}</div>
-            <div><strong>Tools:</strong> ${escapeHTML(skills.tools)}</div>
+          <div class="text-[11px] text-gray-700 mt-1 space-y-0.5">
+            ${skills.languages ? `<div><strong>Languages:</strong> ${escapeHTML(skills.languages)}</div>` : ''}
+            ${skills.frameworks ? `<div><strong>Frameworks:</strong> ${escapeHTML(skills.frameworks)}</div>` : ''}
+            ${skills.tools ? `<div><strong>Tools:</strong> ${escapeHTML(skills.tools)}</div>` : ''}
+            ${skills.coreCS ? `<div><strong>Core CS:</strong> ${escapeHTML(skills.coreCS)}</div>` : ''}
           </div>
         </div>
 
+        ${(target.experience || []).length ? `
         <div>
           <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Work Experience (${(target.experience || []).length} entries)</h3>
           ${(target.experience || []).map(e => `
-            <div class="mt-2 text-[11px]">
-              <div class="font-bold">${escapeHTML(e.jobTitle)} â€“ ${escapeHTML(e.company)}</div>
-              <div class="text-gray-600">${escapeHTML(e.description)}</div>
+            <div class="mt-2 text-[11px] border-l-2 border-blue-200 pl-2">
+              <div class="font-bold text-gray-900">${escapeHTML(e.jobTitle)} — ${escapeHTML(e.company)} (${escapeHTML(e.startDate)} – ${escapeHTML(e.endDate)})</div>
+              <div class="text-gray-600 whitespace-pre-line mt-0.5">${escapeHTML(e.description)}</div>
             </div>
           `).join('')}
-        </div>
+        </div>` : ''}
+
+        ${(target.projects || []).length ? `
+        <div>
+          <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Technical Projects (${(target.projects || []).length} entries)</h3>
+          ${(target.projects || []).map(p => `
+            <div class="mt-2 text-[11px] border-l-2 border-purple-200 pl-2">
+              <div class="font-bold text-gray-900">${escapeHTML(p.title)} <span class="font-mono font-normal text-gray-500">(${escapeHTML(p.techStack)})</span></div>
+              <div class="text-gray-600 whitespace-pre-line mt-0.5">${escapeHTML(p.description)}</div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+
+        ${(target.education || []).length ? `
+        <div>
+          <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Education</h3>
+          ${(target.education || []).map(edu => `
+            <div class="mt-1 text-[11px]">
+              <strong>${escapeHTML(edu.degree)}</strong> — ${escapeHTML(edu.institution)} (${escapeHTML(edu.gradYear)})
+            </div>
+          `).join('')}
+        </div>` : ''}
       </div>`;
 
     modal.classList.remove('hidden');

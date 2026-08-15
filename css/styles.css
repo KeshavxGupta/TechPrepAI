@@ -41,6 +41,14 @@
   --grid-line: rgba(255, 255, 255, 0.04);
 }
 
+/* Surface Utility Classes */
+.bg-surface-primary { background-color: var(--bg-primary); }
+.bg-surface-secondary { background-color: var(--bg-secondary); }
+.bg-surface-tertiary { background-color: var(--bg-tertiary); }
+.bg-surface-elevated { background-color: var(--bg-elevated); }
+.border-surface { border-color: var(--border-color); }
+
+
 /* Base Styles & Reset */
 * {
   box-sizing: border-box;
@@ -238,3 +246,77 @@ body {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   RESUME BUILDER WORKSPACE & A4 PRINT SYSTEM
+   ========================================================================== */
+
+.resume-paper-container {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+/* Custom Scrollbar for Form and Preview Panels */
+.resume-scroll-area::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.resume-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.resume-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.25);
+  border-radius: 4px;
+}
+
+.resume-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.45);
+}
+
+/* Print Optimization */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide everything except the resume container */
+  body * {
+    visibility: hidden;
+  }
+
+  #resume-live-preview,
+  #resume-live-preview * {
+    visibility: visible;
+  }
+
+  #resume-live-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  .no-print, header, nav, footer, .modal, aside, .theme-toggle-btn {
+    display: none !important;
+  }
+}
