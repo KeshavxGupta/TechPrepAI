@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="dark">
 
 <head>
@@ -35,6 +35,12 @@
               600: '#2563eb',
               700: '#1d4ed8',
               900: '#1e3a8a',
+            },
+            surface: {
+              primary: 'var(--bg-primary)',
+              secondary: 'var(--bg-secondary)',
+              tertiary: 'var(--bg-tertiary)',
+              elevated: 'var(--bg-elevated)',
             }
           }
         }
@@ -177,7 +183,7 @@
       
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <h3 id="admin-template-modal-title" class="text-base font-extrabold text-neutral-900 dark:text-white">Create New Canva-Style Layout Template</h3>
-        <button onclick="closeAdminTemplateModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono text-xs p-1">âœ•</button>
+        <button onclick="closeAdminTemplateModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono text-xs p-1">✕</button>
       </div>
 
       <form id="admin-template-form" onsubmit="saveAdminTemplateForm(event)" class="space-y-4 text-xs">
@@ -215,10 +221,12 @@
           <div>
             <label class="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Visual Layout Architecture</label>
             <select id="tmpl-form-layout" class="w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white font-sans">
-              <option value="modern_sidebar">Canva Two-Column Sidebar Design</option>
-              <option value="minimalist_sv">Silicon Valley High-Impact Single Column</option>
-              <option value="executive_split">Executive Hero Header Card Design</option>
+              <option value="silicon_valley">Silicon Valley Single Column (ATS #1 Standard)</option>
+              <option value="modern_sidebar">Modern Two-Column Sidebar Accent</option>
+              <option value="executive_grid">Executive Lead & Architect Split Grid</option>
               <option value="ivy_classic">Ivy League Academic Serif Design</option>
+              <option value="terminal_dev">Developer Terminal & Monospace Badges</option>
+              <option value="compact_dense">Compact 1-Page High Density</option>
             </select>
           </div>
 
@@ -226,8 +234,10 @@
             <label class="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Font Family Hierarchy</label>
             <select id="tmpl-form-font" class="w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white font-sans">
               <option value="Inter, sans-serif">Inter (Sans-Serif - Tech Standard)</option>
-              <option value="Roboto, sans-serif">Roboto (Clean Modern)</option>
+              <option value="Roboto, sans-serif">Roboto (Clean ATS)</option>
+              <option value="'JetBrains Mono', monospace">JetBrains Mono (Developer)</option>
               <option value="Georgia, serif">Georgia (Academic Serif)</option>
+              <option value="'Outfit', sans-serif">Outfit (Display Modern)</option>
             </select>
           </div>
         </div>
@@ -272,7 +282,7 @@
       
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <h3 class="text-base font-extrabold text-neutral-900 dark:text-white">Student Resume Inspection View</h3>
-        <button onclick="closeAdminInspectResumeModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono text-xs p-1">âœ•</button>
+        <button onclick="closeAdminInspectResumeModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono text-xs p-1">✕</button>
       </div>
 
       <div id="admin-inspect-resume-container">
