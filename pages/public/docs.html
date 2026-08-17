@@ -1,0 +1,190 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Platform Documentation â€” TechPrep AI</title>
+  <meta name="description" content="Official TechPrep AI User Guide, DSA IDE documentation, ATS Resume Engine specs, and Admin Console guide.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration for Custom Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- Initialize theme preference early -->
+  <script src="/js/core/theme.js"></script>
+</head>
+
+<body class="bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern">
+
+  <!-- Navbar Header -->
+  <header class="sticky top-0 z-50 bg-surface-primary/90 subtle-glass border-b border-neutral-200 dark:border-neutral-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="/index.html" class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-sm shadow-sm">
+            TP
+          </div>
+          <span class="font-bold text-base tracking-tight font-sans">TechPrep <span class="text-blue-600 dark:text-blue-500">AI</span></span>
+        </a>
+
+        <div class="flex items-center space-x-4">
+          <a href="/pages/admin/admin-hub.html" class="px-3 py-1.5 text-xs font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 text-blue-600 dark:text-blue-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            Admin Console
+          </a>
+
+          <button class="theme-toggle-btn p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-neutral-200 dark:border-neutral-700 transition-colors flex items-center space-x-1 text-xs" title="Toggle Light / Dark mode">
+            <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <span class="hidden sm:inline font-mono">Theme</span>
+          </button>
+
+          <a href="/index.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-12 space-y-10 text-left">
+    
+    <div class="space-y-3 pb-6 border-b border-neutral-200 dark:border-neutral-800">
+      <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+        DOCUMENTATION & GUIDES
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-neutral-900 dark:text-white tracking-tight">Platform Documentation</h1>
+      <p class="text-sm text-neutral-500">Comprehensive guides for Students, Placement Candidates, and Tech Hub Administrators.</p>
+    </div>
+
+    <!-- Quick Navigation Index Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <a href="#dsa-ide" class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated hover:border-blue-500 transition-colors space-y-1 block">
+        <span class="text-xs font-mono text-blue-500 font-bold">01. MODULE</span>
+        <h3 class="font-bold text-sm text-neutral-900 dark:text-white">DSA Code IDE</h3>
+      </a>
+      <a href="#ats-engine" class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated hover:border-emerald-500 transition-colors space-y-1 block">
+        <span class="text-xs font-mono text-emerald-500 font-bold">02. MODULE</span>
+        <h3 class="font-bold text-sm text-neutral-900 dark:text-white">ATS Resume Engine</h3>
+      </a>
+      <a href="#placement-tracker" class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated hover:border-amber-500 transition-colors space-y-1 block">
+        <span class="text-xs font-mono text-amber-500 font-bold">03. MODULE</span>
+        <h3 class="font-bold text-sm text-neutral-900 dark:text-white">Drive Tracker</h3>
+      </a>
+      <a href="#admin-guide" class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated hover:border-purple-500 transition-colors space-y-1 block">
+        <span class="text-xs font-mono text-purple-500 font-bold">04. MODULE</span>
+        <h3 class="font-bold text-sm text-neutral-900 dark:text-white">Admin Console</h3>
+      </a>
+    </div>
+
+    <!-- Doc Sections -->
+    <div class="space-y-8 text-sm text-neutral-600 dark:text-neutral-300">
+      
+      <!-- Section 1 -->
+      <section id="dsa-ide" class="p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated space-y-4">
+        <div class="flex items-center space-x-2 text-blue-500 font-mono text-xs font-bold uppercase">
+          <span>01 / DSA Code Execution IDE</span>
+        </div>
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Multi-Language Code Runner & Problem Sheets</h2>
+        <p class="leading-relaxed">The TechPrep AI Code Runner allows students to solve curated Data Structures & Algorithms (DSA) problems in 4 programming languages: C++, Python 3, Java 17, and Node.js JavaScript.</p>
+        <ul class="list-disc pl-5 space-y-1 text-xs">
+          <li><strong>Execution Sandbox</strong>: Simulates compiling, testcase assertions, time complexity metrics, and memory bounds.</li>
+          <li><strong>Topic Sheets</strong>: Grouped into Sliding Window, Two Pointers, Dynamic Programming, Graphs, Trees, and Priority Queues.</li>
+        </ul>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="ats-engine" class="p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated space-y-4">
+        <div class="flex items-center space-x-2 text-emerald-500 font-mono text-xs font-bold uppercase">
+          <span>02 / AI Resume Designer & ATS Matcher</span>
+        </div>
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Real-Time ATS Parsing & LaTeX Formatting</h2>
+        <p class="leading-relaxed">The ATS Resume Designer analyzes resume bullet points against recruiter algorithms used by Workday, Greenhouse, and Lever.</p>
+        <ul class="list-disc pl-5 space-y-1 text-xs">
+          <li><strong>Single-Column Template Validation</strong>: Verifies layout readability to eliminate parsing crashes.</li>
+          <li><strong>Keyword Density Suggestions</strong>: Identifies missing technical stack keywords (e.g., PostgreSQL, System Design, REST APIs).</li>
+        </ul>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="placement-tracker" class="p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated space-y-4">
+        <div class="flex items-center space-x-2 text-amber-500 font-mono text-xs font-bold uppercase">
+          <span>03 / Campus Placement Drive Tracker</span>
+        </div>
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Campus Eligibility & Pipeline Tracking</h2>
+        <p class="leading-relaxed">Filter campus recruitment drives based on package (LPA), minimum CGPA cutoffs, backlog rules, and application status (Applied, Shortlisted, Interview Round, Offer Extended).</p>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="admin-guide" class="p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated space-y-4">
+        <div class="flex items-center space-x-2 text-purple-500 font-mono text-xs font-bold uppercase">
+          <span>04 / Admin Console & Site Management</span>
+        </div>
+        <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Tech Hub Administration, Bulk Importers & System Logs</h2>
+        <p class="leading-relaxed">Administrators can seed custom quizzes via Excel/Word/TXT importers, monitor student directory telemetry, manage FAQs, export/restore full database backups, and inspect live security audit logs.</p>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-8 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary text-xs text-neutral-500 text-center">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div>Â© 2026 TechPrep AI, Inc. All rights reserved.</div>
+      <div class="flex space-x-4 font-mono text-[11px]">
+        <a href="/pages/public/privacy.html" class="hover:underline">Privacy Policy</a>
+        <a href="/pages/public/terms.html" class="hover:underline">Terms of Service</a>
+        <a href="/pages/public/docs.html" class="text-neutral-900 dark:text-white font-bold underline">Documentation</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/core/ui.js"></script>
+</body>
+
+</html>
+
+
+
+
+

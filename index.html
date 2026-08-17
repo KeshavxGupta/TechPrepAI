@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechPrep AI â€” Developer Platform for DSA, Resumes & Placements</title>
+  <meta name="description"
+    content="One intelligent workspace for engineering students to master DSA, build ATS resumes, and track campus placements.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration for Custom Theme & Font Extensions -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <script>
+      (function () {
+        const storedTheme = localStorage.getItem('techprep_theme') || 'system';
+        let isDark = false;
+        if (storedTheme === 'dark') {
+          isDark = true;
+        } else if (storedTheme === 'light') {
+          isDark = false;
+        } else {
+          isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      })();
+  </script>
+</head>
+
+<body class="bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- Header Navigation Component -->
+  <div id="component-index-header"></div>
+  <script src="/js/components/landing/index-header.js"></script>
+
+  <!-- Hero Section Component -->
+  <div id="component-index-hero"></div>
+  <script src="/js/components/landing/index-hero.js"></script>
+
+  <!-- Interactive Demo Component -->
+  <div id="component-index-demo"></div>
+  <script src="/js/components/landing/index-demo.js"></script>
+
+  <!-- Features & Deep-Dives Component -->
+  <div id="component-index-features"></div>
+  <script src="/js/components/landing/index-features.js"></script>
+
+  <!-- About, Testimonials, FAQ & Contact Component -->
+  <div id="component-index-sections"></div>
+  <script src="/js/components/landing/index-sections.js"></script>
+
+  <!-- Footer Component -->
+  <div id="component-index-footer"></div>
+  <script src="/js/components/landing/index-footer.js"></script>
+
+  <!-- Auth Modals Component -->
+  <div id="component-index-modals"></div>
+  <script src="/js/components/landing/index-modals.js"></script>
+
+  <!-- Application JavaScript Bundle -->
+  <script src="/js/core/ui.js"></script>
+  <script src="/js/core/auth.js"></script>
+  <script src="/js/features/dsa/dsa-runner.js"></script>
+  <script src="/js/features/resume/ats-scanner.js"></script>
+  <script src="/js/features/career/placement-tracker.js"></script>
+  <script src="/js/core/app.js"></script>
+</body>
+
+</html>
+
+
+
+
