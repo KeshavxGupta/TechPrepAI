@@ -1,10 +1,110 @@
 // --- State Management ---
-let placements = JSON.parse(localStorage.getItem('techprep_placements')) || [];
+const DEFAULT_DRIVES_SEED = [
+  {
+    id: "drive-1",
+    company: "Google",
+    role: "Software Development Engineer (SWE-1)",
+    package: "32.0",
+    deadline: "2026-09-30",
+    interviewDate: "2026-10-15",
+    eligibility: "B.Tech/M.Tech CS/IT with 8.0+ CGPA",
+    location: "Bengaluru / Hyderabad (Hybrid)",
+    status: "wishlist",
+    link: "https://careers.google.com",
+    notes: "Focus on Graph algorithms, Dynamic Programming, and System Design fundamentals.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-2",
+    company: "Microsoft",
+    role: "Software Engineer - Cloud & AI",
+    package: "28.5",
+    deadline: "2026-09-25",
+    interviewDate: "2026-10-10",
+    eligibility: "7.5+ CGPA, All Engineering Branches",
+    location: "Noida / Hyderabad / Remote",
+    status: "wishlist",
+    link: "https://careers.microsoft.com",
+    notes: "Round 1: Codility OA (3 DSA Questions), Round 2: Architecture & Systems.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-3",
+    company: "Amazon",
+    role: "SDE-1 (AWS Services)",
+    package: "26.0",
+    deadline: "2026-10-05",
+    interviewDate: "2026-10-20",
+    eligibility: "7.0+ CGPA, 2026 Batch",
+    location: "Bengaluru / Chennai",
+    status: "wishlist",
+    link: "https://amazon.jobs",
+    notes: "Amazon Leadership Principles + 2 DSA Technical Interview rounds.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-4",
+    company: "Atlassian",
+    role: "Software Engineer (Full Stack / Java)",
+    package: "38.0",
+    deadline: "2026-10-12",
+    interviewDate: "2026-10-28",
+    eligibility: "8.0+ CGPA, CS/IT/ECE",
+    location: "Bengaluru (Remote Friendly)",
+    status: "wishlist",
+    link: "https://www.atlassian.com/company/careers",
+    notes: "Craftsmanship & Values interview + Code design round.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-5",
+    company: "Goldman Sachs",
+    role: "Summer Analyst / Tech Analyst",
+    package: "24.0",
+    deadline: "2026-09-18",
+    interviewDate: "2026-09-28",
+    eligibility: "7.5+ CGPA, Strong Math & Coding",
+    location: "Bengaluru / Mumbai",
+    status: "wishlist",
+    link: "https://www.goldmansachs.com/careers",
+    notes: "Aptitude + Advanced Data Structures + Core CS (OS/DBMS/CN).",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  }
+];
+
+let placements = (function() {
+  const storedStr = localStorage.getItem('techprep_placements');
+  if (storedStr === null) {
+    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_DRIVES_SEED));
+    return [...DEFAULT_DRIVES_SEED];
+  }
+  try {
+    const parsed = JSON.parse(storedStr);
+    if (Array.isArray(parsed)) return parsed;
+    return [];
+  } catch {
+    return [];
+  }
+})();
 
 // --- DOM Elements ---
 const summaryStats = document.getElementById('summary-stats');
 const kanbanBoard = document.getElementById('kanban-board');
-const addAppBtn = document.getElementById('save-app-btn');
 
 // Sidebar toggle
 const menuToggle = document.getElementById('menu-toggle');
@@ -51,9 +151,12 @@ if (themeToggle) {
 }
 
 // --- Modal Logic ---
-const openModal = (modalId) => {
+window.openModal = function(modalId) {
     const modalOverlay = document.getElementById('app-modal-overlay') || document.getElementById('modal-overlay');
-    if (modalOverlay) modalOverlay.classList.add('active');
+    if (modalOverlay) {
+        modalOverlay.classList.add('active', 'opacity-100', 'pointer-events-auto');
+        modalOverlay.classList.remove('opacity-0', 'pointer-events-none');
+    }
     
     const modal = document.getElementById(modalId);
     if (modal) {
@@ -62,28 +165,96 @@ const openModal = (modalId) => {
     }
 };
 
-const closeModal = (modalId) => {
+window.closeModal = function(modalId) {
     const modalOverlay = document.getElementById('app-modal-overlay') || document.getElementById('modal-overlay');
-    if (modalOverlay) modalOverlay.classList.remove('active');
+    if (modalOverlay) {
+        modalOverlay.classList.remove('active', 'opacity-100', 'pointer-events-auto');
+        modalOverlay.classList.add('opacity-0', 'pointer-events-none');
+    }
     
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
         modal.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
         
-        // Reset form inputs
-        document.getElementById('app-company').value = '';
-        document.getElementById('app-role').value = '';
-        document.getElementById('app-package').value = '';
-        document.getElementById('app-deadline').value = '';
-        document.getElementById('app-status').value = 'wishlist';
-        document.getElementById('app-link').value = '';
+        // Reset form inputs if application-modal
+        if (modalId === 'application-modal') {
+            const elComp = document.getElementById('app-company');
+            if (elComp) elComp.value = '';
+            const elRole = document.getElementById('app-role');
+            if (elRole) elRole.value = '';
+            const elPkg = document.getElementById('app-package');
+            if (elPkg) elPkg.value = '';
+            const elDead = document.getElementById('app-deadline');
+            if (elDead) elDead.value = '';
+            const elStat = document.getElementById('app-status');
+            if (elStat) elStat.value = 'wishlist';
+            const elLink = document.getElementById('app-link');
+            if (elLink) elLink.value = '';
+            const elLoc = document.getElementById('app-location');
+            if (elLoc) elLoc.value = '';
+            const elElig = document.getElementById('app-eligibility');
+            if (elElig) elElig.value = '';
+            const elInt = document.getElementById('app-interview-date');
+            if (elInt) elInt.value = '';
+        }
     }
+};
+
+window.exportData = function() {
+    const backup = {
+        version: "1.0",
+        timestamp: new Date().toISOString(),
+        placements: placements,
+        weeklyTarget: localStorage.getItem('techprep_weekly_target') || '10'
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TechPrepAI_Placements_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    if (window.showToast) window.showToast("Placements backup exported successfully!", "success");
+};
+
+window.importData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || !Array.isArray(data.placements)) {
+                throw new Error("Invalid backup format: missing placements list.");
+            }
+            placements = data.placements;
+            localStorage.setItem('techprep_placements', JSON.stringify(placements));
+            if (data.weeklyTarget) {
+                localStorage.setItem('techprep_weekly_target', data.weeklyTarget);
+            }
+            renderStats();
+            renderPlacements();
+            renderChart();
+            renderUpcomingJobs();
+            updateWeeklyTarget();
+            checkUpcomingReminders();
+            if (window.showToast) window.showToast("Placements data restored successfully!", "success");
+        } catch (err) {
+            console.error(err);
+            if (window.showToast) window.showToast("Failed to import backup: Invalid JSON structure", "error");
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
 };
 
 closeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        closeModal(e.target.closest('.close-btn').dataset.modal);
+        const modalId = e.target.closest('.close-btn')?.dataset?.modal;
+        if (modalId) closeModal(modalId);
     });
 });
 
@@ -139,27 +310,27 @@ const renderPlacements = () => {
         
         const contentEl = colEl.querySelector('.column-content');
         
-        const visibleJobs = colTasks.slice(0, 1);
-        visibleJobs.forEach(app => {
+        colTasks.forEach(app => {
             const card = document.createElement('div');
             card.className = "job-card bg-bg-elevated p-4 rounded-xl border border-border shadow-sm flex flex-col gap-2 cursor-grab active:cursor-grabbing hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out relative group";
             card.setAttribute('draggable', 'true');
             card.setAttribute('ondragstart', 'drag(event)');
             card.setAttribute('ondragend', 'dragEnd(event)');
             card.setAttribute('data-id', app.id);
-            card.setAttribute('onclick', `openJobDetails('${app.id}')`);
             
             const packageBadge = app.package ? `<span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-2 py-1 rounded-md"><i class="fa-solid fa-indian-rupee-sign text-[0.6rem]"></i> ${app.package} LPA</span>` : '';
             const locationBadge = app.location ? `<span class="bg-slate-100 dark:bg-slate-800/50 text-[0.65rem] text-slate-600 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/50 flex items-center gap-1"><i class="fa-solid fa-map-marker-alt"></i> ${app.location}</span>` : '';
             const eligibilityBadge = app.eligibility ? `<span class="bg-slate-100 dark:bg-slate-800/50 text-[0.65rem] text-slate-600 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/50">${app.eligibility}</span>` : '';
-            const linkBtn = app.link ? `<a href="${app.link}" target="_blank" rel="noopener noreferrer" class="text-text-muted hover:text-accent-primary transition-colors ml-auto"><i class="fa-solid fa-external-link-alt text-[0.8rem]"></i></a>` : '';
+            const linkBtn = app.link ? `<a href="${app.link}" target="_blank" rel="noopener noreferrer" class="text-text-muted hover:text-accent-primary transition-colors p-1" title="Open Career Portal"><i class="fa-solid fa-external-link-alt text-[0.8rem]"></i></a>` : '';
             
-            let appliedStr = 'No date';
+            let appliedStr = 'Not Applied';
             const dateFmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             
-            const applied = app.appliedDate || app.createdAt;
+            const applied = app.appliedDate;
             if (applied) {
                 appliedStr = `Applied: ${dateFmt(applied)}`;
+            } else if (app.deadline) {
+                appliedStr = `Deadline: ${dateFmt(app.deadline)}`;
             }
 
             const interviewBadge = app.interviewDate ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[0.7rem] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-200 dark:border-amber-800/50"><i class="fa-regular fa-calendar-check"></i> Int: ${dateFmt(app.interviewDate)}</span>` : '';
@@ -175,7 +346,7 @@ const renderPlacements = () => {
                 rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'
             };
             const statusLabels = {
-                wishlist: 'Wishlist', applied: 'Applied', assessment: 'OA', interview: 'Interview', selected: 'Offer', rejected: 'Rejected'
+                wishlist: 'Opportunity', applied: 'Applied', assessment: 'OA Round', interview: 'Interview', selected: 'Offer', rejected: 'Rejected'
             };
             
             const statusBadge = `<span class="${statusColors[app.status] || statusColors.wishlist} px-2 py-0.5 rounded-full text-[0.65rem] font-bold uppercase tracking-wider">${statusLabels[app.status] || 'Unknown'}</span>`;
@@ -186,7 +357,7 @@ const renderPlacements = () => {
                         <span class="text-sm font-bold text-slate-400 dark:text-slate-500">${app.company.charAt(0).toUpperCase()}</span>
                     </div>
                     
-                    <div class="flex-1 min-w-0 pr-8">
+                    <div class="flex-1 min-w-0 pr-6">
                         <h4 class="font-bold text-text-primary text-[0.95rem] leading-tight truncate">${app.role}</h4>
                         <p class="text-[0.8rem] text-text-secondary truncate mt-0.5">${app.company}</p>
                         
@@ -204,9 +375,6 @@ const renderPlacements = () => {
                     </div>
                     
                     <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 bg-bg-elevated pl-1 rounded-l-md">
-                        <button class="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-accent-primary transition-all duration-200 ease-out hover:scale-110 active:scale-95 text-[0.8rem]" onclick="openEditModal('${app.id}')" title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
                         <button class="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-500 transition-all duration-200 ease-out hover:scale-110 active:scale-95 text-[0.8rem]" onclick="archivePlacement('${app.id}')" title="Archive">
                             <i class="fa-solid fa-archive"></i>
                         </button>
@@ -220,7 +388,14 @@ const renderPlacements = () => {
                     <div class="flex items-center gap-2">
                         <span class="text-[0.75rem] text-text-muted flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> ${appliedStr} ${noteIcon}</span>
                     </div>
-                    ${linkBtn}
+                    <div class="flex items-center gap-2">
+                        ${app.status === 'wishlist' ? `
+                            <button onclick="event.stopPropagation(); studentApplyNow('${app.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95" title="Apply to this company">
+                                <i class="fa-solid fa-paper-plane text-[9px]"></i> Apply Now
+                            </button>
+                        ` : ''}
+                        ${linkBtn}
+                    </div>
                 </div>
 
                 <!-- Drag Hint Pill -->
@@ -232,14 +407,6 @@ const renderPlacements = () => {
             `;
             contentEl.appendChild(card);
         });
-        // Inject "See all" button when column overflows 1 card
-        if (colTasks.length > 1) {
-            const seeAllBtn = document.createElement('button');
-            seeAllBtn.className = 'w-full mt-2 py-2 text-sm font-medium text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors flex items-center justify-center gap-2';
-            seeAllBtn.setAttribute('onclick', `openMasterListView('${col.id}')`);
-            seeAllBtn.innerHTML = `<span>See all ${colTasks.length}</span> <i class="fa-solid fa-chevron-right"></i>`;
-            colEl.appendChild(seeAllBtn);
-        }
 
         kanbanBoard.appendChild(colEl);
     });
@@ -283,56 +450,7 @@ const renderStats = () => {
 };
 
 
-// --- CRUD Operations ---
-const saveApplication = () => {
-    const company = document.getElementById('app-company').value.trim();
-    const role = document.getElementById('app-role').value.trim();
-    const pkg = document.getElementById('app-package').value.trim();
-    const deadline = document.getElementById('app-deadline').value;
-    const interviewDate = document.getElementById('app-interview-date').value;
-    const eligibility = document.getElementById('app-eligibility').value.trim();
-    const location = document.getElementById('app-location').value.trim();
-    const status = document.getElementById('app-status').value;
-    const link = document.getElementById('app-link').value.trim();
-    
-    if (!company || !role) {
-        if(window.showToast) window.showToast("Please enter Company Name and Job Role.", "error");
-        return;
-    }
-    
-    const newApp = {
-        id: Date.now().toString(),
-        company,
-        role,
-        package: pkg,
-        deadline,
-        interviewDate,
-        eligibility,
-        location,
-        status,
-        link,
-        isArchived: false,
-        createdAt: new Date().toISOString(),
-        appliedDate: new Date().toISOString().split('T')[0],
-        statusUpdatedAt: new Date().toISOString()
-    };
-    
-    placements.push(newApp);
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
-        
-        closeModal('application-modal');
-        renderPlacements();
-        renderStats();
-        renderChart();
-        renderUpcomingJobs();
-        updateWeeklyTarget();
-        checkUpcomingReminders();
-    if(window.showToast) window.showToast('Application added successfully!', 'success');
-};
-
-if (addAppBtn) {
-    addAppBtn.addEventListener('click', saveApplication);
-}
+// --- CRUD Operations (User can edit tracking notes, stages & archive) ---
 
 window.openEditModal = (id) => {
     const app = placements.find(p => p.id === id);
@@ -579,15 +697,44 @@ const renderMasterList = (filterStatus = 'All') => {
     gridContainer.innerHTML = gridHTML;
 };
 
+window.studentApplyNow = (jobId) => {
+    const job = placements.find(p => String(p.id) === String(jobId));
+    if (!job) return;
+
+    if (job.link) {
+        window.open(job.link, '_blank', 'noopener,noreferrer');
+    }
+
+    job.status = 'applied';
+    job.appliedDate = new Date().toISOString().split('T')[0];
+    job.statusUpdatedAt = new Date().toISOString();
+
+    localStorage.setItem('techprep_placements', JSON.stringify(placements));
+    renderPlacements();
+    renderStats();
+    renderChart();
+    renderUpcomingJobs();
+    checkUpcomingReminders();
+
+    if (window.showToast) {
+        window.showToast(`Applied for ${job.company}! Moved to Applied stage.`, 'success');
+    }
+};
+
 window.updateJobStatusFromList = (jobId, newStatus) => {
-    // Kept for backward compatibility if ever needed elsewhere
-    const job = placements.find(p => p.id === jobId);
+    const job = placements.find(p => String(p.id) === String(jobId));
     if (job) {
         job.status = newStatus;
-        job.updatedAt = new Date().toISOString();
+        if (newStatus === 'applied' && !job.appliedDate) {
+            job.appliedDate = new Date().toISOString().split('T')[0];
+        }
+        job.statusUpdatedAt = new Date().toISOString();
         localStorage.setItem('techprep_placements', JSON.stringify(placements));
         renderMasterList('All');
-        if(window.showToast) window.showToast('Application moved to ' + (columns.find(c => c.id === newStatus)?.title || newStatus), 'success');
+        renderPlacements();
+        renderStats();
+        renderChart();
+        if(window.showToast) window.showToast(`Status updated to ${newStatus}`, 'success');
     }
 };
 
@@ -597,9 +744,12 @@ window.drop = (event, newStatus) => {
     if (!id) return;
 
     // Find the placement and update its status
-    const placementIndex = placements.findIndex(p => p.id === id);
+    const placementIndex = placements.findIndex(p => String(p.id) === String(id));
     if (placementIndex !== -1 && placements[placementIndex].status !== newStatus) {
         placements[placementIndex].status = newStatus;
+        if (newStatus === 'applied' && !placements[placementIndex].appliedDate) {
+            placements[placementIndex].appliedDate = new Date().toISOString().split('T')[0];
+        }
         placements[placementIndex].statusUpdatedAt = new Date().toISOString();
         localStorage.setItem('techprep_placements', JSON.stringify(placements));
         renderPlacements();

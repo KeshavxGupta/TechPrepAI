@@ -1,4 +1,4 @@
-﻿// Mobile Sidebar Toggler
+// Mobile Sidebar Toggler
 window.toggleAdminSidebar = function(forceState) {
   const sidebar = document.getElementById('admin-sidebar');
   const overlay = document.getElementById('admin-sidebar-overlay');
@@ -558,7 +558,12 @@ function resetQuizzes() {
 // Toast Alert Helper
 function showToast(msg) {
   const toast = document.getElementById('toast-notification');
-  document.getElementById('toast-message').textContent = msg;
+  if (!toast) {
+    console.log(msg);
+    return;
+  }
+  const msgEl = document.getElementById('toast-message');
+  if (msgEl) msgEl.textContent = msg;
   toast.classList.remove('hidden');
   
   setTimeout(() => {
@@ -572,10 +577,12 @@ function showToast(msg) {
     }, 300);
   }, 3000);
 }
+window.showToast = showToast;
+window.showToastNotification = showToast;
 
 // Tab switching controller
 function switchAdminTab(tabName) {
-  const panels = ['quizzes', 'users', 'profile', 'site-mgmt'];
+  const panels = ['quizzes', 'placements', 'users', 'profile', 'site-mgmt'];
   
   panels.forEach(p => {
     const panelEl = document.getElementById(`tab-panel-${p}`);
@@ -600,7 +607,9 @@ function switchAdminTab(tabName) {
     }
   });
 
-  if (tabName === 'users') {
+  if (tabName === 'placements') {
+    renderAdminPlacements();
+  } else if (tabName === 'users') {
     renderUsers();
   } else if (tabName === 'profile') {
     loadAdminProfileForm();
@@ -608,6 +617,463 @@ function switchAdminTab(tabName) {
     initSiteManagement();
   }
 }
+
+// ============================================================
+// PLACEMENT DRIVES MANAGEMENT (Admin Exclusive)
+// ============================================================
+
+const DEFAULT_SAMPLE_DRIVES = [
+  {
+    id: "drive-1",
+    company: "Google",
+    role: "Software Development Engineer (SWE-1)",
+    package: "32.0",
+    deadline: "2026-09-30",
+    interviewDate: "2026-10-15",
+    eligibility: "B.Tech/M.Tech CS/IT with 8.0+ CGPA",
+    location: "Bengaluru / Hyderabad (Hybrid)",
+    status: "wishlist",
+    link: "https://careers.google.com",
+    notes: "Focus on Graph algorithms, Dynamic Programming, and System Design fundamentals.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-2",
+    company: "Microsoft",
+    role: "Software Engineer - Cloud & AI",
+    package: "28.5",
+    deadline: "2026-09-25",
+    interviewDate: "2026-10-10",
+    eligibility: "7.5+ CGPA, All Engineering Branches",
+    location: "Noida / Hyderabad / Remote",
+    status: "wishlist",
+    link: "https://careers.microsoft.com",
+    notes: "Round 1: Codility OA (3 DSA Questions), Round 2: Architecture & Systems.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-3",
+    company: "Amazon",
+    role: "SDE-1 (AWS Services)",
+    package: "26.0",
+    deadline: "2026-10-05",
+    interviewDate: "2026-10-20",
+    eligibility: "7.0+ CGPA, 2026 Batch",
+    location: "Bengaluru / Chennai",
+    status: "wishlist",
+    link: "https://amazon.jobs",
+    notes: "Amazon Leadership Principles + 2 DSA Technical Interview rounds.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-4",
+    company: "Atlassian",
+    role: "Software Engineer (Full Stack / Java)",
+    package: "38.0",
+    deadline: "2026-10-12",
+    interviewDate: "2026-10-28",
+    eligibility: "8.0+ CGPA, CS/IT/ECE",
+    location: "Bengaluru (Remote Friendly)",
+    status: "wishlist",
+    link: "https://www.atlassian.com/company/careers",
+    notes: "Craftsmanship & Values interview + Code design round.",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  },
+  {
+    id: "drive-5",
+    company: "Goldman Sachs",
+    role: "Summer Analyst / Tech Analyst",
+    package: "24.0",
+    deadline: "2026-09-18",
+    interviewDate: "2026-09-28",
+    eligibility: "7.5+ CGPA, Strong Math & Coding",
+    location: "Bengaluru / Mumbai",
+    status: "wishlist",
+    link: "https://www.goldmansachs.com/careers",
+    notes: "Aptitude + Advanced Data Structures + Core CS (OS/DBMS/CN).",
+    isArchived: false,
+    createdAt: new Date().toISOString(),
+    appliedDate: null,
+    statusUpdatedAt: new Date().toISOString()
+  }
+];
+
+function getPlacementsData() {
+  const storedStr = localStorage.getItem('techprep_placements');
+  if (storedStr === null) {
+    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_SAMPLE_DRIVES));
+    return [...DEFAULT_SAMPLE_DRIVES];
+  }
+  try {
+    const parsed = JSON.parse(storedStr);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function renderAdminPlacements() {
+  const container = document.getElementById('admin-placement-list-container');
+  if (!container) return;
+
+  const placements = getPlacementsData();
+  const searchInput = document.getElementById('admin-placement-search');
+  const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  const filterSelect = document.getElementById('admin-placement-status-filter');
+  const statusFilter = filterSelect ? filterSelect.value : 'all';
+
+  // Calculate Metrics
+  const totalDrives = placements.length;
+  const openDrives = placements.filter(p => ['applied', 'assessment', 'interview', 'wishlist'].includes(p.status)).length;
+  
+  const packages = placements.map(p => parseFloat(p.package) || 0).filter(pkg => pkg > 0);
+  const highestPkg = packages.length > 0 ? Math.max(...packages) : 0;
+  const avgPkg = packages.length > 0 ? (packages.reduce((a, b) => a + b, 0) / packages.length).toFixed(1) : 0;
+
+  const statTotal = document.getElementById('admin-stat-total-drives');
+  if (statTotal) statTotal.textContent = totalDrives;
+
+  const statOpen = document.getElementById('admin-stat-open-drives');
+  if (statOpen) statOpen.textContent = openDrives;
+
+  const statHighest = document.getElementById('admin-stat-highest-package');
+  if (statHighest) statHighest.textContent = `₹${highestPkg} LPA`;
+
+  const statAvg = document.getElementById('admin-stat-avg-package');
+  if (statAvg) statAvg.textContent = `₹${avgPkg} LPA`;
+
+  // Filter Placements
+  const filtered = placements.filter(p => {
+    const matchesQuery = !query || 
+      (p.company && p.company.toLowerCase().includes(query)) ||
+      (p.role && p.role.toLowerCase().includes(query)) ||
+      (p.eligibility && p.eligibility.toLowerCase().includes(query)) ||
+      (p.location && p.location.toLowerCase().includes(query)) ||
+      (p.notes && p.notes.toLowerCase().includes(query));
+
+    const matchesStatus = (statusFilter === 'all') || (p.status === statusFilter);
+
+    return matchesQuery && matchesStatus;
+  });
+
+  const badgeCount = document.getElementById('admin-placement-count-badge');
+  if (badgeCount) {
+    badgeCount.textContent = `Showing ${filtered.length} of ${totalDrives} drives`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full text-center py-16 p-8 rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 bg-surface-elevated">
+        <svg class="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
+        <h4 class="text-base font-bold text-neutral-800 dark:text-neutral-200">No placement drives found</h4>
+        <p class="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">Try adjusting your search criteria or click "+ Add Placement Drive" to publish a new opening.</p>
+        <button onclick="openAdminPlacementModal()" class="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors inline-flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Publish First Drive
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  const statusBadges = {
+    wishlist: { label: 'Wishlist / Announced', bg: 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    applied: { label: 'Applied / Open', bg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' },
+    assessment: { label: 'Assessment (OA)', bg: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' },
+    interview: { label: 'Interview Round', bg: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' },
+    selected: { label: 'Offer / Selected', bg: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' },
+    rejected: { label: 'Closed / Rejected', bg: 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/50' }
+  };
+
+  container.innerHTML = filtered.map(p => {
+    const badge = statusBadges[p.status] || statusBadges.applied;
+    const initial = (p.company || 'C').charAt(0).toUpperCase();
+
+    const formattedDeadline = p.deadline ? new Date(p.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No deadline';
+    const formattedInterview = p.interviewDate ? new Date(p.interviewDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+
+    return `
+      <div class="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated hover:border-blue-500/40 hover:shadow-md transition-all flex flex-col justify-between group">
+        <div>
+          <!-- Company & Status Header -->
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center font-extrabold text-neutral-700 dark:text-neutral-300 shrink-0 font-mono shadow-sm">
+                ${initial}
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-bold text-sm text-neutral-900 dark:text-white truncate">${p.company}</h3>
+                <p class="text-xs text-neutral-500 truncate">${p.location || 'Pan India / Remote'}</p>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shrink-0 ${badge.bg}">
+              ${badge.label}
+            </span>
+          </div>
+
+          <!-- Role & Package -->
+          <div class="mb-3">
+            <h4 class="font-bold text-sm text-neutral-900 dark:text-white line-clamp-1">${p.role}</h4>
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/40">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                ${p.package} LPA
+              </span>
+              ${p.eligibility ? `
+                <span class="text-[11px] text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700/60 truncate max-w-[180px]" title="${p.eligibility}">
+                  ${p.eligibility}
+                </span>
+              ` : ''}
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="space-y-1 text-xs text-neutral-500 mb-3 pt-2 border-t border-neutral-100 dark:border-neutral-800/80">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Deadline:</span>
+              <span class="font-medium text-neutral-800 dark:text-neutral-200">${formattedDeadline}</span>
+            </div>
+            ${formattedInterview ? `
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="flex items-center gap-1.5 text-amber-600 dark:text-amber-400"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Interview:</span>
+                <span class="font-medium text-amber-700 dark:text-amber-300">${formattedInterview}</span>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Notes / Syllabus -->
+          ${p.notes ? `
+            <p class="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-2 italic bg-surface-secondary p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 mb-4">
+              "${p.notes}"
+            </p>
+          ` : ''}
+        </div>
+
+        <!-- Action Footer -->
+        <div class="flex items-center justify-between pt-3 border-t border-neutral-200 dark:border-neutral-800 gap-2">
+          ${p.link ? `
+            <a href="${p.link}" target="_blank" rel="noopener noreferrer" 
+              class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors inline-flex items-center gap-1">
+              <span>Portal Link</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            </a>
+          ` : '<div></div>'}
+
+          <div class="flex items-center gap-1.5">
+            <button onclick="event.stopPropagation(); openAdminPlacementModal('${p.id}')" 
+              class="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors inline-flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              <span>Edit</span>
+            </button>
+            <button onclick="event.stopPropagation(); deleteAdminPlacement('${p.id}')" 
+              class="p-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-400 hover:text-rose-500 hover:border-rose-300 dark:hover:border-rose-800 transition-colors" title="Delete Drive">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.openAdminPlacementModal = function(id = null) {
+  const overlay = document.getElementById('admin-placement-modal-overlay');
+  const titleEl = document.getElementById('admin-placement-modal-title');
+  const saveBtn = document.getElementById('admin-save-placement-btn');
+  const errorBanner = document.getElementById('admin-placement-error-banner');
+
+  if (!overlay) return;
+  if (errorBanner) errorBanner.classList.add('hidden');
+
+  if (id) {
+    const placements = getPlacementsData();
+    const drive = placements.find(p => String(p.id) === String(id));
+    if (drive) {
+      document.getElementById('admin-placement-id').value = drive.id;
+      document.getElementById('admin-placement-company').value = drive.company || '';
+      document.getElementById('admin-placement-role').value = drive.role || '';
+      document.getElementById('admin-placement-package').value = drive.package || '';
+      document.getElementById('admin-placement-eligibility').value = drive.eligibility || '';
+      document.getElementById('admin-placement-location').value = drive.location || '';
+      document.getElementById('admin-placement-status').value = drive.status || 'applied';
+      document.getElementById('admin-placement-deadline').value = drive.deadline || '';
+      document.getElementById('admin-placement-interview-date').value = drive.interviewDate || '';
+      document.getElementById('admin-placement-link').value = drive.link || '';
+      document.getElementById('admin-placement-notes').value = drive.notes || '';
+
+      if (titleEl) titleEl.innerHTML = `<svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Edit Placement Drive`;
+      if (saveBtn) saveBtn.textContent = 'Update Drive';
+    }
+  } else {
+    document.getElementById('admin-placement-id').value = '';
+    document.getElementById('admin-placement-company').value = '';
+    document.getElementById('admin-placement-role').value = '';
+    document.getElementById('admin-placement-package').value = '';
+    document.getElementById('admin-placement-eligibility').value = '';
+    document.getElementById('admin-placement-location').value = '';
+    document.getElementById('admin-placement-status').value = 'applied';
+    document.getElementById('admin-placement-deadline').value = '';
+    document.getElementById('admin-placement-interview-date').value = '';
+    document.getElementById('admin-placement-link').value = '';
+    document.getElementById('admin-placement-notes').value = '';
+
+    if (titleEl) titleEl.innerHTML = `<svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg> Add Placement Drive`;
+    if (saveBtn) saveBtn.textContent = 'Publish Drive';
+  }
+
+  overlay.classList.remove('hidden');
+  overlay.classList.add('flex');
+};
+
+window.closeAdminPlacementModal = function() {
+  const overlay = document.getElementById('admin-placement-modal-overlay');
+  if (!overlay) return;
+
+  overlay.classList.add('hidden');
+  overlay.classList.remove('flex');
+};
+
+window.saveAdminPlacement = function() {
+  const id = document.getElementById('admin-placement-id').value;
+  const company = document.getElementById('admin-placement-company').value.trim();
+  const role = document.getElementById('admin-placement-role').value.trim();
+  const pkg = document.getElementById('admin-placement-package').value.trim();
+  const eligibility = document.getElementById('admin-placement-eligibility').value.trim();
+  const location = document.getElementById('admin-placement-location').value.trim();
+  const status = document.getElementById('admin-placement-status').value;
+  const deadline = document.getElementById('admin-placement-deadline').value;
+  const interviewDate = document.getElementById('admin-placement-interview-date').value;
+  const link = document.getElementById('admin-placement-link').value.trim();
+  const notes = document.getElementById('admin-placement-notes').value.trim();
+  const errorBanner = document.getElementById('admin-placement-error-banner');
+
+  if (!company || !role || !pkg) {
+    if (errorBanner) {
+      errorBanner.textContent = "Please provide Company Name, Job Role, and Package (LPA).";
+      errorBanner.classList.remove('hidden');
+    }
+    showToast("Please fill in all required fields.");
+    return;
+  }
+
+  let placements = getPlacementsData();
+
+  if (id) {
+    // Update existing drive
+    const idx = placements.findIndex(p => String(p.id) === String(id));
+    if (idx !== -1) {
+      placements[idx] = {
+        ...placements[idx],
+        company,
+        role,
+        package: pkg,
+        eligibility,
+        location,
+        status,
+        deadline,
+        interviewDate,
+        link,
+        notes,
+        statusUpdatedAt: new Date().toISOString()
+      };
+      showToast("Placement drive updated successfully!");
+    }
+  } else {
+    // Create new drive
+    const newDrive = {
+      id: `drive-${Date.now()}`,
+      company,
+      role,
+      package: pkg,
+      eligibility,
+      location,
+      status,
+      deadline,
+      interviewDate,
+      link,
+      notes,
+      isArchived: false,
+      createdAt: new Date().toISOString(),
+      appliedDate: new Date().toISOString().split('T')[0],
+      statusUpdatedAt: new Date().toISOString()
+    };
+    placements.unshift(newDrive);
+    showToast("New placement drive published successfully!");
+  }
+
+  localStorage.setItem('techprep_placements', JSON.stringify(placements));
+  closeAdminPlacementModal();
+  renderAdminPlacements();
+};
+
+window.deleteAdminPlacement = function(id) {
+  if (!confirm("Are you sure you want to delete this placement drive?")) return;
+
+  let placements = getPlacementsData();
+  placements = placements.filter(p => String(p.id) !== String(id));
+  localStorage.setItem('techprep_placements', JSON.stringify(placements));
+
+  showToast("Placement drive deleted successfully");
+  renderAdminPlacements();
+};
+
+window.exportAdminPlacements = function() {
+  const placements = getPlacementsData();
+  const dataStr = JSON.stringify(placements, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TechPrepAI_Placement_Drives_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Placement drives exported (.json)");
+};
+
+window.importAdminPlacements = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid format: expected array of placement drives.");
+      }
+      localStorage.setItem('techprep_placements', JSON.stringify(data));
+      renderAdminPlacements();
+      showToast("Placement drives imported successfully!");
+    } catch {
+      showToast("Import failed: Invalid JSON schema");
+    } finally {
+      event.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+};
+
+// Expose functions to window
+window.renderAdminPlacements = renderAdminPlacements;
 
 // User Directory Operations
 function renderUsers() {
@@ -1525,7 +1991,7 @@ function clearAuditLogs() {
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
-  if (tabParam && ['quizzes', 'users', 'profile', 'site-mgmt'].includes(tabParam)) {
+  if (tabParam && ['quizzes', 'placements', 'users', 'profile', 'site-mgmt'].includes(tabParam)) {
     switchAdminTab(tabParam);
   }
 });

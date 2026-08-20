@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Placement Tracker — TechPrep AI</title>
+  <meta name="description" content="Track your dream job applications, manage recruitment pipelines, and organize technical interviews.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration for Custom Theme -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- Initialize theme preference early -->
+  <script src="/js/core/theme.js"></script>
+
+  <!-- Canvas Confetti & Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern">
+
+  <!-- Student Sidebar Component -->
+  <div id="component-user-sidebar"></div>
+  <script src="/js/components/user/user-sidebar.js"></script>
+
+  <!-- Right Dashboard Content Wrapper -->
+  <div class="flex-1 flex flex-col min-h-screen max-w-full overflow-x-hidden">
+    
+    <!-- Top Navbar Header -->
+    <header class="sticky top-0 z-20 bg-surface-primary/90 subtle-glass border-b border-neutral-200 dark:border-neutral-800 transition-colors w-full">
+      <div class="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+        
+        <!-- Left: Hamburger Toggle & Page Breadcrumb -->
+        <div class="flex items-center space-x-3">
+          <button onclick="toggleUserSidebar()" class="lg:hidden p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors" title="Toggle Sidebar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div>
+            <div class="text-xs font-semibold text-neutral-500 flex items-center gap-1.5">
+              <span>Student Portal</span>
+              <span class="text-neutral-400">/</span>
+              <span class="text-neutral-900 dark:text-white font-bold">Placement Tracker</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Header Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          
+          <!-- Archived Jobs Button -->
+          <button onclick="toggleArchivePanel(true)" 
+            class="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors flex items-center space-x-1.5"
+            title="View Archived Applications">
+            <i class="fa-solid fa-archive text-neutral-400 text-xs"></i>
+            <span class="hidden md:inline">Archived</span>
+          </button>
+
+          <!-- Backup Dropdown -->
+          <div class="relative group">
+            <button class="p-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors" title="Backup & Restore Options">
+              <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <div class="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 z-50 hidden group-hover:block py-1">
+              <button onclick="exportData()" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                <i class="fa-solid fa-download text-blue-500"></i> Export Backup (.json)
+              </button>
+              <button onclick="document.getElementById('import-file').click()" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2">
+                <i class="fa-solid fa-upload text-purple-500"></i> Import Backup (.json)
+              </button>
+            </div>
+            <input type="file" id="import-file" accept=".json" class="hidden" onchange="importData(event)">
+          </div>
+
+          <!-- Home Link -->
+          <a href="/index.html" class="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors hidden sm:block">
+            Home
+          </a>
+
+          <!-- Theme Toggle -->
+          <button class="theme-toggle-btn p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-neutral-200 dark:border-neutral-700 transition-colors flex items-center space-x-1" title="Toggle Light / Dark mode">
+            <svg class="w-4 h-4 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <svg class="w-4 h-4 block dark:hidden text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+          </button>
+
+          <!-- User initials Avatar -->
+          <button onclick="switchDashboardTab('profile')" class="flex items-center space-x-2 pl-2 border-l border-neutral-200 dark:border-neutral-800 hover:opacity-80 transition-all">
+            <div id="user-avatar-initials" class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center font-mono select-none">
+              ST
+            </div>
+            <span id="user-display-name" class="hidden sm:block text-xs font-semibold text-neutral-800 dark:text-neutral-200">Student</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="p-4 sm:p-6 lg:p-8 flex-1 w-full text-left max-w-7xl mx-auto space-y-6">
+
+      <!-- Page Banner -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white flex items-center gap-2">
+            <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Placement Application Tracker
+          </h1>
+          <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">
+            Organize job applications, track technical assessments, and monitor your interview pipelines.
+          </p>
+        </div>
+      </div>
+
+      <!-- Reminder Banner Container -->
+      <div id="reminder-banner-container" class="w-full flex flex-col gap-3 empty:hidden"></div>
+
+      <!-- Top Section: Stats & Funnel Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Summary Statistics (8 Cols) -->
+        <div class="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4" id="summary-stats">
+          <!-- Dynamic Stats injected here by placements.js -->
+        </div>
+
+        <!-- Funnel Doughnut Chart (4 Cols) -->
+        <div class="lg:col-span-4 p-4 rounded-2xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col items-center justify-center min-h-[180px]">
+          <canvas id="placementFunnelChart" class="w-full h-full max-h-[160px]"></canvas>
+        </div>
+      </div>
+
+      <!-- Main Kanban Board & Side Widgets -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Kanban Board Carousel Area (8 Cols) -->
+        <div class="lg:col-span-8 w-full">
+          <div class="relative w-full overflow-hidden group">
+            
+            <!-- Left Arrow -->
+            <button onclick="scrollKanban('left')"
+              class="absolute top-1/2 -translate-y-1/2 left-2 z-30 bg-surface-elevated border border-neutral-200 dark:border-neutral-700 shadow-md rounded-full w-8 h-8 flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100">
+              <i class="fa-solid fa-chevron-left text-xs"></i>
+            </button>
+
+            <!-- Scrollable Kanban Container -->
+            <div class="flex flex-nowrap gap-4 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] px-1"
+              id="kanban-scroll-container" 
+              onmouseenter="stopKanbanAutoScroll()"
+              onmouseleave="startKanbanAutoScroll()" 
+              ontouchstart="stopKanbanAutoScroll()"
+              ontouchend="startKanbanAutoScroll()">
+              <div class="flex flex-nowrap gap-4 min-w-max" id="kanban-board">
+                <!-- Columns dynamically injected here by placements.js -->
+              </div>
+            </div>
+
+            <!-- Right Arrow -->
+            <button onclick="scrollKanban('right')"
+              class="absolute top-1/2 -translate-y-1/2 right-2 z-30 bg-surface-elevated border border-neutral-200 dark:border-neutral-700 shadow-md rounded-full w-8 h-8 flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover:opacity-100">
+              <i class="fa-solid fa-chevron-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side Widgets (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+          
+          <!-- Widget 1: Upcoming Dates -->
+          <div class="p-5 rounded-2xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col gap-3">
+            <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-regular fa-calendar-check text-blue-500"></i> Upcoming Deadlines & Interviews
+            </h3>
+            <div id="upcoming-jobs-list" class="flex flex-col gap-2">
+              <!-- Dynamically populated by placements.js -->
+            </div>
+          </div>
+
+          <!-- Widget 2: Weekly Target Tracker -->
+          <div class="p-5 rounded-2xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col gap-3">
+            <div class="flex justify-between items-center">
+              <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Weekly Target</span>
+                <i class="fa-solid fa-circle-info text-neutral-400 hover:text-blue-500 cursor-pointer text-xs" onclick="openWeeklyInfoModal()"></i>
+              </h3>
+              <div class="flex items-center gap-2">
+                <span id="weekly-count-text" class="text-xs font-bold text-blue-600 dark:text-blue-400">0 / 10 Apps</span>
+                <button onclick="openTargetEditor()" title="Edit Target" class="p-1 rounded text-neutral-400 hover:text-blue-500 transition-colors text-xs">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Inline Target Editor -->
+            <div id="weekly-target-editor" class="hidden flex items-center gap-2 bg-surface-secondary border border-neutral-200 dark:border-neutral-700 rounded-xl p-2">
+              <label class="text-xs text-neutral-600 dark:text-neutral-400 font-medium">Target:</label>
+              <input type="number" id="weekly-target-input" min="1" max="100" value="10"
+                class="w-full px-2 py-1 text-xs rounded-lg bg-surface-primary border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white outline-none focus:border-blue-500">
+              <button onclick="saveWeeklyTarget()" class="px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">Save</button>
+              <button onclick="closeTargetEditor()" class="px-2 py-1 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
+                <i class="fa-solid fa-times"></i>
+              </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-neutral-100 dark:bg-neutral-800 rounded-full h-2 overflow-hidden">
+              <div id="weekly-progress-bar" class="h-2 rounded-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="weekly-percentage-text" class="text-xs text-neutral-500 font-medium">0% Completed this week. Keep going!</p>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-6 text-center text-xs text-neutral-500 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary/95 transition-colors">
+      © 2026 TechPrep AI, Inc. All rights reserved. • Student Technical Hub
+    </footer>
+
+  </div>
+
+  <!-- Modals & Drawers -->
+
+  <!-- Modal Backdrop Overlay -->
+  <div class="modal-overlay fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[990] opacity-0 pointer-events-none transition-opacity duration-300" id="app-modal-overlay"></div>
+
+  <!-- Edit Application Modal -->
+  <div class="modal fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg bg-surface-elevated rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 z-[1000] opacity-0 pointer-events-none scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" id="edit-job-modal">
+    <div class="p-5 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center bg-surface-secondary rounded-t-2xl">
+      <h3 class="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-pen-to-square text-blue-600 dark:text-blue-400"></i> Edit Application
+      </h3>
+      <button class="close-btn text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none p-1" data-modal="edit-job-modal">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div class="p-6 overflow-y-auto space-y-4 text-xs font-medium text-neutral-700 dark:text-neutral-300">
+      <input type="hidden" id="edit-app-id">
+      <div class="space-y-1.5">
+        <label class="block">Company Name</label>
+        <input type="text" id="edit-app-company" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div class="space-y-1.5">
+        <label class="block">Job Role</label>
+        <input type="text" id="edit-app-role" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="block">Eligibility</label>
+          <input type="text" id="edit-app-eligibility" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div class="space-y-1.5">
+          <label class="block">Location</label>
+          <input type="text" id="edit-app-location" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="space-y-1.5">
+          <label class="block">Package (LPA)</label>
+          <input type="text" id="edit-app-package" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+        </div>
+        <div class="space-y-1.5">
+          <label class="block">Deadline / OA Date</label>
+          <input type="date" id="edit-app-deadline" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <label class="block">Interview Date</label>
+        <input type="date" id="edit-app-interview-date" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div class="space-y-1.5">
+        <label class="block">Status</label>
+        <select id="edit-app-status" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+          <option value="wishlist">Wishlist</option>
+          <option value="applied">Applied</option>
+          <option value="assessment">Assessment (OA)</option>
+          <option value="interview">Interview</option>
+          <option value="selected">Selected / Offer</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="space-y-1.5">
+        <label class="block">Application Link</label>
+        <input type="url" id="edit-app-link" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
+      </div>
+      <div class="space-y-1.5">
+        <label class="block">Notes & Questions Asked</label>
+        <textarea id="edit-app-notes" rows="3" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500"></textarea>
+      </div>
+    </div>
+    <div class="p-4 border-t border-neutral-200 dark:border-neutral-800 flex justify-end gap-2.5 bg-surface-secondary rounded-b-2xl">
+      <button class="close-btn px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" data-modal="edit-job-modal">Cancel</button>
+      <button id="save-edited-app-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">Save Changes</button>
+    </div>
+  </div>
+
+  <!-- View Job Details Modal -->
+  <div class="modal-overlay fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[1050] opacity-0 pointer-events-none transition-opacity duration-300" id="view-job-overlay" onclick="closeJobDetails()"></div>
+  <div class="modal fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg bg-surface-elevated rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 z-[1100] opacity-0 pointer-events-none scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" id="view-job-modal">
+    <div class="p-5 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-start">
+      <div class="flex items-start gap-3">
+        <div id="view-job-logo" class="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center font-bold text-lg text-blue-600 dark:text-blue-400 border border-neutral-200 dark:border-neutral-700 shrink-0">
+          C
+        </div>
+        <div>
+          <h3 id="view-job-role" class="text-base font-bold text-neutral-900 dark:text-white leading-tight">Role</h3>
+          <p id="view-job-company" class="text-xs text-neutral-500 font-medium mt-0.5">Company</p>
+          <div class="flex items-center gap-2 mt-2">
+            <span id="view-job-location-badge" class="hidden text-[10px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
+              <i class="fa-solid fa-map-marker-alt"></i> <span id="view-job-location">Remote</span>
+            </span>
+            <span id="view-job-eligibility" class="hidden text-[10px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"></span>
+          </div>
+          <div class="flex gap-2 mt-2" id="view-job-badges"></div>
+        </div>
+      </div>
+      <button onclick="closeJobDetails()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg p-1">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div class="p-5 overflow-y-auto space-y-4 text-xs">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="p-3 rounded-xl bg-surface-secondary border border-neutral-200 dark:border-neutral-800">
+          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Package</span>
+          <span id="view-job-package" class="text-lg font-black text-emerald-600 dark:text-emerald-400">N/A</span>
+        </div>
+        <div class="p-3 rounded-xl bg-surface-secondary border border-neutral-200 dark:border-neutral-800">
+          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Timeline</span>
+          <div class="text-[11px] text-neutral-600 dark:text-neutral-400 space-y-0.5">
+            <p>Applied: <span id="view-job-applied-date" class="font-semibold text-neutral-900 dark:text-white">N/A</span></p>
+            <p>Updated: <span id="view-job-updated-date" class="font-semibold text-neutral-900 dark:text-white">N/A</span></p>
+            <p>Deadline: <span id="view-job-deadline-date" class="font-semibold text-neutral-900 dark:text-white">N/A</span></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">Notes & Details</span>
+        <div id="view-job-notes" class="p-3 rounded-xl bg-surface-secondary border border-neutral-200 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 whitespace-pre-wrap min-h-[60px]">
+          No notes provided.
+        </div>
+      </div>
+      <div id="view-job-link-container" class="hidden">
+        <a id="view-job-link" href="#" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+          <i class="fa-solid fa-external-link-alt text-xs"></i> Open Job Portal
+        </a>
+      </div>
+    </div>
+    <div class="p-4 border-t border-neutral-200 dark:border-neutral-800 flex justify-end gap-2.5 bg-surface-secondary rounded-b-2xl">
+      <button onclick="closeJobDetails()" class="px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">Close</button>
+      <button id="view-job-edit-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 shadow-sm transition-colors">Edit Job</button>
+    </div>
+  </div>
+
+  <!-- Archived Applications Panel -->
+  <div id="archive-panel" class="hidden fixed inset-0 z-[1050] bg-neutral-950/60 backdrop-blur-sm flex justify-end" onclick="if(event.target === this) toggleArchivePanel(false)">
+    <div class="bg-surface-elevated w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col border-l border-neutral-200 dark:border-neutral-800">
+      <div class="flex justify-between items-center pb-4 border-b border-neutral-200 dark:border-neutral-800">
+        <h3 class="text-sm font-bold flex items-center gap-2 text-neutral-900 dark:text-white">
+          <i class="fa-solid fa-archive text-blue-500"></i> Archived Applications
+        </h3>
+        <button onclick="toggleArchivePanel(false)" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg p-1">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div id="archived-jobs-list" class="flex flex-col gap-3 mt-4 flex-1">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Master List View Modal -->
+  <div id="master-list-modal" class="fixed inset-0 z-[1050] bg-surface-primary hidden overflow-y-auto">
+    <div class="sticky top-0 z-10 bg-surface-primary/95 subtle-glass border-b border-neutral-200 dark:border-neutral-800 p-4">
+      <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <button onclick="closeMasterListView()" class="text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </button>
+        <h2 class="text-sm font-bold text-neutral-900 dark:text-white">All Applications (Master Grid)</h2>
+        <button onclick="closeMasterListView()" class="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    </div>
+    <div id="master-list-container" class="max-w-6xl mx-auto p-6 flex flex-col gap-6">
+      <div id="master-list-tabs" class="flex gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-2 overflow-x-auto"></div>
+      <div id="master-list-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-12"></div>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div id="custom-confirm-modal" class="fixed inset-0 z-[1150] bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+      <div class="mx-auto w-10 h-10 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+      </div>
+      <h3 id="confirm-modal-title" class="text-base font-bold text-neutral-900 dark:text-white mb-1">Delete Item?</h3>
+      <p id="confirm-modal-message" class="text-xs text-neutral-500 mb-5">Are you sure you want to delete this?</p>
+      <div class="flex gap-2.5">
+        <button id="confirm-cancel-btn" class="flex-1 py-2 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">Cancel</button>
+        <button id="confirm-action-btn" class="flex-1 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Info Modal -->
+  <div id="weekly-info-modal" class="fixed inset-0 z-[1050] bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeWeeklyInfoModal()">
+    <div class="bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-left">
+      <h3 class="text-base font-bold text-neutral-900 dark:text-white mb-3">🎯 Weekly Applications Goal</h3>
+      <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
+        Maintaining steady consistency in applying to Tier-1, startups, and on-campus recruitment drives drastically boosts interview conversion rates. Set a weekly target (e.g. 10 applications) to stay accountable.
+      </p>
+      <div class="flex justify-end">
+        <button onclick="closeWeeklyInfoModal()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[1200] flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <!-- Core Scripts -->
+  <script src="/js/core/ui.js"></script>
+  <script src="/js/core/auth.js"></script>
+  <script src="/js/core/app.js"></script>
+  <script src="/js/features/career/placements.js"></script>
+</body>
+
+</html>

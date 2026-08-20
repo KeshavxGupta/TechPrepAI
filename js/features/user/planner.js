@@ -24,13 +24,15 @@ const progressFill = document.getElementById('progress-fill');
 const globalSearch = document.getElementById('global-search');
 const themeToggle = document.getElementById('theme-toggle');
 
-// Sidebar toggle
+// Sidebar toggle (guarded)
 const menuToggle = document.getElementById('menu-toggle');
 const sidebar = document.querySelector('.sidebar');
 
-menuToggle.addEventListener('click', () => {
-    sidebar.classList.toggle('open');
-});
+if (menuToggle && sidebar) {
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+}
 
 // Modals
 const closeBtns = document.querySelectorAll('.close-btn');
@@ -53,9 +55,9 @@ const initApp = () => {
     if (localStorage.getItem('techprep_theme') === 'dark') {
         document.body.classList.add('dark-theme');
         document.body.classList.add('dark');
-        themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
+        if (themeToggle) themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
     } else {
-        themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
+        if (themeToggle) themeToggle.innerHTML = '<i class="fa-solid fa-moon"></i>';
     }
 
     renderNotes();
@@ -64,62 +66,95 @@ const initApp = () => {
     renderHeatmap();
 };
 
-// --- Theme Toggle ---
-themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark-theme');
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
-    themeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
-});
+// --- Theme Toggle (guarded) ---
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.contains('dark-theme');
+        localStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
+        themeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+    });
+}
 
 // --- Modal Logic ---
-const openModal = (modalId) => {
-    document.getElementById(modalId).classList.add('active');
+window.openModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.add('active', 'opacity-100', 'pointer-events-auto');
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    const card = modal.querySelector('.modal-card');
+    if (card) {
+        card.classList.add('scale-100');
+        card.classList.remove('scale-95');
+    }
 };
 
-const closeModal = (modalId) => {
-    document.getElementById(modalId).classList.remove('active');
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    modal.classList.remove('active', 'opacity-100', 'pointer-events-auto');
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    const card = modal.querySelector('.modal-card');
+    if (card) {
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+    }
+    
     // Reset forms
     if (modalId === 'note-modal') {
-        document.getElementById('note-title').value = '';
-        document.getElementById('note-editor').innerHTML = '';
-        document.getElementById('note-category').value = 'dsa';
-        document.getElementById('note-color').value = '#f43f5e';
+        const titleEl = document.getElementById('note-title');
+        if (titleEl) titleEl.value = '';
+        const edEl = document.getElementById('note-editor');
+        if (edEl) edEl.innerHTML = '';
+        const catEl = document.getElementById('note-category');
+        if (catEl) catEl.value = 'dsa';
+        const colEl = document.getElementById('note-color');
+        if (colEl) colEl.value = '#4f46e5';
         
         const activeRecallToggle = document.getElementById('note-active-recall');
         const srIntervalSelect = document.getElementById('sr-interval');
         if (activeRecallToggle) {
-            activeRecallToggle.checked = false;
+            activeRecallToggle.checked = true;
             if (srIntervalSelect) {
-                srIntervalSelect.style.display = 'none';
+                srIntervalSelect.style.display = 'block';
                 srIntervalSelect.value = 'standard';
             }
         }
         
         // Reset swatches
         document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-        const defaultSwatch = document.querySelector('.color-swatch[data-color="#f43f5e"]');
+        const defaultSwatch = document.querySelector('.color-swatch[data-color="#4f46e5"]');
         if (defaultSwatch) defaultSwatch.classList.add('active');
         const wheel = document.getElementById('custom-color-wheel');
         if (wheel) wheel.value = '#ffffff';
 
-        document.getElementById('note-modal-title').innerText = 'Create New Note';
+        const modalTitle = document.getElementById('note-modal-title');
+        if (modalTitle) modalTitle.innerText = 'Create New Note';
         currentEditingNoteId = null;
-    } else {
-        document.getElementById('task-title').value = '';
-        document.getElementById('task-deadline').value = '';
+    } else if (modalId === 'task-modal') {
+        const tTitle = document.getElementById('task-title');
+        if (tTitle) tTitle.value = '';
+        const tDead = document.getElementById('task-deadline');
+        if (tDead) tDead.value = '';
+        const tRes = document.getElementById('task-resource');
+        if (tRes) tRes.value = '';
     }
 };
 
 closeBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        closeModal(e.target.closest('.close-btn').dataset.modal);
+        const modalId = e.target.closest('.close-btn')?.dataset?.modal;
+        if (modalId) closeModal(modalId);
     });
 });
 
-addNoteBtn.addEventListener('click', () => openModal('note-modal'));
-addTaskBtn.addEventListener('click', () => openModal('task-modal'));
+if (addNoteBtn) {
+    addNoteBtn.addEventListener('click', () => openModal('note-modal'));
+}
+if (addTaskBtn) {
+    addTaskBtn.addEventListener('click', () => openModal('task-modal'));
+}
 
 const activeRecallToggle = document.getElementById('note-active-recall');
 const srIntervalSelect = document.getElementById('sr-interval');
@@ -132,7 +167,7 @@ if (activeRecallToggle && srIntervalSelect) {
 // --- Drawer Logic ---
 let currentViewNoteId = null;
 
-const openDrawer = (id) => {
+window.openDrawer = function(id) {
     const note = notes.find(n => n.id === id);
     if (note) {
         currentViewNoteId = id;
@@ -141,18 +176,26 @@ const openDrawer = (id) => {
         if (window.MathJax) {
             MathJax.typesetPromise([drawerContent]).catch((err) => console.log(err.message));
         }
-        drawerOverlay.classList.add('active');
+        drawerOverlay.classList.add('active', 'opacity-100', 'pointer-events-auto');
+        drawerOverlay.classList.remove('opacity-0', 'pointer-events-none');
         noteDrawer.classList.add('open');
+        noteDrawer.classList.remove('translate-x-full');
     }
 };
 
-const closeDrawer = () => {
-    drawerOverlay.classList.remove('active');
-    noteDrawer.classList.remove('open');
+window.closeDrawer = function() {
+    if (drawerOverlay) {
+        drawerOverlay.classList.remove('active', 'opacity-100', 'pointer-events-auto');
+        drawerOverlay.classList.add('opacity-0', 'pointer-events-none');
+    }
+    if (noteDrawer) {
+        noteDrawer.classList.remove('open');
+        noteDrawer.classList.add('translate-x-full');
+    }
 };
 
-if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeDrawer);
-if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', window.closeDrawer);
+if (drawerOverlay) drawerOverlay.addEventListener('click', window.closeDrawer);
 
 const downloadDrawerBtn = document.getElementById('download-drawer-btn');
 if (downloadDrawerBtn) {
@@ -960,17 +1003,15 @@ const updateProgress = () => {
 };
 
 // --- Global Search ---
-globalSearch.addEventListener('input', (e) => {
-    const q = e.target.value;
-    renderNotes(q);
-});
+if (globalSearch) {
+    globalSearch.addEventListener('input', (e) => {
+        const q = e.target.value;
+        renderNotes(q);
+    });
+}
 
 // --- Data Backup & Restore ---
-/**
- * Export Backup: Gathers notes and tasks from memory/LocalStorage,
- * wraps them in a JSON object, and triggers a Blob download.
- */
-const exportData = () => {
+window.exportData = function() {
     try {
         const data = {
             notes: notes,
@@ -984,7 +1025,7 @@ const exportData = () => {
         
         const a = document.createElement('a');
         a.href = url;
-        a.download = "TechPrep_Backup.json";
+        a.download = `TechPrepAI_StudyPlanner_Backup_${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         
@@ -998,11 +1039,7 @@ const exportData = () => {
     }
 };
 
-/**
- * Import Backup: Reads uploaded .json file, validates schema,
- * and overwrites LocalStorage and memory variables.
- */
-const importData = (event) => {
+window.importData = function(event) {
     const file = event.target.files[0];
     if (!file) return;
 

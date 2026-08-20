@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-admin-sidebar');
   if (!container) return;
 
@@ -32,6 +32,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           <span>Quiz Management</span>
+        </button>
+        <button id="side-btn-placements" onclick="handleAdminSidebarNav('placements')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
+          <svg class="w-4 h-4 mr-1.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          <span>Placement Drives</span>
         </button>
         <button id="side-btn-users" onclick="handleAdminSidebarNav('users')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,13 +90,15 @@
   </aside>`;
 
   window.handleAdminSidebarNav = function(tabName) {
-    const currentPage = (window.location.pathname.split('/').pop() || '/pages/admin/admin-hub.html').toLowerCase();
-    if (currentPage === '/pages/admin/admin-hub.html') {
-      if (window.switchAdminTab) window.switchAdminTab(tabName);
+    const isHub = window.location.pathname.includes('admin-hub') || window.location.pathname.endsWith('admin') || window.location.pathname.endsWith('admin/');
+    if (isHub && typeof window.switchAdminTab === 'function') {
+      window.switchAdminTab(tabName);
     } else {
       window.location.href = `/pages/admin/admin-hub.html?tab=${tabName}`;
     }
-    if (window.toggleAdminSidebar) window.toggleAdminSidebar(false);
+    if (typeof window.toggleAdminSidebar === 'function') {
+      window.toggleAdminSidebar(false);
+    }
   };
 })();
 
