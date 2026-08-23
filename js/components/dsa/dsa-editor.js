@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TechPrep AI - User DSA IDE Component & Controller
  */
 
@@ -357,7 +357,10 @@
             <span class="font-mono text-xs text-neutral-500">Runtime: <strong class="text-neutral-900 dark:text-white">${evaluation.runtimeMs} ms</strong></span>
             <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-neutral-900 dark:text-white">${evaluation.memoryMb} MB</strong></span>
           </div>
-          <button onclick="document.getElementById('dsa-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs">✕ Close</button>
+          <button onclick="document.getElementById('dsa-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs flex items-center gap-1">
+            <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Close
+          </button>
         </div>
         <div class="space-y-2 max-h-48 overflow-y-auto">${testResultsHtml}</div>
       </div>`;
@@ -413,7 +416,7 @@
     const solvedIds = progress.solved || [];
 
     const searchQuery = (document.getElementById('dsa-explorer-search')?.value || '').trim().toLowerCase();
-    const diffFilter = document.getElementById('dsa-explorer-diff')?.value || 'ALL';
+    const diffFilter = document.getElementById('dsa-explorer-diff-filter')?.value || 'ALL';
 
     const filtered = problems.filter(p => {
       const matchesSearch = p.title.toLowerCase().includes(searchQuery) || p.category.toLowerCase().includes(searchQuery);
@@ -425,7 +428,7 @@
       container.innerHTML = `
         <tr>
           <td colspan="5" class="text-center py-10 text-neutral-500 font-mono text-xs">
-            No problems matching search query.
+            No problems matching search filter.
           </td>
         </tr>`;
       return;
@@ -440,7 +443,7 @@
       return `
         <tr onclick="selectExplorerProblem('${p.id}')" class="cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-colors ${p.id === activeProblem.id ? 'bg-blue-500/5 font-semibold' : ''}">
           <td class="py-3 px-4 font-mono text-center">
-            ${isSolved ? '<span class="text-emerald-500 font-bold" title="Solved">✓</span>' : '<span class="text-neutral-400">-</span>'}
+            ${isSolved ? '<svg class="w-3.5 h-3.5 text-emerald-500 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>' : '<span class="text-neutral-400">-</span>'}
           </td>
           <td class="py-3 px-4">
             <div class="font-bold text-neutral-900 dark:text-white text-xs">${escapeHTML(p.title)}</div>

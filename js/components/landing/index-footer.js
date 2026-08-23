@@ -10,11 +10,33 @@
 
         <!-- Brand Info Column -->
         <div class="col-span-2 space-y-3">
-          <div class="flex items-center space-x-2">
-            <div
-              class="w-7 h-7 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-xs">
-              TP
-            </div>
+          <div class="flex items-center gap-3 select-none">
+            <!-- Shield & Brain Vector Mark -->
+          <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-[#0D1520] border border-[#00FFC2]/30 shadow-[0_0_15px_rgba(0,255,194,0.15)] shrink-0">
+            <svg class="w-6 h-6 text-[#00FFC2]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Shield Outline -->
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#00FFC2" fill-opacity="0.08"/>
+              <!-- Internal Neural Network / Circuit Nodes -->
+              <path d="M12 8v4" stroke="#38BDF8"/>
+              <path d="M9.5 10.5l5 3" stroke="#38BDF8"/>
+              <circle cx="12" cy="7" r="1.2" fill="#00FFC2"/>
+              <circle cx="8.5" cy="11" r="1.2" fill="#00FFC2"/>
+              <circle cx="15.5" cy="11" r="1.2" fill="#00FFC2"/>
+              <circle cx="12" cy="16" r="1.2" fill="#00FFC2"/>
+              <path d="M10 14.5l2 1.5 2-1.5" stroke="#38BDF8"/>
+            </svg>
+          </div>
+
+          <!-- Brand Typography -->
+          <div class="flex flex-col text-left">
+            <span class="text-lg sm:text-xl font-extrabold tracking-tight text-neutral-900 dark:text-white leading-none">
+              TechPrep <span class="text-[#00FFC2]">AI</span>
+            </span>
+            <span class="text-[8px] sm:text-[9px] font-semibold tracking-wider text-slate-500 dark:text-slate-400 uppercase mt-0.5">
+              Empowering Technical Careers
+            </span>
+          </div>
+          </div>
             <span class="font-bold text-sm text-neutral-900 dark:text-white">TechPrep AI</span>
           </div>
           <p class="text-neutral-500 leading-relaxed max-w-xs">

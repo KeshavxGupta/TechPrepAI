@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" class="dark">
 
 <head>
@@ -164,7 +164,9 @@
       
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <h3 id="admin-dsa-modal-title" class="text-base font-extrabold text-neutral-900 dark:text-white">Create New DSA Problem</h3>
-        <button onclick="closeAdminDSAModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 font-mono text-xs p-1">✕</button>
+        <button onclick="closeAdminDSAModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <form id="admin-dsa-form" onsubmit="saveDSAProblemForm(event)" class="space-y-6 text-xs">
