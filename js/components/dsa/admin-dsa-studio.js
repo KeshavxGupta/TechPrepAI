@@ -49,7 +49,7 @@
           <td class="py-3 px-4 font-mono text-neutral-500">${p.acceptanceRate || '50.0%'}</td>
           <td class="py-3 px-4">
             <div class="flex items-center space-x-2">
-              <a href="/pages/user/dsa-ide.html?p=${p.slug}" target="_blank" class="px-2.5 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors font-medium">
+              <a href="../user/dsa-ide.html?p=${p.slug}" target="_blank" class="px-2.5 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors font-medium">
                 Test
               </a>
               <button onclick="openAdminDSAModal('${p.id}')" class="px-2.5 py-1 text-xs rounded border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors font-medium">

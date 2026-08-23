@@ -9,14 +9,14 @@
       const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
       if (currentUser) {
         if (currentUser.email === 'khushboo2006june@admin.com') {
-          window.location.href = '/pages/admin/admin-hub.html';
+          window.location.href = '../admin/admin-hub.html';
           return;
         } else {
-          window.location.href = '/pages/user/dashboard.html';
+          window.location.href = '../user/dashboard.html';
           return;
         }
       }
-      window.location.href = "/index.html?modal=signup";
+      window.location.href = "../../index.html?modal=signup";
     })();
   </script>
 </head>

@@ -41,10 +41,10 @@
         <div class="space-y-2">
           <div class="font-semibold text-neutral-900 dark:text-white uppercase tracking-wider text-[11px]">DSA Prep</div>
           <ul class="space-y-1.5">
-            <li><a href="/pages/public/dsa-sheets.html#striver" class="hover:text-neutral-900 dark:hover:text-white">Striver SDE Sheet</a></li>
-            <li><a href="/pages/public/dsa-sheets.html#neetcode" class="hover:text-neutral-900 dark:hover:text-white">NeetCode 150</a></li>
-            <li><a href="/pages/public/dsa-sheets.html#blind75" class="hover:text-neutral-900 dark:hover:text-white">Blind 75</a></li>
-            <li><a href="/pages/public/dsa-sheets.html#system-design" class="hover:text-neutral-900 dark:hover:text-white">System Design 101</a></li>
+            <li><a href="pages/public/dsa-sheets.html#striver" class="hover:text-neutral-900 dark:hover:text-white">Striver SDE Sheet</a></li>
+            <li><a href="pages/public/dsa-sheets.html#neetcode" class="hover:text-neutral-900 dark:hover:text-white">NeetCode 150</a></li>
+            <li><a href="pages/public/dsa-sheets.html#blind75" class="hover:text-neutral-900 dark:hover:text-white">Blind 75</a></li>
+            <li><a href="pages/public/dsa-sheets.html#system-design" class="hover:text-neutral-900 dark:hover:text-white">System Design 101</a></li>
           </ul>
         </div>
 
@@ -52,10 +52,10 @@
         <div class="space-y-2">
           <div class="font-semibold text-neutral-900 dark:text-white uppercase tracking-wider text-[11px]">Resources</div>
           <ul class="space-y-1.5">
-            <li><a href="/pages/public/login.html" class="hover:text-neutral-900 dark:hover:text-white">Student Login</a></li>
-            <li><a href="/pages/admin/admin-hub.html" class="hover:text-neutral-900 dark:hover:text-white">Admin Panel</a></li>
-            <li><a href="/pages/public/docs.html" class="hover:text-neutral-900 dark:hover:text-white">Documentation</a></li>
-            <li><a href="/pages/public/partners.html" class="hover:text-neutral-900 dark:hover:text-white">College Partners</a></li>
+            <li><a href="pages/public/login.html" class="hover:text-neutral-900 dark:hover:text-white">Student Login</a></li>
+            <li><a href="pages/admin/admin-hub.html" class="hover:text-neutral-900 dark:hover:text-white">Admin Panel</a></li>
+            <li><a href="pages/public/docs.html" class="hover:text-neutral-900 dark:hover:text-white">Documentation</a></li>
+            <li><a href="pages/public/partners.html" class="hover:text-neutral-900 dark:hover:text-white">College Partners</a></li>
           </ul>
         </div>
 
@@ -76,9 +76,9 @@
         class="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500">
         <div>© 2026 TechPrep AI, Inc. All rights reserved.</div>
         <div class="flex space-x-4 mt-2 sm:mt-0 font-mono text-[11px]">
-          <a href="/pages/public/privacy.html" class="hover:underline">Privacy Policy</a>
-          <a href="/pages/public/terms.html" class="hover:underline">Terms of Service</a>
-          <a href="/pages/public/security.html" class="hover:underline">Security</a>
+          <a href="pages/public/privacy.html" class="hover:underline">Privacy Policy</a>
+          <a href="pages/public/terms.html" class="hover:underline">Terms of Service</a>
+          <a href="pages/public/security.html" class="hover:underline">Security</a>
         </div>
       </div>
     </div>

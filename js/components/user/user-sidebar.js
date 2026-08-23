@@ -47,7 +47,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
       loadProfileForm();
     }
   } else {
-    window.location.href = `/pages/user/dashboard.html?tab=${tabName}`;
+    window.location.href = `../user/dashboard.html?tab=${tabName}`;
   }
 };
 
@@ -77,7 +77,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
     <div class="space-y-6">
       <!-- Logo -->
       <div class="flex items-center justify-between">
-        <a href="/index.html" class="flex items-center space-x-2.5 group">
+        <a href="../../index.html" class="flex items-center space-x-2.5 group">
           <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-sm shadow-sm group-hover:scale-105 transition-transform">
             TP
           </div>
@@ -111,7 +111,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
         </button>
 
         <!-- DSA Code IDE -->
-        <a href="/pages/user/dsa-ide.html" 
+        <a href="../user/dsa-ide.html" 
           class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold ${isDsa ? activeClass : defaultClass}">
           <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -120,7 +120,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
         </a>
 
         <!-- ATS Resume Builder -->
-        <a href="/pages/user/resume-builder.html" 
+        <a href="../user/resume-builder.html" 
           class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold ${isResume ? activeClass : defaultClass}">
           <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -129,7 +129,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
         </a>
 
         <!-- Placement Tracker -->
-        <a href="/pages/user/placements.html" 
+        <a href="../user/placements.html" 
           class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold ${isPlacements ? activeClass : defaultClass}">
           <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -138,7 +138,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
         </a>
 
         <!-- Daily Planner -->
-        <a href="/pages/user/planner.html" 
+        <a href="../user/planner.html" 
           class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold ${isPlanner ? activeClass : defaultClass}">
           <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -147,7 +147,7 @@ window.switchDashboardTab = window.switchDashboardTab || function(tabName) {
         </a>
 
         <!-- Home Page -->
-        <a href="/index.html" 
+        <a href="../../index.html" 
           class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold ${defaultClass}">
           <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />

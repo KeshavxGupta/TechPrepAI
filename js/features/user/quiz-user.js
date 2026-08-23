@@ -32,12 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auth & Role check
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser) {
-    window.location.href = '/pages/public/login.html';
+    window.location.href = '../public/login.html';
     return;
   }
   
   if (currentUser.email === 'khushboo2006june@admin.com') {
-    window.location.href = '/pages/admin/admin-hub.html';
+    window.location.href = '../admin/admin-hub.html';
     return;
   }
 
@@ -125,7 +125,7 @@ function loadQuizSelector() {
         <h3 class="text-sm font-bold text-neutral-900 dark:text-white">${q.title}</h3>
         <p class="text-xs text-neutral-500 mt-2 line-clamp-2">${q.description}</p>
       </div>
-      <a href="/pages/user/quiz-user.html?quizId=${q.id}" class="block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+      <a href="quiz-user.html?quizId=${q.id}" class="block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
         Start Assessment
       </a>
     `;
@@ -137,7 +137,7 @@ function loadQuizInstructions(quizId) {
   currentQuiz = window.QuizStorage.getQuizById(quizId);
   if (!currentQuiz) {
     window.customAlert("Quiz Error", "Requested quiz parameters not found.", "error").then(() => {
-      window.location.href = '/pages/user/quiz-user.html';
+      window.location.href = 'quiz-user.html';
     });
     return;
   }
@@ -324,7 +324,7 @@ function confirmExitEarly() {
   window.customConfirm("Exit Proctored Session?", "Exiting the assessment environment will invalidate your current session progress and count as a void score. Return to dashboard?").then(approved => {
     if (approved) {
       cleanupEnvironment();
-      window.location.href = '/pages/user/dashboard.html';
+      window.location.href = '../user/dashboard.html';
     }
   });
 }

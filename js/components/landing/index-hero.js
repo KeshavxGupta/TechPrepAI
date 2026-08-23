@@ -33,7 +33,7 @@
 
           <!-- Buttons & Action Bar -->
           <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-            <a href="/pages/user/dsa-ide.html"
+            <a href="pages/user/dsa-ide.html"
               class="px-6 py-3 text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-md flex items-center justify-center group">
               Solve DSA Code IDE
               <svg class="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" fill="none"

@@ -75,7 +75,7 @@ window.logoutUser = function () {
   } else {
     localStorage.removeItem(CURRENT_USER_KEY);
   }
-  window.location.href = '/index.html';
+  window.location.href = window.location.pathname.includes('/pages/') ? '../../index.html' : 'index.html';
 };
 
 window.getCurrentUser = function () {
@@ -312,14 +312,14 @@ function initAuthSystem() {
     if (navAuthContainer) {
       if (isAdmin) {
         navAuthContainer.innerHTML = `
-          <a href="/pages/admin/admin-hub.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">Admin Console</a>
+          <a href="${window.location.pathname.includes('/pages/') ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html'}" class="px-3.5 py-1.5 text-xs font-semibold rounded-md border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">Admin Console</a>
           <button onclick="logoutUser()" class="px-4 py-1.5 text-xs font-semibold rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
             Logout
           </button>
         `;
       } else {
         navAuthContainer.innerHTML = `
-          <a href="/pages/user/dashboard.html" class="px-3.5 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
+          <a href="${window.location.pathname.includes('/pages/') ? '../user/dashboard.html' : 'pages/user/dashboard.html'}" class="px-3.5 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
             Dashboard
           </a>
           <button onclick="logoutUser()" class="px-4 py-1.5 text-xs font-semibold rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
@@ -332,14 +332,14 @@ function initAuthSystem() {
     if (mobileNavAuthContainer) {
       if (isAdmin) {
         mobileNavAuthContainer.innerHTML = `
-          <a href="/pages/admin/admin-hub.html" class="block text-center px-4 py-2 text-sm font-semibold rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200">Admin Console</a>
+          <a href="${window.location.pathname.includes('/pages/') ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html'}" class="block text-center px-4 py-2 text-sm font-semibold rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200">Admin Console</a>
           <button onclick="logoutUser()" class="w-full text-center px-4 py-2 text-sm font-semibold rounded-md border border-rose-500/30 text-rose-600">
             Logout
           </button>
         `;
       } else {
         mobileNavAuthContainer.innerHTML = `
-          <a href="/pages/user/dashboard.html" class="block text-center px-4 py-2 text-sm font-semibold rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-950">
+          <a href="${window.location.pathname.includes('/pages/') ? '../user/dashboard.html' : 'pages/user/dashboard.html'}" class="block text-center px-4 py-2 text-sm font-semibold rounded-md bg-neutral-900 text-white dark:bg-white dark:text-neutral-950">
             Dashboard
           </a>
           <button onclick="logoutUser()" class="w-full text-center px-4 py-2 text-sm font-semibold rounded-md border border-rose-500/30 text-rose-600">
@@ -356,7 +356,7 @@ function initAuthSystem() {
       btn.classList.remove('open-login-modal');
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        window.location.href = isAdmin ? '/pages/admin/admin-hub.html' : '/pages/user/dashboard.html';
+        window.location.href = window.location.pathname.includes('/pages/') ? (isAdmin ? '../admin/admin-hub.html' : '../user/dashboard.html') : (isAdmin ? 'pages/admin/admin-hub.html' : 'pages/user/dashboard.html');
       });
     });
     signupBtns.forEach(btn => {
@@ -491,7 +491,7 @@ function initAuthSystem() {
 
       if (matchedUser) {
         (window.storage || storage).set(CURRENT_USER_KEY, matchedUser);
-        const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? '/pages/admin/admin-hub.html' : '/pages/user/dashboard.html';
+        const isSub = window.location.pathname.includes('/pages/'); const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? (isSub ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html') : (isSub ? '../user/dashboard.html' : 'pages/user/dashboard.html');
         showAuthFeedback('login-error-msg', 'Login successful! Redirecting...', false);
         setTimeout(() => {
           window.location.href = redirectTarget;

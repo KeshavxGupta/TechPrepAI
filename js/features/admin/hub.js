@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser || currentUser.email !== 'khushboo2006june@admin.com') {
     window.customAlert("Access Denied", "Unauthorized Access. Admin Console requires administrator credentials.", "error").then(() => {
-      window.location.href = '/index.html';
+      window.location.href = '../../index.html';
     });
     return;
   }
@@ -1471,7 +1471,7 @@ function loadAdminProfileForm() {
 document.addEventListener('DOMContentLoaded', () => {
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser || currentUser.email !== 'khushboo2006june@admin.com') {
-    window.location.href = '/pages/public/login.html';
+    window.location.href = '../public/login.html';
     return;
   }
 

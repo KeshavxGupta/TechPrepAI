@@ -227,12 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser) {
-    window.location.href = '/pages/public/login.html';
+    window.location.href = '../public/login.html';
     return;
   }
   
   if (currentUser.email === 'khushboo2006june@admin.com') {
-    window.location.href = '/pages/admin/admin-hub.html';
+    window.location.href = '../admin/admin-hub.html';
     return;
   }
 
@@ -326,7 +326,7 @@ function loadStudentPortal() {
         </div>
       </div>
       
-      <a href="/pages/user/quiz-user.html?quizId=${q.id}" class="mt-6 block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
+      <a href="quiz-user.html?quizId=${q.id}" class="mt-6 block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
         ${buttonText}
       </a>
     `;

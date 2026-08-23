@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found — TechPrep AI</title>
+  <meta name="description" content="The page you are looking for does not exist or has been moved.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Early Theme Init -->
+  <script>
+    (function () {
+      const storedTheme = localStorage.getItem('techprep_theme') || 'system';
+      let isDark = false;
+      if (storedTheme === 'dark') isDark = true;
+      else if (storedTheme === 'light') isDark = false;
+      else isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    })();
+  </script>
+</head>
+
+<body class="bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col justify-between antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern">
+
+  <!-- Header -->
+  <header class="border-b border-neutral-200 dark:border-neutral-800 bg-surface-primary/90 subtle-glass px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center space-x-2.5">
+        <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-sm shadow-sm">
+          TP
+        </div>
+        <span class="font-bold text-base tracking-tight font-sans">TechPrep <span class="text-blue-600 dark:text-blue-500">AI</span></span>
+      </a>
+      <a href="index.html" class="px-3.5 py-1.5 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+        Return Home
+      </a>
+    </div>
+  </header>
+
+  <!-- Main 404 Hero -->
+  <main class="flex-1 flex items-center justify-center p-6 text-center">
+    <div class="max-w-md w-full space-y-6">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 font-mono font-extrabold text-3xl shadow-inner">
+        404
+      </div>
+      <div class="space-y-2">
+        <h1 class="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white">Page Not Found</h1>
+        <p class="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+          The requested page could not be found. It may have been moved or you might have followed an outdated link.
+        </p>
+      </div>
+
+      <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="index.html" class="px-5 py-2.5 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors flex items-center justify-center gap-2">
+          <span>Back to Landing Page</span>
+        </a>
+        <a href="pages/user/dashboard.html" class="px-5 py-2.5 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 transition-colors flex items-center justify-center gap-2">
+          <span>Student Portal</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-6 text-center text-xs text-neutral-500 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary/95">
+    © 2026 TechPrep AI, Inc. All rights reserved. • Developer Preparation Platform
+  </footer>
+
+</body>
+
+</html>
