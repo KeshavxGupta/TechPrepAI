@@ -11,8 +11,8 @@
     <div class="space-y-6">
       <!-- Logo -->
       <div class="flex items-center justify-between">
-        <a href="/index.html" class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-sm shadow-sm">
+        <a href="/index.html" class="flex items-center space-x-2.5 group">
+          <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-sm shadow-sm group-hover:scale-105 transition-transform">
             TP
           </div>
           <span class="font-bold text-base tracking-tight font-sans text-neutral-900 dark:text-white">TechPrep <span class="text-blue-600 dark:text-blue-500 font-bold">AI</span></span>
@@ -26,26 +26,26 @@
 
       <!-- Navigation Links -->
       <nav class="space-y-1.5 flex flex-col text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-        <button id="side-btn-quizzes" onclick="handleAdminSidebarNav('quizzes')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
+        <button id="side-btn-quizzes" onclick="handleAdminSidebarNav('quizzes')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           <span>Quiz Management</span>
         </button>
-        <button id="side-btn-placements" onclick="handleAdminSidebarNav('placements')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
-          <svg class="w-4 h-4 mr-1.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button id="side-btn-placements" onclick="handleAdminSidebarNav('placements')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <span>Placement Drives</span>
         </button>
-        <button id="side-btn-users" onclick="handleAdminSidebarNav('users')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
+        <button id="side-btn-users" onclick="handleAdminSidebarNav('users')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
           <span>User Management</span>
         </button>
-        <button id="side-btn-site-mgmt" onclick="handleAdminSidebarNav('site-mgmt')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold">
+        <button id="side-btn-site-mgmt" onclick="handleAdminSidebarNav('site-mgmt')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800">
           <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L5.595 15.12a2 2 0 00-1.802.72L2.53 17.472A2 2 0 004.095 20.6h15.81a2 2 0 001.565-3.128l-1.264-1.633zM12 4a4 4 0 100 8 4 4 0 000-8z" />
           </svg>
@@ -74,14 +74,14 @@
 
     <!-- Sidebar Bottom Profile Section -->
     <div class="border-t border-neutral-200 dark:border-neutral-800 pt-4 flex flex-col space-y-2">
-      <button id="side-btn-profile" onclick="handleAdminSidebarNav('profile')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+      <button id="side-btn-profile" onclick="handleAdminSidebarNav('profile')" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800">
         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
         <span>Admin Profile</span>
       </button>
-      <button onclick="logoutUser()" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800 text-rose-600 dark:text-rose-400 w-full text-xs font-semibold">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button onclick="logoutUser()" class="flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 w-full text-xs font-semibold">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
         </svg>
         <span>Logout</span>
@@ -101,6 +101,3 @@
     }
   };
 })();
-
-
-

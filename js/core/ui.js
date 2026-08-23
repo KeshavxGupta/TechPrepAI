@@ -1,11 +1,12 @@
-﻿/* Safe LocalStorage Helper Utility */
+/* Safe LocalStorage Helper Utility */
 const storage = {
   get(key, defaultValue = null) {
     try {
       const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
+      if (item === null || item === undefined) return defaultValue;
+      return JSON.parse(item);
     } catch (e) {
-      console.warn('Storage read error:', e);
+      console.warn('Storage read error for key:', key, e);
       return defaultValue;
     }
   },
@@ -14,7 +15,7 @@ const storage = {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
     } catch (e) {
-      console.warn('Storage write error:', e);
+      console.warn('Storage write error for key:', key, e);
       return false;
     }
   },
@@ -22,29 +23,87 @@ const storage = {
     try {
       localStorage.removeItem(key);
     } catch (e) {
-      console.warn('Storage remove error:', e);
+      console.warn('Storage remove error for key:', key, e);
     }
   }
 };
 
+window.storage = storage;
+
+// Unified Theme & Current User Keys
 function getThemeStorageKey() {
-  const currentUser = storage.get('techprep_current_user', null);
-  return currentUser ? `techprep_theme_${currentUser.email}` : 'techprep_theme';
+  return 'techprep_theme';
 }
 
+window.getCurrentUser = function() {
+  return storage.get('techprep_current_user', null);
+};
+
+window.getCurrentUserId = function() {
+  const u = window.getCurrentUser();
+  return u ? (u.email || u.id || 'guest') : 'guest';
+};
+
 function getChecklistStorageKey() {
-  const currentUser = storage.get('techprep_current_user', null);
+  const currentUser = window.getCurrentUser();
   return currentUser ? `techprep_study_checklist_${currentUser.email}` : 'techprep_study_checklist_guest';
 }
+
+// Clean Toast Notification System
+window.showToast = window.showToast || function(message, type = 'info') {
+  let container = document.getElementById('global-toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'global-toast-container';
+    container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  let bgClass = 'bg-neutral-900 dark:bg-neutral-800 text-white border border-neutral-700';
+  let iconSvg = '<svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+
+  if (type === 'success') {
+    bgClass = 'bg-emerald-950/90 text-emerald-100 border border-emerald-800/80';
+    iconSvg = '<svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+  } else if (type === 'error') {
+    bgClass = 'bg-rose-950/90 text-rose-100 border border-rose-800/80';
+    iconSvg = '<svg class="w-4 h-4 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+  } else if (type === 'warning') {
+    bgClass = 'bg-amber-950/90 text-amber-100 border border-amber-800/80';
+    iconSvg = '<svg class="w-4 h-4 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
+  }
+
+  toast.className = `flex items-center space-x-2.5 px-4 py-3 rounded-xl shadow-xl text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-x-full opacity-0 pointer-events-auto max-w-sm ${bgClass}`;
+  toast.innerHTML = `
+    ${iconSvg}
+    <span class="flex-1 leading-snug">${message}</span>
+  `;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.remove('translate-x-full', 'opacity-0');
+    toast.classList.add('translate-x-0', 'opacity-100');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('translate-x-0', 'opacity-100');
+    toast.classList.add('translate-x-full', 'opacity-0');
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 3200);
+};
+
+window.showToastNotification = window.showToast;
 
 // Beautiful Custom Alert and Confirm Dialog System
 window.customAlert = function(title, message, type = 'info') {
   return new Promise((resolve) => {
-    // Remove existing modal if any
     const existing = document.getElementById('custom-alert-modal');
     if (existing) existing.remove();
 
-    // Icon mapping
     let iconColor = 'text-blue-500 bg-blue-500/10';
     let iconSvg = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
     if (type === 'error') {
@@ -78,18 +137,19 @@ window.customAlert = function(title, message, type = 'info') {
       </div>
     `;
     document.body.appendChild(modal);
-    document.getElementById('custom-alert-ok-btn').focus();
-
-    document.getElementById('custom-alert-ok-btn').addEventListener('click', () => {
-      modal.remove();
-      resolve(true);
-    });
+    const okBtn = document.getElementById('custom-alert-ok-btn');
+    if (okBtn) {
+      okBtn.focus();
+      okBtn.addEventListener('click', () => {
+        modal.remove();
+        resolve(true);
+      });
+    }
   });
 };
 
 window.customConfirm = function(title, message) {
   return new Promise((resolve) => {
-    // Remove existing modal if any
     const existing = document.getElementById('custom-confirm-modal');
     if (existing) existing.remove();
 
@@ -116,17 +176,21 @@ window.customConfirm = function(title, message) {
       </div>
     `;
     document.body.appendChild(modal);
-    document.getElementById('custom-confirm-cancel-btn').focus();
-
-    document.getElementById('custom-confirm-cancel-btn').addEventListener('click', () => {
-      modal.remove();
-      resolve(false);
-    });
-
-    document.getElementById('custom-confirm-yes-btn').addEventListener('click', () => {
-      modal.remove();
-      resolve(true);
-    });
+    const cancelBtn = document.getElementById('custom-confirm-cancel-btn');
+    const yesBtn = document.getElementById('custom-confirm-yes-btn');
+    if (cancelBtn) {
+      cancelBtn.focus();
+      cancelBtn.addEventListener('click', () => {
+        modal.remove();
+        resolve(false);
+      });
+    }
+    if (yesBtn) {
+      yesBtn.addEventListener('click', () => {
+        modal.remove();
+        resolve(true);
+      });
+    }
   });
 };
 
@@ -145,20 +209,28 @@ function initThemeEngine() {
     } else if (theme === 'light') {
       isDark = false;
     } else {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
 
     if (isDark) {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
+      document.body.classList.add('dark', 'dark-theme');
+      document.body.classList.remove('light');
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
+      document.body.classList.remove('dark', 'dark-theme');
+      document.body.classList.add('light');
     }
 
     themeSelects.forEach(select => {
       select.value = theme;
     });
+
+    if (typeof window.onThemeChanged === 'function') {
+      window.onThemeChanged(isDark);
+    }
   }
 
   applyTheme(storedTheme);
@@ -180,13 +252,27 @@ function initThemeEngine() {
     });
   });
 
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    const currentTheme = localStorage.getItem(getThemeStorageKey()) || 'system';
-    if (currentTheme === 'system') {
-      applyTheme('system');
-    }
-  });
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      const currentTheme = localStorage.getItem(getThemeStorageKey()) || 'system';
+      if (currentTheme === 'system') {
+        applyTheme('system');
+      }
+    });
+  }
 }
+
+window.applyGlobalTheme = function(theme) {
+  localStorage.setItem(getThemeStorageKey(), theme);
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark', 'dark-theme');
+  } else {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark', 'dark-theme');
+  }
+};
 
 /* ==========================================================================
    2. Mobile Menu Toggle
@@ -304,14 +390,14 @@ function initStudyPlanChecklist() {
 /* ==========================================================================
    5. Accessible FAQ Accordion Controller
    ========================================================================== */
-function initFaqAccordion() {
+window.initFaqAccordion = function() {
   const accordionItems = document.querySelectorAll('.accordion-item');
-
   if (!accordionItems.length) return;
 
   accordionItems.forEach(item => {
     const header = item.querySelector('.accordion-header');
-    if (!header) return;
+    if (!header || header.dataset.accordionInit) return;
+    header.dataset.accordionInit = 'true';
 
     header.addEventListener('click', () => {
       const isActive = item.classList.contains('active');
@@ -328,15 +414,12 @@ function initFaqAccordion() {
       }
     });
   });
-}
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   initThemeEngine();
   initMobileMenu();
   initDemoTabs();
   initStudyPlanChecklist();
-  initFaqAccordion();
+  window.initFaqAccordion();
 });
-
-
-

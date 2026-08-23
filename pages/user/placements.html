@@ -271,76 +271,6 @@
   <!-- Modal Backdrop Overlay -->
   <div class="modal-overlay fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[990] opacity-0 pointer-events-none transition-opacity duration-300" id="app-modal-overlay"></div>
 
-  <!-- Edit Application Modal -->
-  <div class="modal fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg bg-surface-elevated rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 z-[1000] opacity-0 pointer-events-none scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" id="edit-job-modal">
-    <div class="p-5 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center bg-surface-secondary rounded-t-2xl">
-      <h3 class="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-        <i class="fa-solid fa-pen-to-square text-blue-600 dark:text-blue-400"></i> Edit Application
-      </h3>
-      <button class="close-btn text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none p-1" data-modal="edit-job-modal">
-        <i class="fa-solid fa-times"></i>
-      </button>
-    </div>
-    <div class="p-6 overflow-y-auto space-y-4 text-xs font-medium text-neutral-700 dark:text-neutral-300">
-      <input type="hidden" id="edit-app-id">
-      <div class="space-y-1.5">
-        <label class="block">Company Name</label>
-        <input type="text" id="edit-app-company" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <div class="space-y-1.5">
-        <label class="block">Job Role</label>
-        <input type="text" id="edit-app-role" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="space-y-1.5">
-          <label class="block">Eligibility</label>
-          <input type="text" id="edit-app-eligibility" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="space-y-1.5">
-          <label class="block">Location</label>
-          <input type="text" id="edit-app-location" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-        </div>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div class="space-y-1.5">
-          <label class="block">Package (LPA)</label>
-          <input type="text" id="edit-app-package" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-        </div>
-        <div class="space-y-1.5">
-          <label class="block">Deadline / OA Date</label>
-          <input type="date" id="edit-app-deadline" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-        </div>
-      </div>
-      <div class="space-y-1.5">
-        <label class="block">Interview Date</label>
-        <input type="date" id="edit-app-interview-date" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <div class="space-y-1.5">
-        <label class="block">Status</label>
-        <select id="edit-app-status" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-          <option value="wishlist">Wishlist</option>
-          <option value="applied">Applied</option>
-          <option value="assessment">Assessment (OA)</option>
-          <option value="interview">Interview</option>
-          <option value="selected">Selected / Offer</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
-      <div class="space-y-1.5">
-        <label class="block">Application Link</label>
-        <input type="url" id="edit-app-link" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500">
-      </div>
-      <div class="space-y-1.5">
-        <label class="block">Notes & Questions Asked</label>
-        <textarea id="edit-app-notes" rows="3" class="w-full p-2.5 bg-surface-primary border border-neutral-200 dark:border-neutral-700 rounded-lg text-neutral-900 dark:text-white focus:outline-none focus:border-blue-500"></textarea>
-      </div>
-    </div>
-    <div class="p-4 border-t border-neutral-200 dark:border-neutral-800 flex justify-end gap-2.5 bg-surface-secondary rounded-b-2xl">
-      <button class="close-btn px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" data-modal="edit-job-modal">Cancel</button>
-      <button id="save-edited-app-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">Save Changes</button>
-    </div>
-  </div>
-
   <!-- View Job Details Modal -->
   <div class="modal-overlay fixed inset-0 bg-neutral-950/60 backdrop-blur-sm z-[1050] opacity-0 pointer-events-none transition-opacity duration-300" id="view-job-overlay" onclick="closeJobDetails()"></div>
   <div class="modal fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg bg-surface-elevated rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 z-[1100] opacity-0 pointer-events-none scale-95 transition-all duration-300 flex flex-col max-h-[90vh]" id="view-job-modal">
@@ -354,7 +284,7 @@
           <p id="view-job-company" class="text-xs text-neutral-500 font-medium mt-0.5">Company</p>
           <div class="flex items-center gap-2 mt-2">
             <span id="view-job-location-badge" class="hidden text-[10px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
-              <i class="fa-solid fa-map-marker-alt"></i> <span id="view-job-location">Remote</span>
+              <span id="view-job-location">Remote</span>
             </span>
             <span id="view-job-eligibility" class="hidden text-[10px] px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"></span>
           </div>
@@ -362,7 +292,7 @@
         </div>
       </div>
       <button onclick="closeJobDetails()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg p-1">
-        <i class="fa-solid fa-times"></i>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
     </div>
     <div class="p-5 overflow-y-auto space-y-4 text-xs">
@@ -388,13 +318,13 @@
       </div>
       <div id="view-job-link-container" class="hidden">
         <a id="view-job-link" href="#" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
-          <i class="fa-solid fa-external-link-alt text-xs"></i> Open Job Portal
+          <span>Open Job Portal</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
         </a>
       </div>
     </div>
     <div class="p-4 border-t border-neutral-200 dark:border-neutral-800 flex justify-end gap-2.5 bg-surface-secondary rounded-b-2xl">
       <button onclick="closeJobDetails()" class="px-4 py-2 text-xs font-semibold rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">Close</button>
-      <button id="view-job-edit-btn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 shadow-sm transition-colors">Edit Job</button>
     </div>
   </div>
 
@@ -452,7 +382,7 @@
   <!-- Weekly Info Modal -->
   <div id="weekly-info-modal" class="fixed inset-0 z-[1050] bg-neutral-950/60 backdrop-blur-sm hidden flex items-center justify-center p-4" onclick="if(event.target === this) closeWeeklyInfoModal()">
     <div class="bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-left">
-      <h3 class="text-base font-bold text-neutral-900 dark:text-white mb-3">🎯 Weekly Applications Goal</h3>
+      <h3 class="text-base font-bold text-neutral-900 dark:text-white mb-3">Weekly Applications Goal</h3>
       <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
         Maintaining steady consistency in applying to Tier-1, startups, and on-campus recruitment drives drastically boosts interview conversion rates. Set a weekly target (e.g. 10 applications) to stay accountable.
       </p>

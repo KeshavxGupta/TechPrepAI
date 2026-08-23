@@ -87,20 +87,55 @@ const DEFAULT_DRIVES_SEED = [
   }
 ];
 
-let placements = (function() {
-  const storedStr = localStorage.getItem('techprep_placements');
-  if (storedStr === null) {
-    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_DRIVES_SEED));
-    return [...DEFAULT_DRIVES_SEED];
+// --- User Data Isolation & Storage Keys ---
+function getUserPlacementsKey() {
+  const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const email = user ? user.email : 'guest@techprepai.com';
+  return `techprep_user_placements_${email}`;
+}
+
+function getUserWeeklyTargetKey() {
+  const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const email = user ? user.email : 'guest@techprepai.com';
+  return `techprep_weekly_target_${email}`;
+}
+
+function loadUserPlacementsData() {
+  const key = getUserPlacementsKey();
+  const storedStr = localStorage.getItem(key);
+  if (storedStr !== null) {
+    try {
+      const parsed = JSON.parse(storedStr);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
   }
+
+  // Seed from master techprep_placements or DEFAULT_DRIVES_SEED if user has no record yet
+  let master = [];
   try {
-    const parsed = JSON.parse(storedStr);
-    if (Array.isArray(parsed)) return parsed;
-    return [];
-  } catch {
-    return [];
+    master = JSON.parse(localStorage.getItem('techprep_placements') || '[]');
+  } catch {}
+  if (!Array.isArray(master) || master.length === 0) {
+    master = DEFAULT_DRIVES_SEED;
+    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_DRIVES_SEED));
   }
-})();
+
+  const userSeed = master.map(d => ({
+    ...d,
+    status: d.status || 'wishlist',
+    appliedDate: d.appliedDate || null
+  }));
+
+  localStorage.setItem(key, JSON.stringify(userSeed));
+  return userSeed;
+}
+
+function saveUserPlacementsData(data) {
+  const key = getUserPlacementsKey();
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+let placements = loadUserPlacementsData();
 
 // --- DOM Elements ---
 const summaryStats = document.getElementById('summary-stats');
@@ -206,7 +241,7 @@ window.exportData = function() {
         version: "1.0",
         timestamp: new Date().toISOString(),
         placements: placements,
-        weeklyTarget: localStorage.getItem('techprep_weekly_target') || '10'
+        weeklyTarget: localStorage.getItem(getUserWeeklyTargetKey()) || '10'
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -230,9 +265,9 @@ window.importData = function(event) {
                 throw new Error("Invalid backup format: missing placements list.");
             }
             placements = data.placements;
-            localStorage.setItem('techprep_placements', JSON.stringify(placements));
+            saveUserPlacementsData(placements);
             if (data.weeklyTarget) {
-                localStorage.setItem('techprep_weekly_target', data.weeklyTarget);
+                localStorage.setItem(getUserWeeklyTargetKey(), data.weeklyTarget);
             }
             renderStats();
             renderPlacements();
@@ -506,7 +541,7 @@ const saveEditedJob = () => {
             statusUpdatedAt: new Date().toISOString()
         };
         
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         closeModal('edit-job-modal');
         renderPlacements();
         renderStats();
@@ -533,7 +568,7 @@ window.deleteApplication = async (id) => {
 
     if (confirmed) {
         placements = placements.filter(p => p.id !== id);
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         renderPlacements();
         renderStats();
         renderChart();
@@ -709,7 +744,7 @@ window.studentApplyNow = (jobId) => {
     job.appliedDate = new Date().toISOString().split('T')[0];
     job.statusUpdatedAt = new Date().toISOString();
 
-    localStorage.setItem('techprep_placements', JSON.stringify(placements));
+    saveUserPlacementsData(placements);
     renderPlacements();
     renderStats();
     renderChart();
@@ -729,7 +764,7 @@ window.updateJobStatusFromList = (jobId, newStatus) => {
             job.appliedDate = new Date().toISOString().split('T')[0];
         }
         job.statusUpdatedAt = new Date().toISOString();
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         renderMasterList('All');
         renderPlacements();
         renderStats();
@@ -751,7 +786,7 @@ window.drop = (event, newStatus) => {
             placements[placementIndex].appliedDate = new Date().toISOString().split('T')[0];
         }
         placements[placementIndex].statusUpdatedAt = new Date().toISOString();
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         renderPlacements();
         renderStats();
         renderChart();
@@ -767,7 +802,7 @@ window.drop = (event, newStatus) => {
                     colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899']
                 });
             }
-            if(window.showToast) window.showToast("Offer Celebration! 🥳", "success");
+            if(window.showToast) window.showToast("Offer Celebration!", "success");
         } else {
             if(window.showToast) window.showToast("Application status updated", "success");
         }
@@ -1071,8 +1106,8 @@ const checkUpcomingReminders = () => {
     bannerContainer.classList.add('hidden');
     
     // Request Notification permission if needed
-    if (Notification.permission === 'default') {
-        Notification.requestPermission();
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        try { Notification.requestPermission(); } catch {}
     }
     
     const todayStr = new Date().toISOString().split('T')[0];
@@ -1215,7 +1250,7 @@ window.archivePlacement = (id) => {
     const placementIndex = placements.findIndex(p => p.id === id);
     if (placementIndex !== -1) {
         placements[placementIndex].isArchived = true;
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         renderPlacements();
         renderStats();
         renderChart();
@@ -1230,7 +1265,7 @@ window.unarchivePlacement = (id) => {
     const placementIndex = placements.findIndex(p => p.id === id);
     if (placementIndex !== -1) {
         placements[placementIndex].isArchived = false;
-        localStorage.setItem('techprep_placements', JSON.stringify(placements));
+        saveUserPlacementsData(placements);
         renderPlacements();
         updateWeeklyTarget();
         renderArchivedJobs();
@@ -1248,7 +1283,7 @@ window.renderArchivedJobs = () => {
     if (!container) return;
     
     // Fetch placements from LocalStorage directly as requested, though we already have it in memory
-    const stored = JSON.parse(localStorage.getItem('techprep_placements')) || placements;
+    const stored = loadUserPlacementsData();
     const archivedJobs = stored.filter(p => p.isArchived === true);
     
     if (archivedJobs.length === 0) {
@@ -1272,9 +1307,9 @@ window.renderArchivedJobs = () => {
     }).join('');
 };
 
-window.updateWeeklyTarget = () => {
+function updateWeeklyTarget() {
     // Read user-set target from localStorage, fallback to 10
-    const WEEKLY_TARGET = parseInt(localStorage.getItem('techprep_weekly_target') || '10', 10);
+    const WEEKLY_TARGET = parseInt(localStorage.getItem(getUserWeeklyTargetKey()) || '10', 10);
 
     // Calculate start of current week (Monday at 00:00:00)
     const now = new Date();
@@ -1285,8 +1320,7 @@ window.updateWeeklyTarget = () => {
     startOfWeek.setHours(0, 0, 0, 0);
 
     // Fetch placements and count applied this week (non-archived)
-    const storedStr = localStorage.getItem('techprep_placements');
-    const stored = storedStr ? JSON.parse(storedStr) : placements;
+    const stored = loadUserPlacementsData();
 
     let appliedThisWeek = 0;
     stored.forEach(p => {
@@ -1333,18 +1367,19 @@ window.updateWeeklyTarget = () => {
         } else if (percentage < 100) {
             // Almost there (70–99%) — violet "almost there!"
             progressBar.style.background = 'linear-gradient(90deg, #6d28d9, #7c3aed, #a78bfa, #8b5cf6, #6d28d9)';
-            percentageText.innerText = `${Math.round(percentage)}% — So close! Final push! 💪`;
+            percentageText.innerText = `${Math.round(percentage)}% — So close! Final push!`;
             percentageText.className = 'text-xs text-violet-500 dark:text-violet-400 mt-1 font-medium';
             countText.className = 'text-xs font-bold text-violet-600 dark:text-violet-400';
         } else {
             // 100%+ — emerald "goal crushed!"
             progressBar.style.background = 'linear-gradient(90deg, #059669, #10b981, #34d399, #10b981, #059669)';
-            percentageText.innerText = `🎉 Weekly goal crushed! You're unstoppable!`;
+            percentageText.innerText = `Weekly goal crushed! You're unstoppable!`;
             percentageText.className = 'text-xs text-emerald-500 dark:text-emerald-400 mt-1 font-semibold';
             countText.className = 'text-xs font-bold text-emerald-500 dark:text-emerald-400';
         }
     }
-};
+}
+window.updateWeeklyTarget = updateWeeklyTarget;
 
 window.openWeeklyInfoModal = () => {
     document.getElementById('weekly-info-modal').classList.remove('hidden');
@@ -1365,7 +1400,7 @@ window.closeWeeklyInfoModal = () => {
 window.openTargetEditor = () => {
     const editor = document.getElementById('weekly-target-editor');
     const input = document.getElementById('weekly-target-input');
-    const savedTarget = localStorage.getItem('techprep_weekly_target') || '10';
+    const savedTarget = localStorage.getItem(getUserWeeklyTargetKey()) || '10';
     input.value = savedTarget;
     editor.classList.remove('hidden');
     input.focus();
@@ -1382,7 +1417,7 @@ window.saveWeeklyTarget = () => {
         if(window.showToast) window.showToast('Please enter a target between 1 and 100.', 'error');
         return;
     }
-    localStorage.setItem('techprep_weekly_target', val.toString());
+    localStorage.setItem(getUserWeeklyTargetKey(), val.toString());
     closeTargetEditor();
     updateWeeklyTarget();
     if(window.showToast) window.showToast(`Weekly target set to ${val} apps!`, 'success');
@@ -1390,7 +1425,7 @@ window.saveWeeklyTarget = () => {
 
 // Start
 initApp();
-updateWeeklyTarget();
+if (window.updateWeeklyTarget) window.updateWeeklyTarget();
 
 // ============================================================
 //  KANBAN AUTO-SCROLL ENGINE  (simple & clean)
@@ -1447,6 +1482,6 @@ window.stopKanbanAutoScroll = () => {
 };
 
 // Kick off as soon as the script runs (page is already loaded at this point)
-startKanbanAutoScroll();
-
-
+if (window.startKanbanAutoScroll) {
+    window.startKanbanAutoScroll();
+}

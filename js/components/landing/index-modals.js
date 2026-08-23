@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-modals');
   if (!container) return;
 
@@ -42,7 +42,7 @@
               <label class="block text-neutral-700 dark:text-neutral-300 font-semibold">Password</label>
             </div>
             <div class="relative">
-              <input type="password" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              <input type="password" required placeholder="Enter your password"
                 class="w-full p-3 pr-10 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 focus:outline-none" title="Toggle password visibility">
                 <svg class="w-4 h-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -107,7 +107,7 @@
           <div class="space-y-1">
             <label class="block text-neutral-700 dark:text-neutral-300 font-semibold">Create Password</label>
             <div class="relative">
-              <input type="password" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              <input type="password" required placeholder="Create a password"
                 class="w-full p-3 pr-10 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 focus:outline-none" title="Toggle password visibility">
                 <svg class="w-4 h-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -120,7 +120,7 @@
           <div class="space-y-1">
             <label class="block text-neutral-700 dark:text-neutral-300 font-semibold">Confirm Password</label>
             <div class="relative">
-              <input type="password" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              <input type="password" required placeholder="Confirm your password"
                 class="w-full p-3 pr-10 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
               <button type="button" class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 focus:outline-none" title="Toggle password visibility">
                 <svg class="w-4 h-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -143,6 +143,3 @@
     </div>
   </div>`;
 })();
-
-
-

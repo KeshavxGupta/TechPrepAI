@@ -1257,6 +1257,58 @@ function renderUsers() {
                 </table>
               </div>`;
           })()}
+        <!-- Campus Placement Applications & Pipeline Status (User-Wise) -->
+        <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
+          ${(() => {
+            const userPlacements = JSON.parse(localStorage.getItem('techprep_user_placements_' + student.email) || '[]');
+            return `
+              <div class="flex items-center justify-between">
+                <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
+                  Placement Applications (${userPlacements.length} Total)
+                </h4>
+              </div>
+              ${userPlacements.length === 0 
+                ? '<p class="text-[10px] text-neutral-500 font-mono italic">No placement applications tracked yet for this student.</p>'
+                : `
+                <div class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800/60 text-[10px]">
+                  <table class="w-full text-left">
+                    <thead>
+                      <tr class="bg-surface-secondary/70 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 font-mono">
+                        <th class="p-2 font-semibold">Company</th>
+                        <th class="p-2 font-semibold">Role</th>
+                        <th class="p-2 font-semibold">CTC</th>
+                        <th class="p-2 font-semibold">Status</th>
+                        <th class="p-2 font-semibold">Applied Date</th>
+                        <th class="p-2 font-semibold">Interview Date</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/40">
+                      ${userPlacements.map(p => `
+                        <tr>
+                          <td class="p-2 font-semibold text-neutral-900 dark:text-white">${escapeHTML(p.company || 'Company')}</td>
+                          <td class="p-2">${escapeHTML(p.role || 'N/A')}</td>
+                          <td class="p-2 font-mono text-emerald-600 dark:text-emerald-400">${p.package ? p.package + ' LPA' : 'N/A'}</td>
+                          <td class="p-2">
+                            <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase font-mono tracking-wider ${
+                              p.status === 'selected' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
+                              p.status === 'interview' ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20' :
+                              p.status === 'assessment' ? 'bg-purple-500/10 text-purple-600 border border-purple-500/20' :
+                              p.status === 'rejected' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20' :
+                              'bg-blue-500/10 text-blue-600 border border-blue-500/20'
+                            }">
+                              ${escapeHTML(p.status || 'applied')}
+                            </span>
+                          </td>
+                          <td class="p-2 text-neutral-500 font-mono">${p.appliedDate ? new Date(p.appliedDate).toLocaleDateString() : 'N/A'}</td>
+                          <td class="p-2 text-neutral-500 font-mono">${p.interviewDate ? new Date(p.interviewDate).toLocaleDateString() : '—'}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            `;
+          })()}
         </div>
 
         <!-- Administrative actions row -->
@@ -1588,7 +1640,24 @@ function switchSiteMgmtSubTab(subName) {
 
 /* --- 1. FAQ MANAGER --- */
 function getFAQs() {
-  return JSON.parse(localStorage.getItem('techprep_faqs') || '[]');
+  const raw = localStorage.getItem('techprep_faqs');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+  }
+  // Default seed FAQs
+  const defaultFAQs = [
+    { id: 'faq_1', category: 'Platform Overview', question: 'How does TechPrep AI prepare students for tier-1 tech placements?', answer: 'TechPrep AI integrates real-time ATS resume auditing, structured DSA sheet roadmaps with in-browser execution, adaptive technical quizzes with instant grading, and campus placement tracking pipelines.' },
+    { id: 'faq_2', category: 'ATS Resume Studio', question: 'What makes the TechPrep AI ATS Resume Builder compliant with applicant tracking systems?', answer: 'Our templates use single-column ATS-standard HTML/CSS hierarchy, standard section headers, quantified metrics checking, and high-impact action verbs.' },
+    { id: 'faq_3', category: 'DSA Practice', question: 'Can I execute code directly in the DSA IDE without installing local compilers?', answer: 'Yes! The in-browser DSA IDE executes JavaScript, Python, C++, and Java code with real-time test case verification and complexity benchmarks.' },
+    { id: 'faq_4', category: 'Placements Tracker', question: 'How does the Placement Tracker isolate student data?', answer: 'Every student account manages their own personal application pipeline (Wishlist, Applied, OA, Interview, Offer) under isolated storage keys.' },
+    { id: 'faq_5', category: 'Account & Security', question: 'How do I access the Admin Console?', answer: 'Administrators log in using verified credentials (khushboo2006june@admin.com / khushboo) to access user management, placement drives, quiz authoring, and site configuration.' },
+    { id: 'faq_6', category: 'Technical Quizzes', question: 'Are quiz results saved across student sessions?', answer: 'Yes, full quiz performance history, time spent, question breakdowns, and pass/fail certificates are saved in user session storage.' }
+  ];
+  localStorage.setItem('techprep_faqs', JSON.stringify(defaultFAQs));
+  return defaultFAQs;
 }
 
 function saveFAQs(faqs) {
@@ -1988,13 +2057,179 @@ function clearAuditLogs() {
   }
 }
 
+/* --- 5. ADMIN TAB SWITCHER & NAVIGATION --- */
+window.switchAdminTab = function(tabName) {
+  const tabs = ['quizzes', 'placements', 'users', 'profile', 'site-mgmt'];
+  tabs.forEach(t => {
+    const panel = document.getElementById(`tab-panel-${t}`);
+    const btn = document.getElementById(`side-btn-${t}`);
+    if (t === tabName) {
+      if (panel) {
+        panel.classList.remove('hidden');
+        panel.classList.add('block');
+      }
+      if (btn) {
+        btn.className = "flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white";
+      }
+    } else {
+      if (panel) {
+        panel.classList.add('hidden');
+        panel.classList.remove('block');
+      }
+      if (btn) {
+        btn.className = "flex items-center space-x-2.5 px-3 py-2.5 rounded-lg text-left transition-all w-full text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800";
+      }
+    }
+  });
+
+  if (tabName === 'quizzes') {
+    loadQuizzes();
+  } else if (tabName === 'placements') {
+    renderAdminPlacements();
+  } else if (tabName === 'users') {
+    renderUsers();
+  } else if (tabName === 'profile') {
+    loadAdminProfileForm();
+  } else if (tabName === 'site-mgmt') {
+    switchSiteMgmtSubTab('faq');
+  }
+};
+
+/* --- 6. ADMIN PROFILE MANAGEMENT & AVATAR PERSISTENCE --- */
+function loadAdminProfileForm() {
+  const adminData = (window.storage && window.storage.get('techprep_admin_profile')) || 
+                    (window.storage && window.storage.get('techprep_current_user')) || {
+    name: 'Khushboo (Admin)',
+    email: 'khushboo2006june@admin.com',
+    role: 'admin',
+    profilePic: ''
+  };
+
+  const nameEl = document.getElementById('admin-profile-name');
+  const emailEl = document.getElementById('admin-profile-email');
+  const contactEl = document.getElementById('admin-profile-contact');
+  const dobEl = document.getElementById('admin-profile-dob');
+  const addressEl = document.getElementById('admin-profile-address');
+  const collegeEl = document.getElementById('admin-profile-college');
+  const degreeEl = document.getElementById('admin-profile-degree');
+  const branchEl = document.getElementById('admin-profile-branch');
+  const specEl = document.getElementById('admin-profile-specialization');
+  const preview = document.getElementById('admin-profile-preview-container');
+  const picDataEl = document.getElementById('admin-profile-pic-data');
+
+  if (nameEl) nameEl.value = adminData.name || 'Khushboo (Admin)';
+  if (emailEl) emailEl.value = adminData.email || 'khushboo2006june@admin.com';
+  if (contactEl) contactEl.value = adminData.contact || '';
+  if (dobEl) dobEl.value = adminData.dob || '';
+  if (addressEl) addressEl.value = adminData.address || '';
+  if (collegeEl) collegeEl.value = adminData.college || '';
+  if (degreeEl) degreeEl.value = adminData.degree || '';
+  if (branchEl) branchEl.value = adminData.branch || '';
+  if (specEl) specEl.value = adminData.specialization || '';
+  if (picDataEl) picDataEl.value = adminData.profilePic || '';
+
+  if (preview) {
+    if (adminData.profilePic) {
+      preview.innerHTML = `<img src="${adminData.profilePic}" alt="Admin Profile" class="w-full h-full object-cover">`;
+    } else {
+      preview.textContent = 'KA';
+    }
+  }
+}
+
+function initAdminProfileHandlers() {
+  const fileInput = document.getElementById('admin-profile-pic-file');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        window.customAlert('File Too Large', 'Please upload a profile image smaller than 2MB.', 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const base64 = evt.target.result;
+        const picDataEl = document.getElementById('admin-profile-pic-data');
+        if (picDataEl) picDataEl.value = base64;
+        const preview = document.getElementById('admin-profile-preview-container');
+        if (preview) preview.innerHTML = `<img src="${base64}" alt="Admin Preview" class="w-full h-full object-cover">`;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const form = document.getElementById('admin-profile-edit-form');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const current = (window.storage && window.storage.get('techprep_admin_profile')) || 
+                      (window.storage && window.storage.get('techprep_current_user')) || {};
+      const updated = {
+        ...current,
+        name: document.getElementById('admin-profile-name')?.value || 'Khushboo (Admin)',
+        email: 'khushboo2006june@admin.com',
+        role: 'admin',
+        contact: document.getElementById('admin-profile-contact')?.value || '',
+        dob: document.getElementById('admin-profile-dob')?.value || '',
+        address: document.getElementById('admin-profile-address')?.value || '',
+        college: document.getElementById('admin-profile-college')?.value || '',
+        degree: document.getElementById('admin-profile-degree')?.value || '',
+        branch: document.getElementById('admin-profile-branch')?.value || '',
+        specialization: document.getElementById('admin-profile-specialization')?.value || '',
+        profilePic: document.getElementById('admin-profile-pic-data')?.value || current.profilePic || ''
+      };
+
+      if (window.storage) {
+        window.storage.set('techprep_admin_profile', updated);
+        window.storage.set('techprep_current_user', updated);
+      } else {
+        localStorage.setItem('techprep_admin_profile', JSON.stringify(updated));
+        localStorage.setItem('techprep_current_user', JSON.stringify(updated));
+      }
+
+      if (window.syncUserAvatar) {
+        window.syncUserAvatar(updated);
+      }
+
+      const successMsg = document.getElementById('admin-profile-success-msg');
+      if (successMsg) {
+        successMsg.classList.remove('hidden');
+        setTimeout(() => successMsg.classList.add('hidden'), 3500);
+      }
+
+      showToastNotification('Admin profile updated successfully');
+      logSystemEvent('SUCCESS', 'Admin updated profile details');
+    });
+  }
+}
+
+// Global function exports for onclick references
+window.openFAQModal = openFAQModal;
+window.closeFAQModal = closeFAQModal;
+window.saveFAQForm = saveFAQForm;
+window.deleteFAQ = deleteFAQ;
+window.renderAdminFAQs = renderAdminFAQs;
+window.switchSiteMgmtSubTab = switchSiteMgmtSubTab;
+window.exportDatabaseBackup = exportDatabaseBackup;
+window.importDatabaseBackup = importDatabaseBackup;
+window.confirmResetDatabase = confirmResetDatabase;
+window.saveSecuritySettings = saveSecuritySettings;
+window.changeAdminPassword = changeAdminPassword;
+window.renderAuditLogs = renderAuditLogs;
+window.exportAuditLogsCSV = exportAuditLogsCSV;
+window.clearAuditLogs = clearAuditLogs;
+window.loadAdminProfileForm = loadAdminProfileForm;
+
 document.addEventListener('DOMContentLoaded', () => {
+  initAdminProfileHandlers();
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
   if (tabParam && ['quizzes', 'placements', 'users', 'profile', 'site-mgmt'].includes(tabParam)) {
-    switchAdminTab(tabParam);
+    window.switchAdminTab(tabParam);
   }
 });
+
 
 
 

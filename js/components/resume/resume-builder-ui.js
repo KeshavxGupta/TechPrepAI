@@ -300,12 +300,12 @@
             <h1 class="text-2xl font-black uppercase tracking-tight text-gray-900 leading-tight">${escapeHTML(info.name || 'Your Full Name')}</h1>
             <div class="text-xs font-bold uppercase tracking-wider mt-0.5" style="color: ${color}">${escapeHTML(info.title || 'Software Engineer')}</div>
             <div class="flex flex-wrap justify-center items-center gap-x-3 gap-y-1 text-[10px] text-gray-600 font-mono mt-2">
-              ${info.email ? `<span>✉ ${escapeHTML(info.email)}</span>` : ''}
-              ${info.phone ? `<span>📱 ${escapeHTML(info.phone)}</span>` : ''}
-              ${info.location ? `<span>📍 ${escapeHTML(info.location)}</span>` : ''}
-              ${info.linkedin ? `<span>🔗 <a href="${formatUrl(info.linkedin)}" class="underline" style="color: ${color}">${escapeHTML(info.linkedin)}</a></span>` : ''}
-              ${info.github ? `<span>💻 <a href="${formatUrl(info.github)}" class="underline" style="color: ${color}">${escapeHTML(info.github)}</a></span>` : ''}
-              ${info.portfolio ? `<span>🌐 <a href="${formatUrl(info.portfolio)}" class="underline" style="color: ${color}">${escapeHTML(info.portfolio)}</a></span>` : ''}
+              ${info.email ? `<span>${escapeHTML(info.email)}</span>` : ''}
+              ${info.phone ? `<span>${info.email ? '• ' : ''}${escapeHTML(info.phone)}</span>` : ''}
+              ${info.location ? `<span>• ${escapeHTML(info.location)}</span>` : ''}
+              ${info.linkedin ? `<span>• <a href="${formatUrl(info.linkedin)}" class="underline" style="color: ${color}">${escapeHTML(info.linkedin)}</a></span>` : ''}
+              ${info.github ? `<span>• <a href="${formatUrl(info.github)}" class="underline" style="color: ${color}">${escapeHTML(info.github)}</a></span>` : ''}
+              ${info.portfolio ? `<span>• <a href="${formatUrl(info.portfolio)}" class="underline" style="color: ${color}">${escapeHTML(info.portfolio)}</a></span>` : ''}
             </div>
           </div>
 
@@ -415,13 +415,13 @@
               </div>
 
               <!-- Contact List -->
-              <div class="space-y-2 text-[10px] text-white/90 font-mono border-t border-white/20 pt-3">
-                <h3 class="font-bold uppercase tracking-wider text-white text-[9px]">Contact</h3>
-                ${info.email ? `<div class="break-all">✉ ${escapeHTML(info.email)}</div>` : ''}
-                ${info.phone ? `<div>📱 ${escapeHTML(info.phone)}</div>` : ''}
-                ${info.location ? `<div>📍 ${escapeHTML(info.location)}</div>` : ''}
-                ${info.linkedin ? `<div class="break-all">🔗 ${escapeHTML(info.linkedin)}</div>` : ''}
-                ${info.github ? `<div class="break-all">💻 ${escapeHTML(info.github)}</div>` : ''}
+              <div class="space-y-1.5 text-[10px] text-white/90 font-mono border-t border-white/20 pt-3">
+                <h3 class="font-bold uppercase tracking-wider text-white text-[9px]">Contact Details</h3>
+                ${info.email ? `<div class="break-all"><span class="text-white/60">Email:</span> ${escapeHTML(info.email)}</div>` : ''}
+                ${info.phone ? `<div><span class="text-white/60">Phone:</span> ${escapeHTML(info.phone)}</div>` : ''}
+                ${info.location ? `<div><span class="text-white/60">Location:</span> ${escapeHTML(info.location)}</div>` : ''}
+                ${info.linkedin ? `<div class="break-all"><a href="${formatUrl(info.linkedin)}" class="underline text-white/90 hover:text-white">${escapeHTML(info.linkedin)}</a></div>` : ''}
+                ${info.github ? `<div class="break-all"><a href="${formatUrl(info.github)}" class="underline text-white/90 hover:text-white">${escapeHTML(info.github)}</a></div>` : ''}
               </div>
 
               <!-- Skill Matrix Badges -->
@@ -904,8 +904,9 @@
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="text-[10px] font-mono uppercase text-neutral-400 font-semibold">Bullet Point Achievements</label>
-            <button type="button" onclick="openBulletEnhancerModal()" class="text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:underline">
-              ✨ AI Bullet Helper
+            <button type="button" onclick="openBulletEnhancerModal()" class="text-[10px] text-purple-600 dark:text-purple-400 font-bold hover:underline flex items-center space-x-1">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>AI Bullet Helper</span>
             </button>
           </div>
           <textarea rows="3" oninput="updateExperienceItem(${idx}, 'description', this.value)" placeholder="• Architected RESTful microservices in Node.js, reducing latency by 35%...\n• Spearheaded frontend migration to React..." class="w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs leading-relaxed font-mono text-neutral-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:outline-none">${escapeHTML(exp.description)}</textarea>
@@ -1112,7 +1113,9 @@
         <input type="text" value="${escapeHTML(c.name)}" oninput="updateCertificationItem(${idx}, 'name', this.value)" placeholder="Certification Name" class="flex-1 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs text-neutral-900 dark:text-white">
         <input type="text" value="${escapeHTML(c.issuer)}" oninput="updateCertificationItem(${idx}, 'issuer', this.value)" placeholder="Issuer" class="w-28 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs text-neutral-900 dark:text-white">
         <input type="text" value="${escapeHTML(c.year)}" oninput="updateCertificationItem(${idx}, 'year', this.value)" placeholder="Year" class="w-16 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-mono text-neutral-900 dark:text-white">
-        <button type="button" onclick="removeCertificationItem(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-1">✕</button>
+        <button type="button" onclick="removeCertificationItem(${idx})" class="text-neutral-400 hover:text-rose-500 p-1" title="Remove">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
     `).join('');
   }
@@ -1157,7 +1160,9 @@
         <input type="text" value="${escapeHTML(a.title)}" oninput="updateAchievementItem(${idx}, 'title', this.value)" placeholder="Honor / Award Title" class="flex-1 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs text-neutral-900 dark:text-white">
         <input type="text" value="${escapeHTML(a.year)}" oninput="updateAchievementItem(${idx}, 'year', this.value)" placeholder="Year" class="w-16 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-mono text-neutral-900 dark:text-white">
         <input type="text" value="${escapeHTML(a.description || '')}" oninput="updateAchievementItem(${idx}, 'description', this.value)" placeholder="Brief Context" class="flex-1 p-1.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs text-neutral-900 dark:text-white">
-        <button type="button" onclick="removeAchievementItem(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-1">✕</button>
+        <button type="button" onclick="removeAchievementItem(${idx})" class="text-neutral-400 hover:text-rose-500 p-1" title="Remove">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
     `).join('');
   }
@@ -1338,7 +1343,7 @@
     if (matchesEl) {
       matchesEl.innerHTML = result.matchDetails.keywordMatches.map(k => `
         <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-          ✓ ${escapeHTML(k)}
+          ${escapeHTML(k)}
         </span>
       `).join('');
       const countEl = document.getElementById('ats-found-count');
@@ -1357,7 +1362,7 @@
 
     if (suggestionsEl) {
       if (result.matchDetails.suggestions.length === 0) {
-        suggestionsEl.innerHTML = `<li class="text-emerald-600 dark:text-emerald-400">✓ Your resume meets high-scoring ATS formatting standards with strong action verbs and quantified impact metrics!</li>`;
+        suggestionsEl.innerHTML = `<li class="text-emerald-600 dark:text-emerald-400">Your resume meets high-scoring ATS formatting standards with strong action verbs and quantified impact metrics!</li>`;
       } else {
         suggestionsEl.innerHTML = result.matchDetails.suggestions.map(s => `
           <li>${escapeHTML(s)}</li>

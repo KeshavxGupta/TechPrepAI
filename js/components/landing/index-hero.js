@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-hero');
   if (!container) return;
 
@@ -59,7 +59,7 @@
               <div class="text-xs text-neutral-500 dark:text-neutral-400">Hiring Partners</div>
             </div>
             <div>
-              <div class="text-xl sm:text-2xl font-bold font-mono text-neutral-900 dark:text-white">â‚¹18.4 LPA</div>
+              <div class="text-xl sm:text-2xl font-bold font-mono text-neutral-900 dark:text-white">₹18.4 LPA</div>
               <div class="text-xs text-neutral-500 dark:text-neutral-400">Avg. Tech Package</div>
             </div>
           </div>
@@ -93,7 +93,7 @@
                   <div class="text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">PREP READINESS</div>
                   <div class="text-2xl font-bold font-mono text-blue-600 dark:text-blue-400 mt-1"><span
                       id="hero-prep-score">88</span><span class="text-xs text-neutral-400">/100</span></div>
-                  <div class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">â†‘ Tier-1 Ready</div>
+                  <div class="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Tier-1 Ready</div>
                 </div>
 
                 <div class="p-3 rounded-lg bg-surface-primary border border-neutral-200 dark:border-neutral-800">
@@ -124,7 +124,7 @@
                   <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-neutral-900 dark:text-white tracking-wide">TODAY'S AI STUDY
                       PLAN</span>
-                    <span class="text-[10px] font-mono text-neutral-500">AUG 09</span>
+                    <span class="text-[10px] font-mono text-neutral-500">DAILY</span>
                   </div>
 
                   <div class="space-y-2 text-xs">
@@ -153,7 +153,7 @@
                       class="study-item-row flex items-center justify-between p-2 rounded bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800/60 cursor-pointer hover:border-blue-500/50 transition-colors">
                       <div class="flex items-center space-x-2">
                         <input type="checkbox" class="study-item-checkbox accent-blue-600 rounded" checked>
-                        <span class="text-neutral-800 dark:text-neutral-200 line-through opacity-60">AI Voice Mock:
+                        <span class="text-neutral-800 dark:text-neutral-200 line-through opacity-60">Mock Interview:
                           Technical Round (20m)</span>
                       </div>
                       <span
@@ -171,7 +171,7 @@
                       class="p-2 rounded bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                       <div>
                         <div class="font-semibold text-neutral-900 dark:text-white">Google</div>
-                        <div class="text-[10px] text-neutral-500">SDE-1 â€¢ 32.5 LPA</div>
+                        <div class="text-[10px] text-neutral-500">SDE-1 • 32.5 LPA</div>
                       </div>
                       <span
                         class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -183,7 +183,7 @@
                       class="p-2 rounded bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                       <div>
                         <div class="font-semibold text-neutral-900 dark:text-white">Atlassian</div>
-                        <div class="text-[10px] text-neutral-500">Backend â€¢ 28 LPA</div>
+                        <div class="text-[10px] text-neutral-500">Backend • 28 LPA</div>
                       </div>
                       <span
                         class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -210,6 +210,3 @@
     </div>
   </section>`;
 })();
-
-
-

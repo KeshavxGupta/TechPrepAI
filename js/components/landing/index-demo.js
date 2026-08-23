@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-demo');
   if (!container) return;
 
@@ -95,7 +95,7 @@
               </div>
               <div>
                 <div class="text-sm font-semibold text-neutral-900 dark:text-white">Upcoming Campus Placement Drive</div>
-                <div class="text-xs text-neutral-500">Google SDE-1 On-Campus Drive â€¢ Registration Deadline Today</div>
+                <div class="text-xs text-neutral-500">Google SDE-1 On-Campus Drive • Registration Deadline Today</div>
               </div>
             </div>
             <button
@@ -172,7 +172,7 @@
             class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3 gap-2">
             <div>
               <span class="text-xs font-mono text-blue-500">PROBLEM #001</span>
-              <h3 class="text-base font-bold text-neutral-900 dark:text-white">Two Sum â€” Array & Hash Table</h3>
+              <h3 class="text-base font-bold text-neutral-900 dark:text-white">Two Sum — Array & Hash Table</h3>
             </div>
 
             <div class="flex items-center space-x-3">
@@ -260,7 +260,7 @@ public:
                   <td class="py-3 px-3 font-semibold text-neutral-900 dark:text-white">Google India</td>
                   <td class="py-3 px-3">Software Development Engineer 1</td>
                   <td class="py-3 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-semibold">32.5 LPA</td>
-                  <td class="py-3 px-3 text-neutral-500">CGPA â‰¥ 8.0 â€¢ CSE/ECE</td>
+                  <td class="py-3 px-3 text-neutral-500">CGPA ≥ 8.0 • CSE/ECE</td>
                   <td class="py-3 px-3">
                     <span
                       class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Shortlisted
@@ -273,7 +273,7 @@ public:
                   <td class="py-3 px-3 font-semibold text-neutral-900 dark:text-white">Amazon AWS</td>
                   <td class="py-3 px-3">Cloud Systems Engineer</td>
                   <td class="py-3 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-semibold">28.0 LPA</td>
-                  <td class="py-3 px-3 text-neutral-500">CGPA â‰¥ 7.5 â€¢ All B.Tech</td>
+                  <td class="py-3 px-3 text-neutral-500">CGPA ≥ 7.5 • All B.Tech</td>
                   <td class="py-3 px-3">
                     <span
                       class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">OA
@@ -286,7 +286,7 @@ public:
                   <td class="py-3 px-3 font-semibold text-neutral-900 dark:text-white">Atlassian</td>
                   <td class="py-3 px-3">Graduate Backend Engineer</td>
                   <td class="py-3 px-3 font-mono text-emerald-600 dark:text-emerald-400 font-semibold">52.0 LPA</td>
-                  <td class="py-3 px-3 text-neutral-500">CGPA â‰¥ 8.5 â€¢ CSE Only</td>
+                  <td class="py-3 px-3 text-neutral-500">CGPA ≥ 8.5 • CSE Only</td>
                   <td class="py-3 px-3">
                     <span
                       class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -303,6 +303,3 @@ public:
     </div>
   </section>`;
 })();
-
-
-

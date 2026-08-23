@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-features');
   if (!container) return;
 
@@ -293,11 +293,11 @@
           <div class="grid grid-cols-2 gap-3 pt-2 text-xs font-mono">
             <div class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary">
               <div class="text-neutral-500">MAANG & TIER 1</div>
-              <div class="text-lg font-bold text-neutral-900 dark:text-white mt-1">â‚¹24 - â‚¹55 LPA</div>
+              <div class="text-lg font-bold text-neutral-900 dark:text-white mt-1">₹24 - ₹55 LPA</div>
             </div>
             <div class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary">
               <div class="text-neutral-500">PRODUCT UNICORNS</div>
-              <div class="text-lg font-bold text-neutral-900 dark:text-white mt-1">â‚¹14 - â‚¹30 LPA</div>
+              <div class="text-lg font-bold text-neutral-900 dark:text-white mt-1">₹14 - ₹30 LPA</div>
             </div>
           </div>
         </div>
@@ -309,7 +309,7 @@
 
             <div class="flex items-center justify-between">
               <input id="placement-search-input" type="text" placeholder="Search company (e.g. Google, Amazon)..."
-                class="w-full max-w-xs px-3 py-1.5 text-xs rounded border border-neutral-300 dark:border-neutral-700 bg-surface-secondary focus:outline-none">
+                class="w-full max-w-xs px-3 py-1.5 text-xs rounded border border-neutral-300 dark:border-neutral-700 bg-surface-secondary focus:outline-none text-neutral-900 dark:text-white">
               <span class="text-xs font-mono text-neutral-500">Live Campus Drive Directory</span>
             </div>
 
@@ -318,10 +318,10 @@
                 class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between">
                 <div>
                   <div class="font-bold text-neutral-900 dark:text-white">Microsoft Security</div>
-                  <div class="text-[11px] text-neutral-500">Software Engineer 1 â€¢ Hyderabad</div>
+                  <div class="text-[11px] text-neutral-500">Software Engineer 1 • Hyderabad</div>
                 </div>
                 <div class="text-right">
-                  <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400">â‚¹45.0 LPA</div>
+                  <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹45.0 LPA</div>
                   <span class="text-[10px] text-blue-500">Shortlisted for OA</span>
                 </div>
               </div>
@@ -330,10 +330,10 @@
                 class="p-3 rounded border border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between">
                 <div>
                   <div class="font-bold text-neutral-900 dark:text-white">Uber Technologies</div>
-                  <div class="text-[11px] text-neutral-500">Backend Systems Engineer â€¢ Bangalore</div>
+                  <div class="text-[11px] text-neutral-500">Backend Systems Engineer • Bangalore</div>
                 </div>
                 <div class="text-right">
-                  <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400">â‚¹38.0 LPA</div>
+                  <div class="font-mono font-bold text-emerald-600 dark:text-emerald-400">₹38.0 LPA</div>
                   <span class="text-[10px] text-emerald-500">Interview Scheduled</span>
                 </div>
               </div>
@@ -346,6 +346,3 @@
     </div>
   </section>`;
 })();
-
-
-

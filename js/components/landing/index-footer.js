@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-footer');
   if (!container) return;
 
@@ -74,7 +74,7 @@
 
       <div
         class="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-500">
-        <div>Â© 2026 TechPrep AI, Inc. All rights reserved.</div>
+        <div>© 2026 TechPrep AI, Inc. All rights reserved.</div>
         <div class="flex space-x-4 mt-2 sm:mt-0 font-mono text-[11px]">
           <a href="/pages/public/privacy.html" class="hover:underline">Privacy Policy</a>
           <a href="/pages/public/terms.html" class="hover:underline">Terms of Service</a>
@@ -84,6 +84,3 @@
     </div>
   </footer>`;
 })();
-
-
-

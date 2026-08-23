@@ -357,7 +357,7 @@
             <span class="font-mono text-xs text-neutral-500">Runtime: <strong class="text-neutral-900 dark:text-white">${evaluation.runtimeMs} ms</strong></span>
             <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-neutral-900 dark:text-white">${evaluation.memoryMb} MB</strong></span>
           </div>
-          <button onclick="document.getElementById('dsa-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs">âœ• Close</button>
+          <button onclick="document.getElementById('dsa-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs">✕ Close</button>
         </div>
         <div class="space-y-2 max-h-48 overflow-y-auto">${testResultsHtml}</div>
       </div>`;
@@ -440,7 +440,7 @@
       return `
         <tr onclick="selectExplorerProblem('${p.id}')" class="cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-colors ${p.id === activeProblem.id ? 'bg-blue-500/5 font-semibold' : ''}">
           <td class="py-3 px-4 font-mono text-center">
-            ${isSolved ? '<span class="text-emerald-500 font-bold" title="Solved">âœ“</span>' : '<span class="text-neutral-400">-</span>'}
+            ${isSolved ? '<span class="text-emerald-500 font-bold" title="Solved">✓</span>' : '<span class="text-neutral-400">-</span>'}
           </td>
           <td class="py-3 px-4">
             <div class="font-bold text-neutral-900 dark:text-white text-xs">${escapeHTML(p.title)}</div>
@@ -454,7 +454,7 @@
           <td class="py-3 px-4 font-mono text-neutral-500 text-xs">${p.acceptanceRate || '50.0%'}</td>
           <td class="py-3 px-4 text-right">
             <button onclick="event.stopPropagation(); selectExplorerProblem('${p.id}')" class="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-colors">
-              Solve â†’
+              Solve →
             </button>
           </td>
         </tr>`;

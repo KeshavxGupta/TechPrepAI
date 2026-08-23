@@ -1,5 +1,6 @@
-﻿const USERS_STORAGE_KEY = 'techprep_registered_users';
+const USERS_STORAGE_KEY = 'techprep_registered_users';
 const CURRENT_USER_KEY = 'techprep_current_user';
+const ADMIN_PROFILE_KEY = 'techprep_admin_profile';
 
 // Check profile completeness helper
 window.checkProfileCompleteness = function (user) {
@@ -48,10 +49,11 @@ window.syncUserAvatar = function (user) {
   const userInitialsEls = document.querySelectorAll('#user-avatar-initials');
   userInitialsEls.forEach(el => {
     if (user.profilePic && user.profilePic.trim() !== '') {
-      el.innerHTML = `<img src="${user.profilePic}" alt="${user.name}" class="w-full h-full object-cover rounded-full">`;
+      el.innerHTML = `<img src="${user.profilePic}" alt="${user.name || 'User'}" class="w-full h-full object-cover rounded-full">`;
       el.className = "w-8 h-8 rounded-full flex items-center justify-center font-mono select-none overflow-hidden ring-1 ring-blue-500/30";
     } else {
-      const names = user.name.trim().split(' ');
+      const name = (user.name || 'Student').trim();
+      const names = name.split(' ');
       const initials = names.length > 1
         ? (names[0][0] + names[names.length - 1][0]).toUpperCase()
         : names[0].substring(0, 2).toUpperCase();
@@ -59,17 +61,102 @@ window.syncUserAvatar = function (user) {
       el.className = "w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center font-mono select-none";
     }
   });
+
+  const userDisplayNameEl = document.getElementById('user-display-name');
+  if (userDisplayNameEl && user.name) {
+    userDisplayNameEl.textContent = user.name;
+  }
 };
 
 // Define global logout
 window.logoutUser = function () {
-  storage.remove(CURRENT_USER_KEY);
+  if (window.storage) {
+    window.storage.remove(CURRENT_USER_KEY);
+  } else {
+    localStorage.removeItem(CURRENT_USER_KEY);
+  }
   window.location.href = '/index.html';
+};
+
+window.getCurrentUser = function () {
+  try {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+window.loginUser = function (email, password) {
+  email = (email || '').trim().toLowerCase();
+  password = (password || '');
+  if (!email || !password) return { success: false, message: 'Email and password required' };
+
+  if (email === 'khushboo2006june@admin.com' && password === 'khushboo') {
+    let savedAdmin = null;
+    try {
+      savedAdmin = JSON.parse(localStorage.getItem(ADMIN_PROFILE_KEY) || 'null');
+    } catch {}
+    const adminUser = savedAdmin || {
+      name: 'Khushboo (Admin)',
+      email: 'khushboo2006june@admin.com',
+      role: 'admin',
+      profilePic: '',
+      college: 'Admin Suite',
+      branch: 'Operations',
+      cgpa: '10.0'
+    };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminUser));
+    return { success: true, user: adminUser };
+  }
+
+  let users = [];
+  try {
+    users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+  } catch {}
+
+  const found = users.find(u => u.email === email && u.password === password);
+  if (found) {
+    if (found.suspended) return { success: false, message: 'Account suspended' };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(found));
+    return { success: true, user: found };
+  }
+  return { success: false, message: 'Invalid credentials' };
+};
+
+window.registerUser = function (userData) {
+  if (!userData || !userData.email || !userData.password) {
+    return { success: false, message: 'Email and password required' };
+  }
+  const email = userData.email.trim().toLowerCase();
+  let users = [];
+  try {
+    users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
+  } catch {}
+
+  if (users.some(u => u.email === email) || email === 'khushboo2006june@admin.com') {
+    return { success: false, message: 'Email already registered' };
+  }
+
+  const newUser = {
+    name: userData.name || 'Student',
+    email,
+    password: userData.password,
+    role: userData.role || 'student',
+    profilePic: userData.profilePic || '',
+    createdAt: new Date().toISOString()
+  };
+  users.push(newUser);
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  return { success: true, user: newUser };
 };
 
 function initPasswordVisibilityTogglers() {
   const togglers = document.querySelectorAll('.toggle-password');
   togglers.forEach(btn => {
+    if (btn.dataset.toggleInit) return;
+    btn.dataset.toggleInit = 'true';
+
     const input = btn.parentElement ? btn.parentElement.querySelector('input') : null;
     if (!input) return;
 
@@ -190,7 +277,7 @@ function initAuthSystem() {
         }
         
         if (isRegistered) {
-          window.customAlert('Success', 'Registration successful! Please login below to enter your dashboard.', 'success');
+          window.customAlert('Registration Complete', 'Your account has been registered successfully. Please sign in below.', 'success');
         }
       }
     }, 100);
@@ -206,7 +293,7 @@ function initAuthSystem() {
   }
 
   // Update UI if User is Logged In
-  const currentUser = storage.get(CURRENT_USER_KEY, null);
+  const currentUser = (window.storage || storage).get(CURRENT_USER_KEY, null);
   const welcomeUserEl = document.getElementById('welcome-user-name');
   const userDisplayNameEl = document.getElementById('user-display-name');
   const logoutBtn = document.getElementById('dashboard-logout-btn');
@@ -217,7 +304,7 @@ function initAuthSystem() {
     if (welcomeUserEl) welcomeUserEl.textContent = currentUser.name;
     if (userDisplayNameEl) userDisplayNameEl.textContent = currentUser.name;
 
-    syncUserAvatar(currentUser);
+    window.syncUserAvatar(currentUser);
 
     const navAuthContainer = document.getElementById('nav-auth-container');
     const mobileNavAuthContainer = document.getElementById('mobile-nav-auth-container');
@@ -281,7 +368,7 @@ function initAuthSystem() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      logoutUser();
+      window.logoutUser();
     });
   }
 
@@ -307,7 +394,7 @@ function initAuthSystem() {
       }
 
       if (confirmPasswordInput && password !== confirmPassword) {
-        showAuthFeedback('signup-error-msg', 'Passwords do not match. Please re-enter passwords.');
+        showAuthFeedback('signup-error-msg', 'Passwords do not match. Please re-enter your password.');
         return;
       }
 
@@ -316,7 +403,7 @@ function initAuthSystem() {
         return;
       }
 
-      const existingUsers = storage.get(USERS_STORAGE_KEY, []);
+      const existingUsers = (window.storage || storage).get(USERS_STORAGE_KEY, []);
       if (existingUsers.some(u => u.email === email) || email === 'khushboo2006june@admin.com') {
         window.customAlert('Registration Error', 'An account with this email is already registered. Please log in.', 'warning');
         showAuthFeedback('signup-error-msg', 'An account with this email is already registered. Please log in.');
@@ -348,7 +435,7 @@ function initAuthSystem() {
         createdAt: new Date().toISOString()
       };
       existingUsers.push(newUser);
-      storage.set(USERS_STORAGE_KEY, existingUsers);
+      (window.storage || storage).set(USERS_STORAGE_KEY, existingUsers);
 
       showAuthFeedback('signup-error-msg', 'Account created successfully! Redirecting to login...', false);
 
@@ -379,17 +466,18 @@ function initAuthSystem() {
       let matchedUser = null;
 
       if (isAdmin) {
-        matchedUser = {
+        const savedAdmin = (window.storage || storage).get(ADMIN_PROFILE_KEY, null);
+        matchedUser = savedAdmin || {
           name: 'Khushboo (Admin)',
           email: 'khushboo2006june@admin.com',
           role: 'admin',
-          profilePic: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+          profilePic: '',
           college: 'Admin Suite',
           branch: 'Operations',
           cgpa: '10.0'
         };
       } else {
-        const users = storage.get(USERS_STORAGE_KEY, []);
+        const users = (window.storage || storage).get(USERS_STORAGE_KEY, []);
         const found = users.find(u => u.email === email && u.password === password);
         if (found) {
           if (found.suspended) {
@@ -402,7 +490,7 @@ function initAuthSystem() {
       }
 
       if (matchedUser) {
-        storage.set(CURRENT_USER_KEY, matchedUser);
+        (window.storage || storage).set(CURRENT_USER_KEY, matchedUser);
         const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? '/pages/admin/admin-hub.html' : '/pages/user/dashboard.html';
         showAuthFeedback('login-error-msg', 'Login successful! Redirecting...', false);
         setTimeout(() => {
@@ -415,7 +503,7 @@ function initAuthSystem() {
     });
   }
 
-  // Modal Login & Signup Handlers (if present in index.html)
+  // Modal Login & Signup Handlers (in index.html)
   const loginModalForm = document.querySelector('#login-modal form');
   if (loginModalForm) {
     loginModalForm.addEventListener('submit', (e) => {
@@ -428,17 +516,18 @@ function initAuthSystem() {
       let matchedUser = null;
 
       if (isAdmin) {
-        matchedUser = {
+        const savedAdmin = (window.storage || storage).get(ADMIN_PROFILE_KEY, null);
+        matchedUser = savedAdmin || {
           name: 'Khushboo (Admin)',
           email: 'khushboo2006june@admin.com',
           role: 'admin',
-          profilePic: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+          profilePic: '',
           college: 'Admin Suite',
           branch: 'Operations',
           cgpa: '10.0'
         };
       } else {
-        const users = storage.get(USERS_STORAGE_KEY, []);
+        const users = (window.storage || storage).get(USERS_STORAGE_KEY, []);
         const found = users.find(u => u.email === email && u.password === password);
         if (found) {
           if (found.suspended) {
@@ -450,10 +539,10 @@ function initAuthSystem() {
       }
 
       if (matchedUser) {
-        storage.set(CURRENT_USER_KEY, matchedUser);
+        (window.storage || storage).set(CURRENT_USER_KEY, matchedUser);
         window.location.href = matchedUser.email === 'khushboo2006june@admin.com' ? '/pages/admin/admin-hub.html' : '/pages/user/dashboard.html';
       } else {
-        window.customAlert('Login Error', 'Invalid email or password.', 'error');
+        window.customAlert('Login Error', 'Invalid email or password. Please check your credentials.', 'error');
       }
     });
   }
@@ -474,7 +563,12 @@ function initAuthSystem() {
           return;
         }
 
-        const users = storage.get(USERS_STORAGE_KEY, []);
+        if (password.length < 6) {
+          window.customAlert('Registration Error', 'Password must be at least 6 characters long.', 'warning');
+          return;
+        }
+
+        const users = (window.storage || storage).get(USERS_STORAGE_KEY, []);
         if (users.some(u => u.email === email) || email === 'khushboo2006june@admin.com') {
           window.customAlert('Registration Error', 'This email is already registered. Please log in.', 'warning');
           return;
@@ -503,9 +597,9 @@ function initAuthSystem() {
           suspended: false,
           createdAt: new Date().toISOString()
         });
-        storage.set(USERS_STORAGE_KEY, users);
+        (window.storage || storage).set(USERS_STORAGE_KEY, users);
 
-        window.customAlert('Registration Success', 'Registration successful! You can now log in.', 'success');
+        window.customAlert('Registration Complete', 'Your account has been created successfully. Please log in.', 'success');
 
         const signupModal = document.getElementById('signup-modal');
         if (signupModal) {
@@ -532,6 +626,3 @@ document.addEventListener('DOMContentLoaded', () => {
   initAuthModals();
   initAuthSystem();
 });
-
-
-

@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-index-sections');
   if (!container) return;
 
@@ -82,7 +82,7 @@
           <div class="p-6 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-lg space-y-5 text-left">
             <div class="flex items-center justify-between">
               <div class="text-xs font-mono font-semibold text-neutral-500 uppercase tracking-wider">PLACEMENT READINESS RADAR</div>
-              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">READY â€¢ 91.2%</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">READY • 91.2%</span>
             </div>
 
             <div class="space-y-3.5 text-xs">
@@ -143,7 +143,7 @@
               <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Hiring Partners</div>
             </div>
             <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary">
-              <div class="text-2xl font-bold font-mono text-neutral-900 dark:text-white">â‚¹18.4 LPA</div>
+              <div class="text-2xl font-bold font-mono text-neutral-900 dark:text-white">₹18.4 LPA</div>
               <div class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Avg. Tier-1 Package</div>
             </div>
           </div>
@@ -199,7 +199,7 @@
             </div>
             <div>
               <div class="font-bold text-sm text-neutral-900 dark:text-white">Aarav Sharma</div>
-              <div class="text-xs text-neutral-500">IIT Bombay â€¢ CSE '25</div>
+              <div class="text-xs text-neutral-500">IIT Bombay • CSE '25</div>
             </div>
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
@@ -222,7 +222,7 @@
             </div>
             <div>
               <div class="font-bold text-sm text-neutral-900 dark:text-white">Priya Kulkarni</div>
-              <div class="text-xs text-neutral-500">BITS Pilani â€¢ ECE '25</div>
+              <div class="text-xs text-neutral-500">BITS Pilani • ECE '25</div>
             </div>
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
@@ -244,7 +244,7 @@
             </div>
             <div>
               <div class="font-bold text-sm text-neutral-900 dark:text-white">Rohan Verma</div>
-              <div class="text-xs text-neutral-500">VIT Vellore â€¢ IT '25</div>
+              <div class="text-xs text-neutral-500">VIT Vellore • IT '25</div>
             </div>
           </div>
           <p class="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
@@ -274,58 +274,10 @@
       </div>
 
       <div id="landing-faq-accordion" class="space-y-4">
-        <!-- FAQs rendered dynamically below -->
+        <!-- FAQs rendered dynamically -->
       </div>
     </div>
   </section>
-
-  <script>
-    (function() {
-      const container = document.getElementById('landing-faq-accordion');
-      if (!container) return;
-
-      const escapeHTML = (str) => {
-        if (!str) return '';
-        return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-      };
-
-      const faqs = JSON.parse(localStorage.getItem('techprep_faqs') || 'null') || [
-        {
-          question: 'Is TechPrep AI free for engineering students?',
-          answer: 'Yes! TechPrep AI offers a comprehensive free tier that includes access to the core 350 DSA roadmap, 5 ATS resume scans per month, and campus placement application tracking. Advanced features are unlocked with TechPrep Pro.'
-        },
-        {
-          question: 'How does the ATS Resume Scoring engine work?',
-          answer: 'Our ATS engine simulates parsing algorithms used by Enterprise ATS software (Workday, Greenhouse, Lever). It extracts technical skills, verifies bullet structure impact, measures keyword density against job descriptions, and checks for unparseable columns or tables.'
-        },
-        {
-          question: 'Can I track college campus placement eligibility?',
-          answer: 'Absolutely. You can input your branch, CGPA, and backlog history to filter companies that meet your specific college placement office eligibility rules.'
-        },
-        {
-          question: 'How is the DSA roadmap structured?',
-          answer: 'The DSA roadmap is grouped by pattern rather than topic order. It covers Arrays, Strings, Hashing, Two Pointers, Sliding Window, Stacks/Queues, Trees, Graphs, Heap/Priority Queue, and Dynamic Programming with complexity analysis.'
-        }
-      ];
-
-      container.innerHTML = faqs.map(f => \`
-        <div class="accordion-item rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated overflow-hidden">
-          <button class="accordion-header w-full px-6 py-4 text-left flex items-center justify-between focus:outline-none" aria-expanded="false">
-            <span class="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white">\${escapeHTML(f.question)}</span>
-            <svg class="chevron-icon w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          <div class="accordion-content px-6 pb-5 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed border-t border-neutral-100 dark:border-neutral-800/60 pt-3">
-            \${escapeHTML(f.answer)}
-          </div>
-        </div>
-      \`).join('');
-    })();
-  </script>
-    </div>
-  </section>
-
 
   <!-- CONTACT US & GET STARTED SECTION -->
   <section id="contact" class="py-16 lg:py-24 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary">
@@ -359,7 +311,7 @@
               Reach our support team for platform help, feature requests, or technical assistance.
             </p>
             <a href="mailto:support@techprep.ai" class="inline-block text-xs font-mono text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-              support@techprep.ai â†’
+              support@techprep.ai →
             </a>
           </div>
 
@@ -374,7 +326,7 @@
               Bring TechPrep AI to your engineering college or placement office with custom student analytics.
             </p>
             <a href="mailto:tpo@techprep.ai" class="inline-block text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">
-              tpo@techprep.ai â†’
+              tpo@techprep.ai →
             </a>
           </div>
 
@@ -383,13 +335,13 @@
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
               </svg>
-              <span class="font-bold text-sm text-neutral-900 dark:text-white">Discord Developer Community</span>
+              <span class="font-bold text-sm text-neutral-900 dark:text-white">Developer Community</span>
             </div>
             <p class="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
               Join 50,000+ engineers discussing daily DSA problems, system design, and placement experiences.
             </p>
-            <a href="#" onclick="customAlert('Community Discord', 'Redirecting to TechPrep AI Discord server...', 'info'); return false;" class="inline-block text-xs font-mono text-purple-600 dark:text-purple-400 font-semibold hover:underline">
-              discord.gg/techprep-ai â†’
+            <a href="#" onclick="if(window.customAlert) window.customAlert('Community Forum', 'Connecting to TechPrep AI community channels...', 'info'); return false;" class="inline-block text-xs font-mono text-purple-600 dark:text-purple-400 font-semibold hover:underline">
+              discord.gg/techprep-ai →
             </a>
           </div>
 
@@ -403,7 +355,7 @@
               <p class="text-xs text-neutral-500 mt-1">Fill out the form below and our team will get back to you within 24 hours.</p>
             </div>
 
-            <form onsubmit="event.preventDefault(); customAlert('Message Sent', 'Thank you for reaching out! A TechPrep AI representative will contact you shortly.', 'success'); this.reset();" class="space-y-4 text-xs">
+            <form onsubmit="event.preventDefault(); if(window.customAlert) window.customAlert('Message Sent', 'Thank you for reaching out! A TechPrep AI representative will contact you shortly.', 'success'); this.reset();" class="space-y-4 text-xs">
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-neutral-700 dark:text-neutral-300 font-medium mb-1">Full Name</label>
@@ -441,7 +393,70 @@
 
     </div>
   </section>`;
+
+  // Initialize and Render Landing FAQs from LocalStorage
+  setTimeout(() => {
+    const faqContainer = document.getElementById('landing-faq-accordion');
+    if (!faqContainer) return;
+
+    const escapeHTML = (str) => {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    };
+
+    const defaultFaqs = [
+      {
+        id: 'faq_1',
+        question: 'Is TechPrep AI free for engineering students?',
+        category: 'General',
+        answer: 'Yes! TechPrep AI offers a comprehensive free tier that includes access to the core 350 DSA roadmap, 5 ATS resume scans per month, and campus placement application tracking. Advanced features are unlocked with TechPrep Pro.'
+      },
+      {
+        id: 'faq_2',
+        question: 'How does the ATS Resume Scoring engine work?',
+        category: 'Resume',
+        answer: 'Our ATS engine simulates parsing algorithms used by Enterprise ATS software (Workday, Greenhouse, Lever). It extracts technical skills, verifies bullet structure impact, measures keyword density against job descriptions, and checks for unparseable columns or tables.'
+      },
+      {
+        id: 'faq_3',
+        question: 'Can I track college campus placement eligibility?',
+        category: 'Placements',
+        answer: 'Absolutely. You can input your branch, CGPA, and backlog history to filter companies that meet your specific college placement office eligibility rules.'
+      },
+      {
+        id: 'faq_4',
+        question: 'How is the DSA roadmap structured?',
+        category: 'DSA',
+        answer: 'The DSA roadmap is grouped by pattern rather than topic order. It covers Arrays, Strings, Hashing, Two Pointers, Sliding Window, Stacks/Queues, Trees, Graphs, Heap/Priority Queue, and Dynamic Programming with complexity analysis.'
+      }
+    ];
+
+    let faqs = null;
+    try {
+      faqs = JSON.parse(localStorage.getItem('techprep_faqs'));
+    } catch (e) {}
+
+    if (!Array.isArray(faqs) || faqs.length === 0) {
+      faqs = defaultFaqs;
+      localStorage.setItem('techprep_faqs', JSON.stringify(defaultFaqs));
+    }
+
+    faqContainer.innerHTML = faqs.map((f, i) => `
+      <div class="accordion-item rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated overflow-hidden">
+        <button class="accordion-header w-full px-6 py-4 text-left flex items-center justify-between focus:outline-none" aria-expanded="${i === 0 ? 'true' : 'false'}">
+          <span class="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white">${escapeHTML(f.question)}</span>
+          <svg class="chevron-icon w-5 h-5 text-neutral-400 shrink-0 ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="accordion-content px-6 pb-5 text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed border-t border-neutral-100 dark:border-neutral-800/60 pt-3">
+          ${escapeHTML(f.answer)}
+        </div>
+      </div>
+    `).join('');
+
+    if (window.initFaqAccordion) {
+      window.initFaqAccordion();
+    }
+  }, 10);
 })();
-
-
-

@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-admin-site-mgmt');
   if (!container) return;
 
@@ -210,13 +210,13 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label for="admin-new-pass" class="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">New Password</label>
-              <input type="password" id="admin-new-pass" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              <input type="password" id="admin-new-pass" required placeholder="Enter new password"
                 class="w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
             </div>
 
             <div>
               <label for="admin-confirm-pass" class="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">Confirm New Password</label>
-              <input type="password" id="admin-confirm-pass" required placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              <input type="password" id="admin-confirm-pass" required placeholder="Confirm new password"
                 class="w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
             </div>
           </div>

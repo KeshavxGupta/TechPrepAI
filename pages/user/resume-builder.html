@@ -104,24 +104,28 @@
           <div class="px-3 py-2 border-b border-neutral-200 dark:border-neutral-800 text-[11px] font-mono text-neutral-400 font-bold uppercase">
             Starter ATS Profiles
           </div>
-          <button onclick="loadSampleProfilePreset('fullstack')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between">
-            <span>⚡ Full-Stack SDE (Mid-Senior)</span>
+          <button onclick="loadSampleProfilePreset('fullstack')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            <span>Full-Stack SDE (Mid-Senior)</span>
           </button>
-          <button onclick="loadSampleProfilePreset('aiml')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between">
-            <span>🧠 AI & Machine Learning Eng</span>
+          <button onclick="loadSampleProfilePreset('aiml')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-purple-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <span>AI & Machine Learning Eng</span>
           </button>
-          <button onclick="loadSampleProfilePreset('devops')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between">
-            <span>☁️ Cloud & DevOps Platform Eng</span>
+          <button onclick="loadSampleProfilePreset('devops')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+            <span>Cloud & DevOps Platform Eng</span>
           </button>
-          <button onclick="loadSampleProfilePreset('intern')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between">
-            <span>🎓 CS Student / SDE Intern</span>
+          <button onclick="loadSampleProfilePreset('intern')" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400 flex items-center space-x-2">
+            <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
+            <span>CS Student / SDE Intern</span>
           </button>
         </div>
       </div>
 
       <!-- AI Bullet Enhancer Button -->
       <button onclick="openBulletEnhancerModal()" class="px-2.5 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 font-bold text-xs transition-colors shadow-sm flex items-center space-x-1" title="AI Action Verbs & Bullet Formula Generator">
-        <span>✨</span>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         <span class="hidden md:inline">AI Bullet Helper</span>
       </button>
 
@@ -148,16 +152,20 @@
 
         <div id="res-export-dropdown" class="origin-top-right absolute right-0 mt-2 w-48 rounded-xl shadow-2xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 ring-1 ring-black ring-opacity-5 z-50 hidden py-1 animate-modal-scale-in">
           <button onclick="exportResumePDF(); toggleExportDropdown();" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center space-x-2">
-            <span>📄 Print / Export PDF</span>
+            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span>Print / Export PDF</span>
           </button>
           <button onclick="openImportExportModal('export-json'); toggleExportDropdown();" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center space-x-2">
-            <span>💾 Save Data (JSON)</span>
+            <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Save Data (JSON)</span>
           </button>
           <button onclick="openImportExportModal('import-json'); toggleExportDropdown();" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center space-x-2">
-            <span>📂 Import Data (JSON)</span>
+            <svg class="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg>
+            <span>Import Data (JSON)</span>
           </button>
           <button onclick="copyResumeAsMarkdown(); toggleExportDropdown();" class="w-full text-left px-3 py-2 text-xs text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center space-x-2">
-            <span>📋 Copy as Plain Text</span>
+            <svg class="w-3.5 h-3.5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+            <span>Copy as Plain Text</span>
           </button>
         </div>
       </div>
@@ -263,7 +271,8 @@
           <div class="flex items-center justify-between mb-1">
             <label class="block text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">Professional Summary</label>
             <button type="button" onclick="generateSummaryPrompt()" class="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center space-x-1">
-              <span>✨ Suggest Summary</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>Suggest Summary</span>
             </button>
           </div>
           <textarea id="res-form-summary" rows="3" oninput="updateResumeDataFromForm()" placeholder="High-impact 2-3 sentence executive summary showcasing your years of experience, core tech stack, and key metrics..."
@@ -485,7 +494,9 @@
             <p class="text-xs text-neutral-500">Benchmark your resume against algorithmic applicant tracking systems (Workday, Lever, Greenhouse)</p>
           </div>
         </div>
-        <button onclick="closeATSCheckerModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 font-mono text-sm p-1">✕</button>
+        <button onclick="closeATSCheckerModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <!-- Score Overview Hero -->
@@ -589,14 +600,18 @@
     <div class="w-full max-w-2xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl p-6 text-left space-y-5 max-h-[85vh] overflow-y-auto resume-scroll-area animate-modal-scale-in">
       
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
-        <div class="flex items-center space-x-2">
-          <span class="text-xl">✨</span>
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-purple-600/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
           <div>
-            <h3 class="text-base font-extrabold text-neutral-900 dark:text-white">AI Action Verbs & High-Impact Bullet Generator</h3>
+            <h3 class="text-base font-extrabold text-neutral-900 dark:text-white">Action Verbs & High-Impact Bullet Generator</h3>
             <p class="text-xs text-neutral-500">Formulate MAANG-standard metric bullets: [Action Verb] + [What You Built] + [Quantifiable Metric]</p>
           </div>
         </div>
-        <button onclick="closeBulletEnhancerModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 font-mono text-sm p-1">✕</button>
+        <button onclick="closeBulletEnhancerModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <!-- High Impact Formula Reference Card -->
@@ -689,7 +704,9 @@
       
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
         <h3 class="text-base font-extrabold text-neutral-900 dark:text-white" id="import-export-modal-title">Import & Export Resume</h3>
-        <button onclick="closeImportExportModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 font-mono text-sm p-1">✕</button>
+        <button onclick="closeImportExportModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <div id="import-json-container" class="space-y-3">
@@ -726,7 +743,9 @@
           </svg>
           <h3 class="text-base font-extrabold text-neutral-900 dark:text-white">Saved Resume Drafts</h3>
         </div>
-        <button onclick="closeDraftsHistoryModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 font-mono text-sm p-1">✕</button>
+        <button onclick="closeDraftsHistoryModal()" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
 
       <div class="flex justify-between items-center pb-2">
