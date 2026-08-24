@@ -1,0 +1,23 @@
+What does HTML stand for?
+A. Hyper Text Markup Language
+B. Hyper Tech Markdown Language
+C. High Text Machine Language
+D. Hyperlinks and Text Markup Language
+ANSWER: A
+EXPLANATION: HTML is the standard markup language for creating web pages.
+
+Which CSS property controls the text size?
+A. font-style
+B. text-style
+C. font-size
+D. text-size
+ANSWER: C
+EXPLANATION: The font-size property sets the size of the font.
+
+Which HTML element is used for the largest heading?
+A. <heading>
+B. <h6>
+C. <head>
+D. <h1>
+ANSWER: D
+EXPLANATION: The <h1> tag defines the most important or largest heading.

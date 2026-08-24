@@ -1,0 +1,4 @@
+Question,Option A,Option B,Option C,Option D,Correct Answer,Explanation
+What is the default port for HTTP protocol?,80,443,8080,21,A,HTTP operates on port 80 by default. HTTPS operates on port 443.
+Which language is primarily used for Android App development?,Swift,Java/Kotlin,C#,Python,B,Kotlin and Java are the official languages for Android development.
+What does SQL stand for?,Simple Query Language,System Query Language,Structured Query Language,Standard Query Loop,C,SQL is Structured Query Language for database access.
