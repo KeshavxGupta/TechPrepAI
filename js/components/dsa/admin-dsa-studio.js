@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TechPrep AI - Admin DSA Studio Component & Controller
  */
 
@@ -190,7 +190,11 @@
     try {
       testCases = JSON.parse(document.getElementById('dsa-form-testcases-json').value);
     } catch (err) {
-      alert("Invalid JSON format in Testcases field: " + err.message);
+      if (window.customAlert) {
+        window.customAlert("Invalid Testcases JSON", "Error parsing testcases JSON: " + err.message, "error");
+      } else if (window.showToast) {
+        window.showToast("Invalid JSON format in Testcases", "error");
+      }
       return;
     }
 
@@ -212,15 +216,29 @@
     saveDSAProblems(problems);
     closeAdminDSAModal();
     renderAdminDSAProblemTable();
-    alert("DSA problem saved successfully!");
+    if (window.showToast) {
+      window.showToast("DSA problem saved successfully!", "success");
+    } else if (window.customAlert) {
+      window.customAlert("Saved", "DSA problem saved successfully!", "success");
+    }
   };
 
   window.deleteDSAProblem = function(problemId) {
-    if (!confirm("Are you sure you want to delete this DSA problem?")) return;
-    let problems = getDSAProblems();
-    problems = problems.filter(p => p.id !== problemId);
-    saveDSAProblems(problems);
-    renderAdminDSAProblemTable();
+    const doDelete = () => {
+      let problems = getDSAProblems();
+      problems = problems.filter(p => p.id !== problemId);
+      saveDSAProblems(problems);
+      renderAdminDSAProblemTable();
+      if (window.showToast) window.showToast("DSA problem deleted", "success");
+    };
+
+    if (window.customConfirm) {
+      window.customConfirm("Delete Problem", "Are you sure you want to delete this DSA problem?").then(confirmed => {
+        if (confirmed) doDelete();
+      });
+    } else {
+      doDelete();
+    }
   };
 
   window.exportDSAProblemsJSON = function() {
@@ -232,6 +250,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
+    if (window.showToast) window.showToast("DSA problems exported successfully", "success");
   };
 
   window.importDSAProblemsJSON = function(input) {
@@ -245,10 +264,12 @@
         if (Array.isArray(data)) {
           saveDSAProblems(data);
           renderAdminDSAProblemTable();
-          alert("DSA problem dataset restored successfully!");
+          if (window.showToast) window.showToast("DSA problem dataset restored successfully!", "success");
+          else if (window.customAlert) window.customAlert("Data Restored", "DSA problem dataset restored successfully!", "success");
         }
       } catch (err) {
-        alert("Failed to parse JSON: " + err.message);
+        if (window.customAlert) window.customAlert("Import Error", "Failed to parse JSON: " + err.message, "error");
+        else if (window.showToast) window.showToast("Failed to parse JSON", "error");
       }
     };
     reader.readAsText(file);

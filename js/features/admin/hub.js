@@ -1024,14 +1024,22 @@ window.saveAdminPlacement = function() {
 };
 
 window.deleteAdminPlacement = function(id) {
-  if (!confirm("Are you sure you want to delete this placement drive?")) return;
+  const doDelete = () => {
+    let placements = getPlacementsData();
+    placements = placements.filter(p => String(p.id) !== String(id));
+    localStorage.setItem('techprep_placements', JSON.stringify(placements));
 
-  let placements = getPlacementsData();
-  placements = placements.filter(p => String(p.id) !== String(id));
-  localStorage.setItem('techprep_placements', JSON.stringify(placements));
+    if (window.showToast) window.showToast("Placement drive deleted successfully", "success");
+    renderAdminPlacements();
+  };
 
-  showToast("Placement drive deleted successfully");
-  renderAdminPlacements();
+  if (window.customConfirm) {
+    window.customConfirm("Delete Placement Drive", "Are you sure you want to delete this placement drive?").then(yes => {
+      if (yes) doDelete();
+    });
+  } else {
+    doDelete();
+  }
 };
 
 window.exportAdminPlacements = function() {
@@ -1778,14 +1786,23 @@ function saveFAQForm(e) {
 }
 
 function deleteFAQ(faqId) {
-  if (!confirm("Are you sure you want to delete this FAQ entry?")) return;
-  let faqs = getFAQs();
-  const faq = faqs.find(f => f.id === faqId);
-  faqs = faqs.filter(f => f.id !== faqId);
-  saveFAQs(faqs);
-  renderAdminFAQs();
-  showToastNotification("FAQ deleted");
-  logSystemEvent('WARNING', `Deleted FAQ: "${faq ? faq.question.substring(0, 30) : faqId}"`);
+  const doDelete = () => {
+    let faqs = getFAQs();
+    const faq = faqs.find(f => f.id === faqId);
+    faqs = faqs.filter(f => f.id !== faqId);
+    saveFAQs(faqs);
+    renderAdminFAQs();
+    if (window.showToast) window.showToast("FAQ deleted", "success");
+    logSystemEvent('WARNING', `Deleted FAQ: "${faq ? faq.question.substring(0, 30) : faqId}"`);
+  };
+
+  if (window.customConfirm) {
+    window.customConfirm("Delete FAQ", "Are you sure you want to delete this FAQ entry?").then(yes => {
+      if (yes) doDelete();
+    });
+  } else {
+    doDelete();
+  }
 }
 
 /* --- 2. DATABASE BACKUP & RESTORE --- */
@@ -1835,7 +1852,7 @@ function exportDatabaseBackup() {
   downloadAnchor.click();
   downloadAnchor.remove();
 
-  showToastNotification("Database backup exported successfully");
+  if (window.showToast) window.showToast("Database backup exported successfully", "success");
   logSystemEvent('SUCCESS', 'Exported full JSON database backup');
 }
 
@@ -1848,11 +1865,11 @@ function importDatabaseBackup(input) {
     try {
       const data = JSON.parse(e.target.result);
       if (!data.quizzes || !Array.isArray(data.quizzes)) {
-        window.customAlert("Restore Error", "Invalid backup file schema: missing quizzes collection.", "error");
+        if (window.customAlert) window.customAlert("Restore Error", "Invalid backup file schema: missing quizzes collection.", "error");
         return;
       }
 
-      if (confirm(`Restore database from backup (${data.quizzes.length} quizzes, ${data.users ? data.users.length : 0} users)? This will replace current site data.`)) {
+      const doRestore = () => {
         if (data.quizzes) saveQuizzes(data.quizzes);
         if (data.users) localStorage.setItem('techprep_registered_users', JSON.stringify(data.users));
         if (data.attempts) localStorage.setItem('techprep_attempt_history', JSON.stringify(data.attempts));
@@ -1861,11 +1878,19 @@ function importDatabaseBackup(input) {
         if (data.auditLogs) localStorage.setItem('techprep_audit_logs', JSON.stringify(data.auditLogs));
 
         updateDBTelemetry();
-        showToastNotification("Database restored successfully");
+        if (window.showToast) window.showToast("Database restored successfully", "success");
         logSystemEvent('SUCCESS', `Restored database from JSON file (${file.name})`);
+      };
+
+      if (window.customConfirm) {
+        window.customConfirm("Restore Database", `Restore database from backup (${data.quizzes.length} quizzes, ${data.users ? data.users.length : 0} users)? This will replace current site data.`).then(yes => {
+          if (yes) doRestore();
+        });
+      } else {
+        doRestore();
       }
     } catch (err) {
-      window.customAlert("Restore Error", "Failed to parse JSON backup file: " + err.message, "error");
+      if (window.customAlert) window.customAlert("Restore Error", "Failed to parse JSON backup file: " + err.message, "error");
     }
   };
   reader.readAsText(file);
@@ -1873,7 +1898,7 @@ function importDatabaseBackup(input) {
 }
 
 function confirmResetDatabase() {
-  if (confirm("DANGER: Are you sure you want to reset the database to factory defaults? All custom quizzes, student history, and logs will be reset.")) {
+  const doReset = () => {
     localStorage.removeItem('techprep_quizzes');
     localStorage.removeItem('techprep_attempt_history');
     localStorage.removeItem('techprep_faqs');
@@ -1881,8 +1906,16 @@ function confirmResetDatabase() {
     
     initDefaultSiteMgmtData();
     updateDBTelemetry();
-    showToastNotification("Database reset to factory seeds");
+    if (window.showToast) window.showToast("Database reset to factory seeds", "warning");
     logSystemEvent('WARNING', 'Performed full factory database reset');
+  };
+
+  if (window.customConfirm) {
+    window.customConfirm("Reset Database", "DANGER: Are you sure you want to reset the database to factory defaults? All custom quizzes, student history, and logs will be reset.").then(yes => {
+      if (yes) doReset();
+    });
+  } else {
+    doReset();
   }
 }
 

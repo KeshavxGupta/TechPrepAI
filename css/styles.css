@@ -297,3 +297,31 @@ body {
     display: none !important;
   }
 }
+
+/* Mobile & Touch Viewport Responsive Utilities */
+@media (max-width: 768px) {
+  .modal {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 0 auto;
+  }
+  
+  .kanban-column {
+    width: 290px !important;
+  }
+}
+
+/* Smooth Touch Scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Hide scrollbars gracefully while allowing scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

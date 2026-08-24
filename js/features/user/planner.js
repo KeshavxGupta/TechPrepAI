@@ -466,7 +466,14 @@ const saveNote = () => {
     const activeRecallToggle = document.getElementById('note-active-recall');
     const activeRecall = activeRecallToggle ? activeRecallToggle.checked : false;
 
-    if (!title) return alert('Please enter a note title');
+    if (!title) {
+        if (window.customAlert) {
+            window.customAlert('Missing Title', 'Please enter a title for your note.', 'warning');
+        } else if (window.showToast) {
+            window.showToast('Please enter a note title', 'warning');
+        }
+        return;
+    }
 
     const generateSRTask = (days, label, priority, frequency) => {
         const d = new Date();
@@ -551,10 +558,19 @@ const saveNote = () => {
 };
 
 const deleteNote = (id) => {
-    if(confirm('Are you sure you want to delete this note?')) {
+    const doDelete = () => {
         notes = notes.filter(n => n.id !== id);
         localStorage.setItem('techprep_notes', JSON.stringify(notes));
         renderNotes();
+        if (window.showToast) window.showToast('Note deleted', 'success');
+    };
+
+    if (window.customConfirm) {
+        window.customConfirm('Delete Note', 'Are you sure you want to delete this study note?').then(confirmed => {
+            if (confirmed) doDelete();
+        });
+    } else {
+        doDelete();
     }
 };
 
@@ -816,7 +832,14 @@ const saveTask = () => {
     const resourceInput = document.getElementById('task-resource');
     const resourceLink = resourceInput ? resourceInput.value.trim() : '';
 
-    if (!title) return alert('Please enter a task description');
+    if (!title) {
+        if (window.customAlert) {
+            window.customAlert('Missing Description', 'Please enter a description for your task.', 'warning');
+        } else if (window.showToast) {
+            window.showToast('Please enter a task description', 'warning');
+        }
+        return;
+    }
 
     const newTask = {
         id: Date.now().toString(),
@@ -1035,7 +1058,8 @@ window.exportData = function() {
         }, 100);
     } catch (error) {
         console.error("Export failed:", error);
-        alert("Failed to export data.");
+        if (window.customAlert) window.customAlert('Export Failed', 'Failed to export study planner data.', 'error');
+        else if (window.showToast) window.showToast('Failed to export data.', 'error');
     }
 };
 
@@ -1068,17 +1092,19 @@ window.importData = function(event) {
             updateProgress();
             if (typeof renderHeatmap === 'function') renderHeatmap();
             
-            alert("Data restored successfully!");
+            if (window.showToast) window.showToast('Data restored successfully!', 'success');
+            else if (window.customAlert) window.customAlert('Data Restored', 'Planner notes and tasks restored successfully!', 'success');
         } catch (error) {
             console.error("Import failed:", error);
-            alert("Invalid backup file format.");
+            if (window.customAlert) window.customAlert('Import Failed', 'Invalid backup file format.', 'error');
+            else if (window.showToast) window.showToast('Invalid backup file format.', 'error');
         } finally {
             event.target.value = ''; // Reset input
         }
     };
     
     reader.onerror = () => {
-        alert("Error reading file.");
+        if (window.customAlert) window.customAlert('Error', 'Error reading backup file.', 'error');
         event.target.value = '';
     };
     

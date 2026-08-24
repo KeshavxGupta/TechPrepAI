@@ -308,38 +308,32 @@ const renderPlacements = () => {
     
     kanbanBoard.innerHTML = '';
     
+    // Active recruitment stages (removed unnecessary selected/rejected columns)
     const columns = [
-        { id: 'wishlist', title: 'Wishlist', color: 'slate', icon: 'fa-star' },
-        { id: 'applied', title: 'Applied', color: 'blue', icon: 'fa-paper-plane' },
-        { id: 'assessment', title: 'Assessment (OA)', color: 'purple', icon: 'fa-laptop-code' },
-        { id: 'interview', title: 'Interview', color: 'amber', icon: 'fa-comments' },
-        { id: 'selected', title: 'Selected / Offer', color: 'emerald', icon: 'fa-check-circle' },
-        { id: 'rejected', title: 'Rejected', color: 'rose', icon: 'fa-times-circle' }
+        { id: 'wishlist', title: 'Available Jobs & Wishlist', color: 'blue', icon: 'fa-briefcase', headerClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' },
+        { id: 'applied', title: 'Applied', color: 'cyan', icon: 'fa-paper-plane', headerClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20' },
+        { id: 'assessment', title: 'Assessment (OA)', color: 'purple', icon: 'fa-laptop-code', headerClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' },
+        { id: 'interview', title: 'Interview Rounds', color: 'amber', icon: 'fa-comments', headerClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' }
     ];
 
     columns.forEach(col => {
         const colTasks = placements.filter(p => p.status === col.id && !p.isArchived);
         
-        // Define color classes based on the tailwind color palette
-        const headerBgColor = `bg-${col.color}-100 dark:bg-${col.color}-900/30`;
-        const headerTextColor = `text-${col.color}-700 dark:text-${col.color}-400`;
-        const borderColor = `border-${col.color}-200 dark:border-${col.color}-800`;
-        
         const colEl = document.createElement('div');
-        // No fixed min-height — column grows only as tall as its content area (max-h controlled inside)
-        colEl.className = `kanban-column w-80 shrink-0 snap-start flex flex-col gap-3 rounded-xl border ${borderColor} bg-bg-secondary/50 p-3`;
+        colEl.className = "kanban-column w-84 sm:w-92 shrink-0 snap-start flex flex-col gap-3 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-surface-elevated/80 subtle-glass p-4 shadow-sm transition-all";
         colEl.setAttribute('ondragover', 'allowDrop(event)');
         colEl.setAttribute('ondrop', `drop(event, '${col.id}')`);
         
         colEl.innerHTML = `
-            <div class="column-header flex justify-between items-center px-3 py-2 rounded-lg ${headerBgColor} ${headerTextColor} font-semibold text-sm">
+            <div class="column-header flex justify-between items-center px-3.5 py-2.5 rounded-xl border ${col.headerClass} font-bold text-xs">
                 <div class="flex items-center gap-2">
-                    <i class="fa-solid ${col.icon}"></i> ${col.title}
+                    <i class="fa-solid ${col.icon}"></i> 
+                    <span>${col.title}</span>
                 </div>
-                <span class="badge bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-full text-xs">${colTasks.length}</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-surface-primary shadow-xs">${colTasks.length}</span>
             </div>
-            <div class="column-content relative flex flex-col gap-3 max-h-[420px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2">
-                ${colTasks.length === 0 ? `<div class="text-center text-text-muted text-sm py-4 italic">No applications</div>` : ''}
+            <div class="column-content relative flex flex-col gap-3.5 max-h-[580px] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-neutral-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-700 [&::-webkit-scrollbar-thumb]:rounded-full pb-2 pt-1 pr-1">
+                ${colTasks.length === 0 ? `<div class="text-center text-neutral-400 dark:text-neutral-500 text-xs py-10 italic border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl">No active applications in this stage</div>` : ''}
             </div>
         `;
         
@@ -347,97 +341,71 @@ const renderPlacements = () => {
         
         colTasks.forEach(app => {
             const card = document.createElement('div');
-            card.className = "job-card bg-bg-elevated p-4 rounded-xl border border-border shadow-sm flex flex-col gap-2 cursor-grab active:cursor-grabbing hover:border-blue-300 dark:hover:border-blue-500/50 hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out relative group";
+            card.className = "job-card bg-surface-primary p-4 rounded-xl border border-neutral-200/90 dark:border-neutral-800/90 shadow-sm flex flex-col gap-3.5 cursor-grab active:cursor-grabbing hover:border-blue-500/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 relative group";
             card.setAttribute('draggable', 'true');
             card.setAttribute('ondragstart', 'drag(event)');
             card.setAttribute('ondragend', 'dragEnd(event)');
             card.setAttribute('data-id', app.id);
             
-            const packageBadge = app.package ? `<span class="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-2 py-1 rounded-md"><i class="fa-solid fa-indian-rupee-sign text-[0.6rem]"></i> ${app.package} LPA</span>` : '';
-            const locationBadge = app.location ? `<span class="bg-slate-100 dark:bg-slate-800/50 text-[0.65rem] text-slate-600 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/50 flex items-center gap-1"><i class="fa-solid fa-map-marker-alt"></i> ${app.location}</span>` : '';
-            const eligibilityBadge = app.eligibility ? `<span class="bg-slate-100 dark:bg-slate-800/50 text-[0.65rem] text-slate-600 dark:text-slate-400 font-semibold px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700/50">${app.eligibility}</span>` : '';
-            const linkBtn = app.link ? `<a href="${app.link}" target="_blank" rel="noopener noreferrer" class="text-text-muted hover:text-accent-primary transition-colors p-1" title="Open Career Portal"><i class="fa-solid fa-external-link-alt text-[0.8rem]"></i></a>` : '';
+            const packageBadge = app.package ? `<span class="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"><i class="fa-solid fa-indian-rupee-sign text-[9px]"></i> ${app.package} LPA</span>` : '';
+            const locationBadge = app.location ? `<span class="bg-surface-secondary text-[11px] text-neutral-600 dark:text-neutral-400 font-medium px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 flex items-center gap-1 truncate max-w-[140px]"><i class="fa-solid fa-map-marker-alt text-[9px] text-neutral-400"></i> ${app.location}</span>` : '';
+            const eligibilityBadge = app.eligibility ? `<span class="bg-surface-secondary text-[11px] text-neutral-600 dark:text-neutral-400 font-medium px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-800 truncate max-w-[130px]">${app.eligibility}</span>` : '';
+            const linkBtn = app.link ? `<a href="${app.link}" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg text-neutral-400 hover:text-blue-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Open Career Portal"><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>` : '';
             
-            let appliedStr = 'Not Applied';
-            const dateFmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            let appliedStr = 'No deadline';
+            const dateFmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             
             const applied = app.appliedDate;
             if (applied) {
                 appliedStr = `Applied: ${dateFmt(applied)}`;
             } else if (app.deadline) {
-                appliedStr = `Deadline: ${dateFmt(app.deadline)}`;
+                appliedStr = `Due: ${dateFmt(app.deadline)}`;
             }
 
-            const interviewBadge = app.interviewDate ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[0.7rem] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-200 dark:border-amber-800/50"><i class="fa-regular fa-calendar-check"></i> Int: ${dateFmt(app.interviewDate)}</span>` : '';
-
-            const noteIcon = app.notes && app.notes.trim() !== '' ? `<span class="text-accent-primary ml-1" title="Has Notes"><i class="fa-solid fa-file-alt"></i></span>` : '';
-
-            const statusColors = {
-                wishlist: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-                applied: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-                assessment: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-                interview: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-                selected: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-                rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'
-            };
-            const statusLabels = {
-                wishlist: 'Opportunity', applied: 'Applied', assessment: 'OA Round', interview: 'Interview', selected: 'Offer', rejected: 'Rejected'
-            };
-            
-            const statusBadge = `<span class="${statusColors[app.status] || statusColors.wishlist} px-2 py-0.5 rounded-full text-[0.65rem] font-bold uppercase tracking-wider">${statusLabels[app.status] || 'Unknown'}</span>`;
+            const interviewBadge = app.interviewDate ? `<span class="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 border border-amber-500/20"><i class="fa-regular fa-calendar-check text-[9px]"></i> Round: ${dateFmt(app.interviewDate)}</span>` : '';
 
             card.innerHTML = `
                 <div class="flex items-start gap-3 relative">
-                    <div class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center shrink-0 shadow-sm border border-slate-200 dark:border-slate-700">
-                        <span class="text-sm font-bold text-slate-400 dark:text-slate-500">${app.company.charAt(0).toUpperCase()}</span>
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 shadow-inner">
+                        <span class="text-sm font-extrabold text-blue-600 dark:text-blue-400 font-mono">${app.company.charAt(0).toUpperCase()}</span>
                     </div>
                     
-                    <div class="flex-1 min-w-0 pr-6">
-                        <h4 class="font-bold text-text-primary text-[0.95rem] leading-tight truncate">${app.role}</h4>
-                        <p class="text-[0.8rem] text-text-secondary truncate mt-0.5">${app.company}</p>
-                        
-                        <div class="flex flex-wrap items-center gap-2 mt-2">
-                            ${statusBadge}
-                            ${packageBadge}
-                        </div>
-                        <div class="flex flex-wrap items-center gap-1.5 mt-2">
-                            ${locationBadge}
-                            ${eligibilityBadge}
-                        </div>
-                        <div class="mt-2">
-                            ${interviewBadge}
-                        </div>
+                    <div class="flex-1 min-w-0 pr-12">
+                        <h4 class="font-bold text-neutral-900 dark:text-white text-sm leading-tight truncate">${app.role}</h4>
+                        <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 truncate mt-0.5">${app.company}</p>
                     </div>
                     
-                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0 bg-bg-elevated pl-1 rounded-l-md">
-                        <button class="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-amber-500 transition-all duration-200 ease-out hover:scale-110 active:scale-95 text-[0.8rem]" onclick="archivePlacement('${app.id}')" title="Archive">
-                            <i class="fa-solid fa-archive"></i>
+                    <div class="flex items-center gap-1 absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-primary pl-1 py-0.5 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                        <button class="w-6 h-6 flex items-center justify-center rounded text-neutral-400 hover:text-amber-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all text-xs" onclick="archivePlacement('${app.id}')" title="Archive application">
+                            <i class="fa-solid fa-box-archive"></i>
                         </button>
-                        <button class="w-6 h-6 flex items-center justify-center rounded text-text-muted hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-danger transition-all duration-200 ease-out hover:scale-110 active:scale-95 text-[0.8rem]" onclick="deleteApplication('${app.id}')" title="Delete">
+                        <button class="w-6 h-6 flex items-center justify-center rounded text-neutral-400 hover:text-rose-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all text-xs" onclick="deleteApplication('${app.id}')" title="Delete application">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 </div>
+
+                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                    ${packageBadge}
+                    ${locationBadge}
+                    ${eligibilityBadge}
+                </div>
+
+                ${interviewBadge ? `<div class="pt-0.5">${interviewBadge}</div>` : ''}
                 
-                <div class="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[0.75rem] text-text-muted flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> ${appliedStr} ${noteIcon}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
+                <div class="flex items-center justify-between pt-2.5 border-t border-neutral-100 dark:border-neutral-800/80 text-[11px] text-neutral-500">
+                    <span class="flex items-center gap-1 font-mono text-[10px]">
+                        <i class="fa-regular fa-clock"></i> ${appliedStr}
+                    </span>
+
+                    <div class="flex items-center gap-1.5">
                         ${app.status === 'wishlist' ? `
-                            <button onclick="event.stopPropagation(); studentApplyNow('${app.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95" title="Apply to this company">
+                            <button onclick="event.stopPropagation(); studentApplyNow('${app.id}')" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer" title="Apply to this company">
                                 <i class="fa-solid fa-paper-plane text-[9px]"></i> Apply Now
                             </button>
                         ` : ''}
                         ${linkBtn}
                     </div>
-                </div>
-
-                <!-- Drag Hint Pill -->
-                <div class="drag-hint-pill">
-                    <span class="inline-flex items-center gap-1.5 bg-slate-800/80 dark:bg-white/10 backdrop-blur-sm text-white dark:text-slate-200 text-[0.6rem] font-semibold px-2.5 py-1 rounded-full shadow-lg border border-white/10">
-                        <i class="fa-solid fa-grip-dots-vertical text-slate-400"></i> Drag to move stage
-                    </span>
                 </div>
             `;
             contentEl.appendChild(card);
@@ -451,35 +419,36 @@ const renderPlacements = () => {
 const renderStats = () => {
     if (!summaryStats) return;
     
-    const totalApplied = placements.filter(p => p.status !== 'wishlist').length;
-    const pendingOA = placements.filter(p => p.status === 'assessment').length;
-    const activeInterviews = placements.filter(p => p.status === 'interview').length;
-    const offers = placements.filter(p => p.status === 'selected').length;
+    const unarchived = placements.filter(p => !p.isArchived);
+    const totalAvailable = unarchived.filter(p => p.status === 'wishlist').length;
+    const totalApplied = unarchived.filter(p => p.status === 'applied').length;
+    const pendingOA = unarchived.filter(p => p.status === 'assessment').length;
+    const activeInterviews = unarchived.filter(p => p.status === 'interview').length;
     
     summaryStats.innerHTML = `
-        <div class="stat-card bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-slate-800/50 relative overflow-hidden group">
-            <i class="fa-solid fa-paper-plane absolute top-4 right-4 text-4xl text-blue-500/10 dark:text-blue-400/10 group-hover:scale-110 transition-transform"></i>
-            <p class="text-sm text-text-secondary font-medium mb-1">Total Applied</p>
-            <h3 class="text-4xl font-black text-text-primary mb-2">${totalApplied}</h3>
-            <span class="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-arrow-trend-up mr-1"></i>+3 this week</span>
+        <div class="stat-card bg-surface-elevated/70 subtle-glass p-4 sm:p-5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-sm transition-all hover:-translate-y-1 relative overflow-hidden group">
+            <i class="fa-solid fa-briefcase absolute top-3 right-3 text-3xl text-blue-500/10 dark:text-blue-400/10 group-hover:scale-110 transition-transform"></i>
+            <p class="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-1">Available Drives</p>
+            <h3 class="text-3xl font-black text-neutral-900 dark:text-white mb-1 font-mono">${totalAvailable}</h3>
+            <span class="text-[11px] text-blue-600 dark:text-blue-400 font-mono">Open Opportunities</span>
         </div>
-        <div class="stat-card bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-slate-800/50 relative overflow-hidden group">
-            <i class="fa-solid fa-laptop-code absolute top-4 right-4 text-4xl text-purple-500/10 dark:text-purple-400/10 group-hover:scale-110 transition-transform"></i>
-            <p class="text-sm text-text-secondary font-medium mb-1">Pending OAs</p>
-            <h3 class="text-4xl font-black text-text-primary mb-2">${pendingOA}</h3>
-            <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">Needs attention</span>
+        <div class="stat-card bg-surface-elevated/70 subtle-glass p-4 sm:p-5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-sm transition-all hover:-translate-y-1 relative overflow-hidden group">
+            <i class="fa-solid fa-paper-plane absolute top-3 right-3 text-3xl text-cyan-500/10 dark:text-cyan-400/10 group-hover:scale-110 transition-transform"></i>
+            <p class="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-1">Total Applied</p>
+            <h3 class="text-3xl font-black text-neutral-900 dark:text-white mb-1 font-mono">${totalApplied}</h3>
+            <span class="text-[11px] text-cyan-600 dark:text-cyan-400 font-mono">Applications Sent</span>
         </div>
-        <div class="stat-card bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-slate-800/50 relative overflow-hidden group">
-            <i class="fa-solid fa-comments absolute top-4 right-4 text-4xl text-amber-500/10 dark:text-amber-400/10 group-hover:scale-110 transition-transform"></i>
-            <p class="text-sm text-text-secondary font-medium mb-1">Active Interviews</p>
-            <h3 class="text-4xl font-black text-text-primary mb-2">${activeInterviews}</h3>
-            <span class="text-xs text-emerald-500 font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-arrow-trend-up mr-1"></i>+1 this week</span>
+        <div class="stat-card bg-surface-elevated/70 subtle-glass p-4 sm:p-5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-sm transition-all hover:-translate-y-1 relative overflow-hidden group">
+            <i class="fa-solid fa-laptop-code absolute top-3 right-3 text-3xl text-purple-500/10 dark:text-purple-400/10 group-hover:scale-110 transition-transform"></i>
+            <p class="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-1">Pending OAs</p>
+            <h3 class="text-3xl font-black text-neutral-900 dark:text-white mb-1 font-mono">${pendingOA}</h3>
+            <span class="text-[11px] text-purple-600 dark:text-purple-400 font-mono">Online Assessments</span>
         </div>
-        <div class="stat-card bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-slate-800/50 relative overflow-hidden group">
-            <i class="fa-solid fa-trophy absolute top-4 right-4 text-4xl text-emerald-500/10 dark:text-emerald-400/10 group-hover:scale-110 transition-transform"></i>
-            <p class="text-sm text-text-secondary font-medium mb-1">Offers</p>
-            <h3 class="text-4xl font-black text-text-primary mb-2">${offers}</h3>
-            <span class="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">Target: 3</span>
+        <div class="stat-card bg-surface-elevated/70 subtle-glass p-4 sm:p-5 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-sm transition-all hover:-translate-y-1 relative overflow-hidden group">
+            <i class="fa-solid fa-comments absolute top-3 right-3 text-3xl text-amber-500/10 dark:text-amber-400/10 group-hover:scale-110 transition-transform"></i>
+            <p class="text-xs text-neutral-500 font-semibold uppercase tracking-wider mb-1">Active Interviews</p>
+            <h3 class="text-3xl font-black text-neutral-900 dark:text-white mb-1 font-mono">${activeInterviews}</h3>
+            <span class="text-[11px] text-amber-600 dark:text-amber-400 font-mono">Live Rounds</span>
         </div>
     `;
 };
@@ -855,13 +824,11 @@ const getChartData = () => {
         wishlist: 0,
         applied: 0,
         assessment: 0,
-        interview: 0,
-        selected: 0,
-        rejected: 0
+        interview: 0
     };
     
     placements.forEach(p => {
-        if(counts[p.status] !== undefined) {
+        if (!p.isArchived && counts[p.status] !== undefined) {
             counts[p.status]++;
         }
     });
@@ -870,9 +837,7 @@ const getChartData = () => {
         counts.wishlist, 
         counts.applied, 
         counts.assessment, 
-        counts.interview, 
-        counts.selected, 
-        counts.rejected
+        counts.interview
     ];
 };
 
@@ -885,28 +850,26 @@ const renderChart = () => {
     }
     
     const data = getChartData();
-    const isDark = document.body.classList.contains('dark-theme');
-    const textColor = isDark ? 'rgba(255,255,255,0.7)' : '#475569';
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#94a3b8' : '#475569';
     
-    // Tailwind Colors (Slate, Blue, Purple, Amber, Emerald, Rose)
+    // Tailwind Colors: Blue, Cyan, Purple, Amber
     const backgroundColors = [
-        '#94a3b8', // Slate-400
         '#3b82f6', // Blue-500
+        '#06b6d4', // Cyan-500
         '#a855f7', // Purple-500
-        '#f59e0b', // Amber-500
-        '#10b981', // Emerald-500
-        '#f43f5e'  // Rose-500
+        '#f59e0b'  // Amber-500
     ];
     
     funnelChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Wishlist', 'Applied', 'Assessment', 'Interview', 'Selected', 'Rejected'],
+            labels: ['Available', 'Applied', 'Assessment', 'Interview'],
             datasets: [{
                 data: data,
                 backgroundColor: backgroundColors,
                 borderWidth: isDark ? 2 : 0,
-                borderColor: isDark ? '#0f172a' : '#ffffff', // slate-900 or white
+                borderColor: isDark ? '#18181b' : '#ffffff',
                 hoverOffset: 4
             }]
         },
@@ -928,10 +891,10 @@ const renderChart = () => {
                     }
                 },
                 tooltip: {
-                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                    backgroundColor: isDark ? 'rgba(24, 24, 27, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     titleColor: isDark ? '#f8fafc' : '#0f172a',
                     bodyColor: isDark ? '#cbd5e1' : '#475569',
-                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                    borderColor: isDark ? '#27272a' : '#e2e8f0',
                     borderWidth: 1,
                     padding: 10,
                     boxPadding: 4,
@@ -951,7 +914,7 @@ const renderUpcomingJobs = () => {
     if (!listContainer) return;
     
     // Filter active pipeline jobs
-    let activeJobs = placements.filter(p => p.status !== 'selected' && p.status !== 'rejected' && p.deadline);
+    let activeJobs = placements.filter(p => !p.isArchived && p.deadline);
     
     // Sort by deadline (closest first)
     activeJobs.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
@@ -960,16 +923,16 @@ const renderUpcomingJobs = () => {
     activeJobs = activeJobs.slice(0, 3);
     
     if (activeJobs.length === 0) {
-        listContainer.innerHTML = `<div class="p-4 text-center text-sm text-text-muted bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">No upcoming milestones right now</div>`;
+        listContainer.innerHTML = `<div class="sm:col-span-3 p-6 text-center text-xs text-neutral-400 dark:text-neutral-500 bg-surface-primary rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800 italic">No upcoming deadlines or milestones scheduled</div>`;
         return;
     }
     
     listContainer.innerHTML = '';
     
     const colors = [
-        { bg: 'bg-blue-100 dark:bg-blue-900/40', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-200 dark:border-blue-800/50' },
-        { bg: 'bg-purple-100 dark:bg-purple-900/40', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800/50' },
-        { bg: 'bg-amber-100 dark:bg-amber-900/40', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-200 dark:border-amber-800/50' }
+        { bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', badge: 'text-blue-500' },
+        { bg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', badge: 'text-purple-500' },
+        { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', badge: 'text-amber-500' }
     ];
     
     activeJobs.forEach((job, index) => {
@@ -978,18 +941,20 @@ const renderUpcomingJobs = () => {
         const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
         const c = colors[index % colors.length];
         
-        // Map status for friendly text
-        const statusLabels = { wishlist: 'Wishlist', applied: 'Applied', assessment: 'Online Assessment (OA)', interview: 'Interview' };
+        const statusLabels = { wishlist: 'Available', applied: 'Applied', assessment: 'OA Round', interview: 'Interview' };
         
         listContainer.innerHTML += `
-            <div onclick="openJobDetails('${job.id}')" class="flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-                <div class="w-12 h-12 rounded-xl ${c.bg} ${c.text} flex flex-col items-center justify-center shrink-0 border ${c.border} shadow-inner">
-                    <span class="text-[0.6rem] font-bold uppercase leading-none mb-1">${month}</span>
-                    <span class="text-lg font-black leading-none">${day}</span>
+            <div onclick="openJobDetails('${job.id}')" class="flex items-center gap-3 p-3.5 rounded-xl bg-surface-primary border border-neutral-200/80 dark:border-neutral-800/80 hover:border-blue-500/40 hover:shadow-md transition-all cursor-pointer group">
+                <div class="w-11 h-11 rounded-xl ${c.bg} flex flex-col items-center justify-center shrink-0 border shadow-xs">
+                    <span class="text-[9px] font-bold uppercase leading-none font-mono">${month}</span>
+                    <span class="text-base font-black leading-none mt-0.5 font-mono">${day}</span>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-text-primary text-sm truncate">${job.company}</h4>
-                    <p class="text-xs text-text-secondary truncate">${statusLabels[job.status] || job.role}</p>
+                    <div class="flex items-center justify-between gap-1">
+                        <h4 class="font-bold text-neutral-900 dark:text-white text-xs truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">${job.company}</h4>
+                        <span class="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-surface-secondary text-neutral-500">${statusLabels[job.status] || 'Active'}</span>
+                    </div>
+                    <p class="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">${job.role}</p>
                 </div>
             </div>
         `;
@@ -1282,25 +1247,57 @@ window.renderArchivedJobs = () => {
     const container = document.getElementById('archived-jobs-list');
     if (!container) return;
     
-    // Fetch placements from LocalStorage directly as requested, though we already have it in memory
     const stored = loadUserPlacementsData();
     const archivedJobs = stored.filter(p => p.isArchived === true);
     
     if (archivedJobs.length === 0) {
-        container.innerHTML = `<div class="text-center text-text-muted text-sm py-10 italic">No archived applications.</div>`;
+        container.innerHTML = `
+            <div class="text-center py-12 px-4 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
+                <div class="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-3 text-neutral-400">
+                    <i class="fa-solid fa-box-open text-lg"></i>
+                </div>
+                <p class="text-xs font-semibold text-neutral-800 dark:text-neutral-200">No Archived Applications</p>
+                <p class="text-[11px] text-neutral-500 mt-0.5">When you archive an application, it will appear here with an instant option to restore.</p>
+            </div>`;
         return;
     }
     
     container.innerHTML = archivedJobs.map(job => {
+        const pkgBadge = job.package ? `<span class="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">₹ ${job.package} LPA</span>` : '';
+        const locBadge = job.location ? `<span class="text-[10px] text-neutral-500 bg-surface-secondary border border-neutral-200 dark:border-neutral-800 px-2 py-0.5 rounded truncate max-w-[120px]">${job.location}</span>` : '';
+
         return `
-            <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden mb-4 transition-all">
-                <div class="p-4">
-                    <h4 class="text-md font-semibold text-slate-800 dark:text-white">${job.role}</h4>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1"><i class="fa-regular fa-building"></i> ${job.company}</p>
+            <div class="bg-surface-primary rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700">
+                <div class="p-4 space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-start gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center font-bold text-xs text-neutral-600 dark:text-neutral-300 shrink-0 border border-neutral-200 dark:border-neutral-700">
+                                ${job.company.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="text-xs font-bold text-neutral-900 dark:text-white leading-tight truncate">${job.role}</h4>
+                                <p class="text-[11px] text-neutral-500 font-medium truncate mt-0.5">${job.company}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                        ${pkgBadge}
+                        ${locBadge}
+                    </div>
                 </div>
-                <div class="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-3">
-                    <button onclick="unarchivePlacement('${job.id}')" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 rounded-lg transition-colors"><i class="fa-solid fa-undo"></i> Restore</button>
-                    <button onclick="deletePlacement('${job.id}')" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/30 dark:hover:bg-red-900/50 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i> Delete</button>
+
+                <div class="bg-surface-secondary/70 px-4 py-2.5 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-mono text-neutral-400">Archived Record</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="unarchivePlacement('${job.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-all cursor-pointer">
+                            <i class="fa-solid fa-arrow-rotate-left text-[10px]"></i>
+                            <span>Unarchive / Restore</span>
+                        </button>
+                        <button onclick="deletePlacement('${job.id}')" class="p-1.5 text-xs text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors" title="Delete permanently">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;

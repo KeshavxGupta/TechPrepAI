@@ -440,7 +440,9 @@ function initAuthSystem() {
       showAuthFeedback('signup-error-msg', 'Account created successfully! Redirecting to login...', false);
 
       setTimeout(() => {
-        window.location.href = `/pages/public/login.html?email=${encodeURIComponent(email)}&registered=true`;
+        const isSub = window.location.pathname.includes('/pages/');
+        const loginUrl = isSub ? 'login.html?email=' + encodeURIComponent(email) + '&registered=true' : 'pages/public/login.html?email=' + encodeURIComponent(email) + '&registered=true';
+        window.location.href = loginUrl;
       }, 700);
     });
   }
@@ -491,7 +493,8 @@ function initAuthSystem() {
 
       if (matchedUser) {
         (window.storage || storage).set(CURRENT_USER_KEY, matchedUser);
-        const isSub = window.location.pathname.includes('/pages/'); const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? (isSub ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html') : (isSub ? '../user/dashboard.html' : 'pages/user/dashboard.html');
+        const isSub = window.location.pathname.includes('/pages/');
+        const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? (isSub ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html') : (isSub ? '../user/dashboard.html' : 'pages/user/dashboard.html');
         showAuthFeedback('login-error-msg', 'Login successful! Redirecting...', false);
         setTimeout(() => {
           window.location.href = redirectTarget;
@@ -540,7 +543,9 @@ function initAuthSystem() {
 
       if (matchedUser) {
         (window.storage || storage).set(CURRENT_USER_KEY, matchedUser);
-        window.location.href = matchedUser.email === 'khushboo2006june@admin.com' ? '/pages/admin/admin-hub.html' : '/pages/user/dashboard.html';
+        const isSub = window.location.pathname.includes('/pages/');
+        const redirectTarget = matchedUser.email === 'khushboo2006june@admin.com' ? (isSub ? '../admin/admin-hub.html' : 'pages/admin/admin-hub.html') : (isSub ? '../user/dashboard.html' : 'pages/user/dashboard.html');
+        window.location.href = redirectTarget;
       } else {
         window.customAlert('Login Error', 'Invalid email or password. Please check your credentials.', 'error');
       }

@@ -1229,9 +1229,18 @@
     });
   };
 
-  // --- STARTER PROFILE PRESET LOADER ---
+  // --- STARTER PROFILE & EXPORT DROPDOWNS ---
   window.toggleSampleProfileDropdown = function() {
     const dropdown = document.getElementById('res-sample-dropdown');
+    const exportDropdown = document.getElementById('res-export-dropdown');
+    if (exportDropdown) exportDropdown.classList.add('hidden');
+    if (dropdown) dropdown.classList.toggle('hidden');
+  };
+
+  window.toggleExportDropdown = function() {
+    const dropdown = document.getElementById('res-export-dropdown');
+    const sampleDropdown = document.getElementById('res-sample-dropdown');
+    if (sampleDropdown) sampleDropdown.classList.add('hidden');
     if (dropdown) dropdown.classList.toggle('hidden');
   };
 
