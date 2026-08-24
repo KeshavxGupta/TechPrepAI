@@ -436,9 +436,14 @@
       faqs = JSON.parse(localStorage.getItem('techprep_faqs'));
     } catch (e) {}
 
-    if (!Array.isArray(faqs) || faqs.length === 0) {
+    if (faqs === null || !Array.isArray(faqs)) {
       faqs = defaultFaqs;
       localStorage.setItem('techprep_faqs', JSON.stringify(defaultFaqs));
+    }
+
+    if (faqs.length === 0) {
+      faqContainer.innerHTML = '<p class="text-xs text-neutral-500 py-6 text-center">No frequently asked questions available at this time.</p>';
+      return;
     }
 
     faqContainer.innerHTML = faqs.map((f, i) => `

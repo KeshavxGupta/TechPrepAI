@@ -535,14 +535,17 @@ function closeDeleteModal() {
   pendingDeleteId = null;
 }
 
-document.getElementById('confirm-delete-btn').addEventListener('click', () => {
-  if (pendingDeleteId) {
-    window.QuizStorage.deleteQuiz(pendingDeleteId);
-    showToast("Quiz deleted successfully.");
-    closeDeleteModal();
-    loadQuizzes();
-  }
-});
+const confirmDelBtn = document.getElementById('confirm-delete-btn');
+if (confirmDelBtn) {
+  confirmDelBtn.addEventListener('click', () => {
+    if (pendingDeleteId) {
+      window.QuizStorage.deleteQuiz(pendingDeleteId);
+      showToast("Quiz deleted successfully.");
+      closeDeleteModal();
+      loadQuizzes();
+    }
+  });
+}
 
 // Reset Quizzes to Default Seeds
 function resetQuizzes() {
@@ -1086,18 +1089,25 @@ window.renderAdminPlacements = renderAdminPlacements;
 // User Directory Operations
 function renderUsers() {
   const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
-  const searchQuery = document.getElementById('user-search').value.trim().toLowerCase();
+  const searchEl = document.getElementById('user-search');
+  const searchQuery = (searchEl ? searchEl.value : '').trim().toLowerCase();
   
-  const students = users.filter(u => u.email !== 'khushboo2006june@admin.com');
+  const students = users.filter(u => u && u.email && u.email.toLowerCase() !== 'khushboo2006june@admin.com');
   
   const filtered = students.filter(s => 
-    s.name.toLowerCase().includes(searchQuery) || 
-    s.email.toLowerCase().includes(searchQuery)
+    (s.name || '').toLowerCase().includes(searchQuery) || 
+    (s.email || '').toLowerCase().includes(searchQuery) ||
+    (s.college || '').toLowerCase().includes(searchQuery) ||
+    (s.branch || '').toLowerCase().includes(searchQuery)
   );
 
-  document.getElementById('user-results-count').textContent = `Showing ${filtered.length} of ${students.length} users`;
+  const countEl = document.getElementById('user-results-count');
+  if (countEl) {
+    countEl.textContent = `Showing ${filtered.length} of ${students.length} users`;
+  }
 
   const listContainer = document.getElementById('user-list-container');
+  if (!listContainer) return;
   listContainer.innerHTML = '';
 
   if (filtered.length === 0) {
@@ -1106,16 +1116,20 @@ function renderUsers() {
     return;
   }
 
+  const escape = window.escapeHTML || function(s) { return s ? String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])) : ''; };
+
   filtered.forEach((student, index) => {
     const completeness = window.checkProfileCompleteness ? window.checkProfileCompleteness(student) : { percentage: 0 };
     const attempts = JSON.parse(localStorage.getItem('techprep_user_quiz_results_' + student.email) || '[]');
+    const resumes = typeof window.getUserResumes === 'function' ? window.getUserResumes(student.email) : (JSON.parse(localStorage.getItem('techprep_user_resumes') || '[]').filter(r => r.userEmail === student.email));
 
     const card = document.createElement('div');
     card.className = "p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-4 text-left transition-all hover:border-neutral-300 dark:hover:border-neutral-700";
     
+    const studentName = student.name || 'Student';
     const avatarHTML = student.profilePic 
-      ? `<img src="${student.profilePic}" alt="${student.name}" class="w-10 h-10 rounded-full object-cover">`
-      : `<div class="w-10 h-10 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold font-mono text-sm">${student.name.substring(0,2).toUpperCase()}</div>`;
+      ? `<img src="${escape(student.profilePic)}" alt="${escape(studentName)}" class="w-10 h-10 rounded-full object-cover">`
+      : `<div class="w-10 h-10 rounded-full bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold font-mono text-sm">${escape(studentName.substring(0,2).toUpperCase())}</div>`;
 
     const suspendedBadge = student.suspended 
       ? `<span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase font-mono tracking-wider border bg-rose-500/10 text-rose-600 border-rose-500/20">Suspended</span>`
@@ -1127,10 +1141,10 @@ function renderUsers() {
           ${avatarHTML}
           <div>
             <h3 class="text-sm font-extrabold text-neutral-900 dark:text-white flex items-center gap-2">
-              ${student.name}
+              ${escape(studentName)}
               ${suspendedBadge}
             </h3>
-            <p class="text-xs text-neutral-500 mt-0.5">${student.email}</p>
+            <p class="text-xs text-neutral-500 mt-0.5">${escape(student.email)}</p>
           </div>
         </div>
         
@@ -1153,14 +1167,14 @@ function renderUsers() {
           <div class="space-y-2">
             <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">Contact & Links</h4>
             <div class="space-y-1 text-xs">
-              <div>Contact: <strong class="text-neutral-900 dark:text-white">${student.contact || 'N/A'}</strong></div>
-              <div>DOB: <strong class="text-neutral-900 dark:text-white">${student.dob || 'N/A'}</strong></div>
-              <div>Address: <strong class="text-neutral-900 dark:text-white">${student.address || 'N/A'}</strong></div>
-              <div class="flex space-x-2.5 mt-2.5 text-[10px] font-mono">
-                ${student.leetcode ? `<a href="${student.leetcode}" target="_blank" class="text-blue-500 hover:underline">Coding Profile</a>` : ''}
-                ${student.github ? `<a href="${student.github}" target="_blank" class="text-blue-500 hover:underline">GitHub</a>` : ''}
-                ${student.linkedin ? `<a href="${student.linkedin}" target="_blank" class="text-blue-500 hover:underline">LinkedIn</a>` : ''}
-                ${student.portfolio ? `<a href="${student.portfolio}" target="_blank" class="text-blue-500 hover:underline">Portfolio</a>` : ''}
+              <div>Contact: <strong class="text-neutral-900 dark:text-white">${escape(student.contact || 'N/A')}</strong></div>
+              <div>DOB: <strong class="text-neutral-900 dark:text-white">${escape(student.dob || 'N/A')}</strong></div>
+              <div>Address: <strong class="text-neutral-900 dark:text-white">${escape(student.address || 'N/A')}</strong></div>
+              <div class="flex flex-wrap gap-2 mt-2 text-[10px] font-mono">
+                ${student.leetcode ? `<a href="${formatUrl(student.leetcode)}" target="_blank" class="text-blue-500 hover:underline">Coding Profile</a>` : ''}
+                ${student.github ? `<a href="${formatUrl(student.github)}" target="_blank" class="text-blue-500 hover:underline">GitHub</a>` : ''}
+                ${student.linkedin ? `<a href="${formatUrl(student.linkedin)}" target="_blank" class="text-blue-500 hover:underline">LinkedIn</a>` : ''}
+                ${student.portfolio ? `<a href="${formatUrl(student.portfolio)}" target="_blank" class="text-blue-500 hover:underline">Portfolio</a>` : ''}
               </div>
             </div>
           </div>
@@ -1169,11 +1183,11 @@ function renderUsers() {
           <div class="space-y-2">
             <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">Academics</h4>
             <div class="space-y-1 text-xs">
-              <div>College: <strong class="text-neutral-900 dark:text-white">${student.college || 'N/A'}</strong></div>
-              <div>Degree: <strong class="text-neutral-900 dark:text-white">${student.degree || 'N/A'} (${student.gradYear || 'N/A'})</strong></div>
-              <div>Branch: <strong class="text-neutral-900 dark:text-white">${student.branch || 'N/A'}</strong></div>
-              <div>CGPA: <strong class="text-blue-600 dark:text-blue-400 font-mono">${student.cgpa || 'N/A'}</strong></div>
-              <div>10th / 12th: <strong class="text-neutral-900 dark:text-white font-mono">${student.marks10 ? student.marks10 + '%' : 'N/A'} / ${student.marks12 ? student.marks12 + '%' : 'N/A'}</strong></div>
+              <div>College: <strong class="text-neutral-900 dark:text-white">${escape(student.college || 'N/A')}</strong></div>
+              <div>Degree: <strong class="text-neutral-900 dark:text-white">${escape(student.degree || 'N/A')} ${student.gradYear ? '(' + escape(student.gradYear) + ')' : ''}</strong></div>
+              <div>Branch: <strong class="text-neutral-900 dark:text-white">${escape(student.branch || 'N/A')} ${student.specialization ? '— ' + escape(student.specialization) : ''}</strong></div>
+              <div>CGPA: <strong class="text-blue-600 dark:text-blue-400 font-mono">${escape(student.cgpa || 'N/A')}</strong></div>
+              <div>10th / 12th: <strong class="text-neutral-900 dark:text-white font-mono">${student.marks10 ? escape(student.marks10) + '%' : 'N/A'} / ${student.marks12 ? escape(student.marks12) + '%' : 'N/A'}</strong></div>
             </div>
           </div>
 
@@ -1181,7 +1195,7 @@ function renderUsers() {
           <div class="space-y-3">
             <div class="space-y-1">
               <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">Skills</h4>
-              <p class="text-xs text-neutral-800 dark:text-neutral-200 leading-relaxed">${student.skills || 'No skills added yet.'}</p>
+              <p class="text-xs text-neutral-800 dark:text-neutral-200 leading-relaxed">${escape(student.skills || 'No skills added yet.')}</p>
             </div>
 
             <div class="space-y-1">
@@ -1190,6 +1204,46 @@ function renderUsers() {
             </div>
           </div>
 
+        </div>
+
+        <!-- Saved Resumes & ATS Score (User-Wise) -->
+        <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
+          <div class="flex items-center justify-between">
+            <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
+              Saved ATS Resume Drafts (${resumes.length} Drafts)
+            </h4>
+            <a href="../admin/admin-resume-studio.html" class="text-[10px] text-blue-500 font-semibold hover:underline">Open Resume Studio →</a>
+          </div>
+          ${resumes.length === 0 
+            ? '<p class="text-[10px] text-neutral-500 font-mono italic">No resume drafts saved yet for this student.</p>'
+            : `
+            <div class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800/60 text-[10px]">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-surface-secondary/70 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 font-mono">
+                    <th class="p-2 font-semibold">Resume Title</th>
+                    <th class="p-2 font-semibold">Template Layout</th>
+                    <th class="p-2 font-semibold">ATS Score</th>
+                    <th class="p-2 font-semibold">Last Updated</th>
+                    <th class="p-2 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/40">
+                  ${resumes.map(r => `
+                    <tr>
+                      <td class="p-2 font-semibold text-neutral-900 dark:text-white">${escape(r.title || 'Untitled Resume')}</td>
+                      <td class="p-2 font-mono text-neutral-500">${escape(r.templateId || 'silicon_valley')}</td>
+                      <td class="p-2 font-mono font-bold text-blue-600 dark:text-blue-400">${r.atsScore ? r.atsScore + '%' : '85%'}</td>
+                      <td class="p-2 text-neutral-500 font-mono">${r.lastUpdated ? new Date(r.lastUpdated).toLocaleDateString() : 'N/A'}</td>
+                      <td class="p-2">
+                        <button onclick="inspectAdminUserResume('${r.id}')" class="px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-blue-600 dark:text-blue-400 font-medium">Inspect</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
         </div>
 
         <!-- Quiz Attempts list -->
@@ -1213,7 +1267,7 @@ function renderUsers() {
                   ${attempts.map(att => `
                     <tr>
                       <td class="p-2 text-neutral-500">${new Date(att.timestamp).toLocaleDateString()}</td>
-                      <td class="p-2 font-semibold">${att.quizTitle}</td>
+                      <td class="p-2 font-semibold">${escape(att.quizTitle)}</td>
                       <td class="p-2 font-mono">${att.scorePercent}%</td>
                       <td class="p-2 text-amber-500 font-semibold font-mono">${att.violations || 0}</td>
                       <td class="p-2 font-semibold ${att.status === 'PASSED' ? 'text-emerald-500' : 'text-rose-500'}">${att.status}</td>
@@ -1254,9 +1308,9 @@ function renderUsers() {
                     ${userSubs.slice(0, 10).map(s => `
                       <tr>
                         <td class="p-2 text-neutral-500">${new Date(s.timestamp).toLocaleDateString()} ${new Date(s.timestamp).toLocaleTimeString()}</td>
-                        <td class="p-2 font-semibold">${s.problemTitle || 'DSA Problem'}</td>
-                        <td class="p-2 font-mono">${s.difficulty || 'Easy'}</td>
-                        <td class="p-2 font-mono uppercase text-blue-500">${s.language || 'js'}</td>
+                        <td class="p-2 font-semibold">${escape(s.problemTitle || 'DSA Problem')}</td>
+                        <td class="p-2 font-mono">${escape(s.difficulty || 'Easy')}</td>
+                        <td class="p-2 font-mono uppercase text-blue-500">${escape(s.language || 'js')}</td>
                         <td class="p-2 font-mono">${s.runtimeMs || 12} ms</td>
                         <td class="p-2 font-semibold ${s.status === 'Accepted' ? 'text-emerald-500' : 'text-rose-500'}">${s.status}</td>
                       </tr>
@@ -1265,6 +1319,8 @@ function renderUsers() {
                 </table>
               </div>`;
           })()}
+        </div>
+
         <!-- Campus Placement Applications & Pipeline Status (User-Wise) -->
         <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
           ${(() => {
@@ -1293,9 +1349,9 @@ function renderUsers() {
                     <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/40">
                       ${userPlacements.map(p => `
                         <tr>
-                          <td class="p-2 font-semibold text-neutral-900 dark:text-white">${escapeHTML(p.company || 'Company')}</td>
-                          <td class="p-2">${escapeHTML(p.role || 'N/A')}</td>
-                          <td class="p-2 font-mono text-emerald-600 dark:text-emerald-400">${p.package ? p.package + ' LPA' : 'N/A'}</td>
+                          <td class="p-2 font-semibold text-neutral-900 dark:text-white">${escape(p.company || 'Company')}</td>
+                          <td class="p-2">${escape(p.role || 'N/A')}</td>
+                          <td class="p-2 font-mono text-emerald-600 dark:text-emerald-400">${p.package ? escape(p.package) + ' LPA' : 'N/A'}</td>
                           <td class="p-2">
                             <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase font-mono tracking-wider ${
                               p.status === 'selected' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
@@ -1304,7 +1360,7 @@ function renderUsers() {
                               p.status === 'rejected' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20' :
                               'bg-blue-500/10 text-blue-600 border border-blue-500/20'
                             }">
-                              ${escapeHTML(p.status || 'applied')}
+                              ${escape(p.status || 'applied')}
                             </span>
                           </td>
                           <td class="p-2 text-neutral-500 font-mono">${p.appliedDate ? new Date(p.appliedDate).toLocaleDateString() : 'N/A'}</td>
@@ -1383,20 +1439,31 @@ function renderUsersMetrics(students) {
   const activePct = Math.round((activeCount / totalStudents) * 100);
   const suspendedPct = Math.round((suspendedCount / totalStudents) * 100);
 
-  document.getElementById('chart-complete-count').textContent = completeCount;
-  document.getElementById('chart-complete-bar').style.width = `${completePct}%`;
+  const cCountEl = document.getElementById('chart-complete-count');
+  const cBarEl = document.getElementById('chart-complete-bar');
+  const inCountEl = document.getElementById('chart-incomplete-count');
+  const inBarEl = document.getElementById('chart-incomplete-bar');
+  const actCountEl = document.getElementById('chart-active-count');
+  const actBarEl = document.getElementById('chart-active-bar');
+  const suspCountEl = document.getElementById('chart-suspended-count');
+  const suspBarEl = document.getElementById('chart-suspended-bar');
+  const avgCgpaEl = document.getElementById('metrics-avg-cgpa');
+  const totalAttEl = document.getElementById('metrics-total-attempts');
+
+  if (cCountEl) cCountEl.textContent = completeCount;
+  if (cBarEl) cBarEl.style.width = `${completePct}%`;
   
-  document.getElementById('chart-incomplete-count').textContent = incompleteCount;
-  document.getElementById('chart-incomplete-bar').style.width = `${incompletePct}%`;
+  if (inCountEl) inCountEl.textContent = incompleteCount;
+  if (inBarEl) inBarEl.style.width = `${incompletePct}%`;
 
-  document.getElementById('chart-active-count').textContent = activeCount;
-  document.getElementById('chart-active-bar').style.width = `${activePct}%`;
+  if (actCountEl) actCountEl.textContent = activeCount;
+  if (actBarEl) actBarEl.style.width = `${activePct}%`;
 
-  document.getElementById('chart-suspended-count').textContent = suspendedCount;
-  document.getElementById('chart-suspended-bar').style.width = `${suspendedPct}%`;
+  if (suspCountEl) suspCountEl.textContent = suspendedCount;
+  if (suspBarEl) suspBarEl.style.width = `${suspendedPct}%`;
 
   const avgCgpa = cgpaUsers ? (totalCgpa / cgpaUsers).toFixed(2) : '0.00';
-  document.getElementById('metrics-avg-cgpa').textContent = avgCgpa;
+  if (avgCgpaEl) avgCgpaEl.textContent = avgCgpa;
 
   let totalAttemptsCount = 0;
   const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
@@ -1407,7 +1474,7 @@ function renderUsersMetrics(students) {
   const guestAttempts = JSON.parse(localStorage.getItem('techprep_user_quiz_results_guest') || '[]');
   totalAttemptsCount += guestAttempts.length;
   
-  document.getElementById('metrics-total-attempts').textContent = totalAttemptsCount;
+  if (totalAttEl) totalAttEl.textContent = totalAttemptsCount;
 }
 
 // Administrative suspension toggler
@@ -1441,6 +1508,14 @@ function handleAdminResetPassword(email, inputId) {
     pwdInput.value = '';
   }
 }
+
+// Global function exports for User Management
+window.renderUsers = renderUsers;
+window.toggleDetails = toggleDetails;
+window.toggleUserSuspension = toggleUserSuspension;
+window.handleAdminResetPassword = handleAdminResetPassword;
+window.renderUsersMetrics = renderUsersMetrics;
+
 
 // Admin profile settings page controller
 function loadAdminProfileForm() {
@@ -1649,10 +1724,10 @@ function switchSiteMgmtSubTab(subName) {
 /* --- 1. FAQ MANAGER --- */
 function getFAQs() {
   const raw = localStorage.getItem('techprep_faqs');
-  if (raw) {
+  if (raw !== null) {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed)) return parsed;
     } catch {}
   }
   // Default seed FAQs
@@ -2237,6 +2312,98 @@ function initAdminProfileHandlers() {
   }
 }
 
+function inspectAdminUserResume(resumeId) {
+  const modal = document.getElementById('admin-inspect-resume-modal');
+  const container = document.getElementById('admin-inspect-resume-container');
+  if (!modal || !container) {
+    window.location.href = '../admin/admin-resume-studio.html';
+    return;
+  }
+
+  const allResumes = JSON.parse(localStorage.getItem('techprep_user_resumes') || '[]');
+  const target = allResumes.find(r => r.id === resumeId);
+  if (!target) {
+    if (window.customAlert) window.customAlert('Not Found', 'Resume draft not found.', 'warning');
+    return;
+  }
+
+  const info = target.personalInfo || {};
+  const skills = target.skills || {};
+  const escape = window.escapeHTML || function(s) { return s || ''; };
+
+  container.innerHTML = `
+    <div class="p-6 bg-white text-gray-900 rounded-lg shadow font-sans text-xs text-left leading-relaxed space-y-4 max-h-[75vh] overflow-y-auto">
+      <div class="border-b-2 border-blue-600 pb-3">
+        <h2 class="text-xl font-bold uppercase tracking-tight text-gray-900">${escape(info.name || target.userName || 'Student')}</h2>
+        <div class="text-xs font-semibold text-blue-600 uppercase font-mono">${escape(info.title || 'Engineer')} • ATS Score: ${target.atsScore ? target.atsScore + '%' : '85%'}</div>
+        <div class="flex flex-wrap gap-3 text-[11px] text-gray-600 font-mono mt-1">
+          <span>Email: ${escape(info.email || target.userEmail || 'N/A')}</span>
+          <span>Phone: ${escape(info.phone || 'N/A')}</span>
+          <span>Location: ${escape(info.location || 'N/A')}</span>
+        </div>
+      </div>
+
+      ${info.summary ? `
+      <div>
+        <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Professional Summary</h3>
+        <p class="text-[11px] text-gray-700 mt-1">${escape(info.summary)}</p>
+      </div>` : ''}
+
+      <div>
+        <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Technical Skills</h3>
+        <div class="text-[11px] text-gray-700 mt-1 space-y-0.5">
+          ${skills.languages ? `<div><strong>Languages:</strong> ${escape(skills.languages)}</div>` : ''}
+          ${skills.frameworks ? `<div><strong>Frameworks:</strong> ${escape(skills.frameworks)}</div>` : ''}
+          ${skills.tools ? `<div><strong>Tools:</strong> ${escape(skills.tools)}</div>` : ''}
+          ${skills.coreCS ? `<div><strong>Core CS:</strong> ${escape(skills.coreCS)}</div>` : ''}
+        </div>
+      </div>
+
+      ${(target.experience || []).length ? `
+      <div>
+        <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Work Experience (${(target.experience || []).length} entries)</h3>
+        ${(target.experience || []).map(e => `
+          <div class="mt-2 text-[11px] border-l-2 border-blue-200 pl-2">
+            <div class="font-bold text-gray-900">${escape(e.jobTitle)} — ${escape(e.company)} (${escape(e.startDate)} – ${escape(e.endDate)})</div>
+            <div class="text-gray-600 whitespace-pre-line mt-0.5">${escape(e.description)}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      ${(target.projects || []).length ? `
+      <div>
+        <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Technical Projects (${(target.projects || []).length} entries)</h3>
+        ${(target.projects || []).map(p => `
+          <div class="mt-2 text-[11px] border-l-2 border-purple-200 pl-2">
+            <div class="font-bold text-gray-900">${escape(p.title)} <span class="font-mono font-normal text-gray-500">(${escape(p.techStack)})</span></div>
+            <div class="text-gray-600 whitespace-pre-line mt-0.5">${escape(p.description)}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
+      ${(target.education || []).length ? `
+      <div>
+        <h3 class="font-bold text-xs uppercase font-mono text-blue-600">Education</h3>
+        ${(target.education || []).map(edu => `
+          <div class="mt-1 text-[11px]">
+            <strong>${escape(edu.degree)}</strong> — ${escape(edu.institution)} (${escape(edu.gradYear)})
+          </div>
+        `).join('')}
+      </div>` : ''}
+    </div>`;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeAdminInspectResumeModal() {
+  const modal = document.getElementById('admin-inspect-resume-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
 // Global function exports for onclick references
 window.openFAQModal = openFAQModal;
 window.closeFAQModal = closeFAQModal;
@@ -2253,6 +2420,8 @@ window.renderAuditLogs = renderAuditLogs;
 window.exportAuditLogsCSV = exportAuditLogsCSV;
 window.clearAuditLogs = clearAuditLogs;
 window.loadAdminProfileForm = loadAdminProfileForm;
+window.inspectAdminUserResume = inspectAdminUserResume;
+window.closeAdminInspectResumeModal = closeAdminInspectResumeModal;
 
 document.addEventListener('DOMContentLoaded', () => {
   initAdminProfileHandlers();

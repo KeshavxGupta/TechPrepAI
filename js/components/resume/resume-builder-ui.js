@@ -21,6 +21,7 @@
       currentResume = userResumes[0];
     } else {
       currentResume = createEmptyResumeData();
+      saveUserResume(currentResume);
     }
 
     // Ensure backwards compatibility with older stored resumes

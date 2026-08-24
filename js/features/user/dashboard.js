@@ -1,4 +1,4 @@
-﻿// Mobile Sidebar Toggler
+// Mobile Sidebar Toggler
 window.toggleUserSidebar = function(forceState) {
   const sidebar = document.getElementById('user-sidebar');
   const overlay = document.getElementById('user-sidebar-overlay');
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('techprep_current_user', JSON.stringify(currentUser));
       
       const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
-      const userIdx = users.findIndex(u => u.email === oldEmail);
+      const userIdx = users.findIndex(u => (u.email || '').toLowerCase() === (oldEmail || '').toLowerCase());
       if (userIdx > -1) {
         users[userIdx].name = name;
         users[userIdx].email = email;
@@ -203,9 +203,16 @@ document.addEventListener('DOMContentLoaded', () => {
         users[userIdx].github = currentUser.github;
         users[userIdx].linkedin = currentUser.linkedin;
         users[userIdx].portfolio = currentUser.portfolio;
-        
-        localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+      } else {
+        users.push({
+          ...currentUser,
+          name,
+          email,
+          suspended: false,
+          createdAt: new Date().toISOString()
+        });
       }
+      localStorage.setItem('techprep_registered_users', JSON.stringify(users));
       
       document.getElementById('welcome-user-name').textContent = name;
       document.getElementById('user-display-name').textContent = name;

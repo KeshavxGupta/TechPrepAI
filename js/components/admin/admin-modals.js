@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-admin-modals');
   if (!container) return;
 
@@ -130,6 +130,24 @@
           Delete Quiz
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Student Resume Inspection Modal (in Admin Console) -->
+  <div id="admin-inspect-resume-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-sm">
+    <div class="w-full max-w-3xl bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-2xl p-6 text-left space-y-4 max-h-[85vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
+        <h3 class="text-base font-extrabold text-neutral-900 dark:text-white">Student Resume Inspection View</h3>
+        <button onclick="closeAdminInspectResumeModal()" class="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 p-1" title="Close">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div id="admin-inspect-resume-container">
+        <!-- Rendered dynamically -->
+      </div>
+
     </div>
   </div>`;
 })();

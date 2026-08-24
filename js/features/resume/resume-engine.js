@@ -480,12 +480,21 @@ function getAllUserResumes() {
 
 function saveUserResume(resume) {
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
-  const userName = currentUser ? currentUser.name : 'Guest Student';
+  const userEmail = (resume && resume.userEmail) || (currentUser ? currentUser.email : 'guest@techprepai.com');
+  const userName = (resume && resume.userName) || (currentUser ? currentUser.name : 'Guest Student');
 
   resume.userEmail = userEmail;
   resume.userName = userName;
   resume.lastUpdated = new Date().toISOString();
+
+  if (!resume.atsScore) {
+    try {
+      const analysis = analyzeATSCompatibility(resume);
+      resume.atsScore = analysis.score || 85;
+    } catch {
+      resume.atsScore = 85;
+    }
+  }
 
   const all = getAllUserResumes();
   const idx = all.findIndex(r => r.id === resume.id);
@@ -505,11 +514,36 @@ function deleteUserResume(resumeId) {
   localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
 }
 
-// Create Fresh Default Resume
+// Create Fresh Default Resume with Logged In User Profile Sync
 function createEmptyResumeData(templateId = 'tmpl_silicon_valley') {
   const base = JSON.parse(JSON.stringify(SAMPLE_PROFILES.fullstack));
   base.id = 'res_' + Date.now();
   base.templateId = templateId;
+
+  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  if (currentUser) {
+    base.userEmail = currentUser.email;
+    base.userName = currentUser.name;
+    base.personalInfo = base.personalInfo || {};
+    if (currentUser.name) base.personalInfo.name = currentUser.name;
+    if (currentUser.email) base.personalInfo.email = currentUser.email;
+    if (currentUser.contact) base.personalInfo.phone = currentUser.contact;
+    if (currentUser.address) base.personalInfo.location = currentUser.address;
+    if (currentUser.linkedin) base.personalInfo.linkedin = currentUser.linkedin;
+    if (currentUser.github) base.personalInfo.github = currentUser.github;
+    if (currentUser.portfolio) base.personalInfo.portfolio = currentUser.portfolio;
+
+    if (currentUser.college || currentUser.degree) {
+      base.education = [{
+        degree: currentUser.degree ? `${currentUser.degree} in ${currentUser.branch || 'Computer Science'}` : 'B.Tech in Computer Science',
+        institution: currentUser.college || 'Engineering Institute of Technology',
+        gradYear: currentUser.gradYear || '2026',
+        cgpa: currentUser.cgpa || '8.8',
+        coursework: 'Data Structures & Algorithms, Database Management Systems, Operating Systems'
+      }];
+    }
+  }
+
   return base;
 }
 
