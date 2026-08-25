@@ -13,7 +13,8 @@
 </p>
 
 <p align="center">
-  <a href="#about-the-project">About</a> •
+  <a href="#executive-summary">About</a> •
+  <a href="#ui-showcase--screenshots">Screenshots</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#project-structure">Project Structure</a> •
@@ -32,6 +33,10 @@
 
 Traditional interview preparation is fragmented across disparate platforms — LeetCode for DSA, Overleaf or Reactive Resume for resume generation, Notion or spreadsheets for tracking job drives, and random websites for aptitude tests. **TechPrep AI unifies the entire placement lifecycle into a single, cohesive, lightning-fast workstation with zero server bloat.**
 
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164013.png" alt="TechPrep AI Landing Page & Interactive Dashboard Preview" width="100%" />
+</p>
+
 ```
                      ┌────────────────────────────────────────────────────────┐
                      │                      TechPrep AI                       │
@@ -44,6 +49,69 @@ Traditional interview preparation is fragmented across disparate platforms — L
 │  & Runner │    │  & AI Scanner │     │  (Kanban Board)  │    │ & Bulk Importer │  │ & CMS Studio │
 └───────────┘    └───────────────┘     └──────────────────┘    └─────────────────┘  └──────────────┘
 ```
+
+---
+
+## UI Showcase & Screenshots
+
+Explore the rich user interface and end-to-end preparation modules available inside TechPrep AI:
+
+### 1. In-Browser DSA Problem Studio & Code Runner
+Multi-language client-side execution sandbox (JavaScript, Python, C++, Java) with curated company tags, sample testcase validation, and acceptance telemetry.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164358.png" alt="In-Browser DSA Problem Studio & Code Runner IDE" width="100%" />
+</p>
+
+---
+
+### 2. ATS-Grade Resume Builder & Live Intelligence Scanner
+Real-time ATS scoring analyzer (99% score validation), instant recruiter-grade template switcher, custom palette selector, and pixel-perfect A4 PDF export.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164416.png" alt="ATS Resume Builder and Intelligence Scanner" width="100%" />
+</p>
+
+---
+
+### 3. Campus & Off-Campus Placement Command Center
+Interactive drag-and-drop Kanban pipeline tracking drives from Wishlist to Offer, with package metrics (CTC in LPA), deadlines, and interview schedules.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164510.png" alt="Placement Application Tracker Kanban Pipeline" width="100%" />
+</p>
+
+---
+
+### 4. Interactive Quiz & Technical Assessment Portal
+Mock examination portal supporting topic filters (JavaScript, DSA Trees/Graphs, DBMS), question timers, and instant diagnostics.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164135.png" alt="Interactive Quiz & Assessment Portal" width="100%" />
+</p>
+
+---
+
+### 5. Notes & Daily Study Planner Workspace
+Integrated CS revision notes organizer, weekly milestone targets, and gamified activity streak tracking.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164534.png" alt="Notes & Daily Study Planner" width="100%" />
+</p>
+
+---
+
+### 6. Student Profile, Academics & Credentials Hub
+Complete profile management tracking personal details, college academics (CGPA, 10th/12th scores), and external coding profiles (LeetCode, GitHub, LinkedIn).
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164222.png" alt="Profile Settings & Basic Info" width="100%" />
+</p>
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164304.png" alt="Academic Scores and Coding Profiles" width="100%" />
+</p>
+
+---
+
+### 7. Authentication & Security Gateway
+Streamlined, glassmorphic login modal with client-side credential verification and role-based redirecting.
+<p align="center">
+  <img src="photos/Screenshot%202026-08-25%20164108.png" alt="Authentication Gateway Modal" width="100%" />
+</p>
 
 ---
 
@@ -129,6 +197,17 @@ TechPrepAI/
 ├── 404.html                         # Error 404 handler with quick navigation
 ├── README.md                        # Project documentation & reference
 ├── .gitignore                       # Git ignore configuration
+│
+├── photos/                          # High-resolution platform UI screenshots & preview assets
+│   ├── Screenshot 2026-08-25 164013.png # Hero landing page & live dashboard preview
+│   ├── Screenshot 2026-08-25 164108.png # User authentication & login modal
+│   ├── Screenshot 2026-08-25 164135.png # Student quiz assessment dashboard
+│   ├── Screenshot 2026-08-25 164222.png # Profile settings & completeness meter
+│   ├── Screenshot 2026-08-25 164304.png # Academic scores & coding platform links
+│   ├── Screenshot 2026-08-25 164358.png # DSA Problem Studio & in-browser IDE
+│   ├── Screenshot 2026-08-25 164416.png # ATS Resume Builder & live score analyzer
+│   ├── Screenshot 2026-08-25 164510.png # Placement Application Kanban tracker
+│   └── Screenshot 2026-08-25 164534.png # Notes & Daily Study Planner workspace
 │
 ├── css/
 │   └── styles.css                   # Global styles, variables, & glassmorphism
