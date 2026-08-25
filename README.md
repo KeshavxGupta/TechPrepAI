@@ -5,28 +5,28 @@
 </p>
 
 <p align="center">
-  <a href="#-key-features"><img src="https://img.shields.io/badge/Features-DSA%20|%20Resume%20|%20Placements%20|%20Quizzes-blue?style=for-the-badge" alt="Features" /></a>
-  <a href="#-quick-start"><img src="https://img.shields.io/badge/Setup-Zero%20Config%20/%20Instant-success?style=for-the-badge" alt="Zero Config" /></a>
-  <a href="#-tech-stack"><img src="https://img.shields.io/badge/Stack-Vanilla%20ES6+%20%7C%20TailwindCSS-purple?style=for-the-badge" alt="Stack" /></a>
+  <a href="#key-features"><img src="https://img.shields.io/badge/Features-DSA%20|%20Resume%20|%20Placements%20|%20Quizzes-blue?style=for-the-badge" alt="Features" /></a>
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Setup-Zero%20Config%20/%20Instant-success?style=for-the-badge" alt="Zero Config" /></a>
+  <a href="#tech-stack"><img src="https://img.shields.io/badge/Stack-Vanilla%20ES6+%20%7C%20TailwindCSS-purple?style=for-the-badge" alt="Stack" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License" /></a>
-  <a href="#-architecture"><img src="https://img.shields.io/badge/Architecture-Modular%20Client--First-brightgreen?style=for-the-badge" alt="Client First" /></a>
+  <a href="#architecture"><img src="https://img.shields.io/badge/Architecture-Modular%20Client--First-brightgreen?style=for-the-badge" alt="Client First" /></a>
 </p>
 
 <p align="center">
-  <a href="#-about-the-project">About</a> •
-  <a href="#-key-features">Key Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-project-structure">Project Structure</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-deep-dive-modules">Module Deep Dives</a> •
-  <a href="#-data-persistence--storage">Data & Storage</a> •
-  <a href="#-roadmap">Roadmap</a> •
-  <a href="#-contributing">Contributing</a>
+  <a href="#about-the-project">About</a> •
+  <a href="#key-features">Key Features</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#project-structure">Project Structure</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#deep-dive-modules">Module Deep Dives</a> •
+  <a href="#data-persistence--storage-keys">Data & Storage</a> •
+  <a href="#roadmap">Roadmap</a> •
+  <a href="#contributing">Contributing</a>
 </p>
 
 ---
 
-## ⚡ Executive Summary
+## Executive Summary
 
 **TechPrep AI** is an end-to-end, high-performance web platform crafted for computer science students, software engineering aspirants, and career transitioners targeting Tier-1 tech companies, FAANG, and high-growth startups.
 
@@ -47,43 +47,43 @@ Traditional interview preparation is fragmented across disparate platforms — L
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-### 💻 1. In-Browser DSA Problem Studio & Code Runner
+### 1. In-Browser DSA Problem Studio & Code Runner
 - **Multi-Language Sandbox**: Write and execute algorithms in JavaScript, Python, C++, and Java.
 - **Pre-loaded Curated Question Bank**: Includes classic patterns (Two Sum, Valid Anagram, Reverse Linked List, Binary Tree Inversion) with curated company tags (Google, Meta, Amazon, Microsoft, Apple, Uber).
 - **Testcase Evaluator & Visual Assertion**: Real-time evaluation against custom and seed test cases with execution time and pass/fail telemetry.
 - **Company & Category Filters**: Slice questions by Topic (*Arrays & Hashing*, *Two Pointers*, *Trees*, *Graphs*, *DP*) or Target Company.
 
-### 📄 2. ATS-Grade Resume Builder & Intelligence Scanner
+### 2. ATS-Grade Resume Builder & Intelligence Scanner
 - **6+ Recruiter-Engineered Templates**: Silicon Valley Standard (ATS #1), Modern Tech Sidebar, Clean Minimal, Senior Staff, and Academic layouts.
 - **Live Interactive ATS Score Analyzer**: Evaluates metric quantification, action verb density, section structure completeness, and keyword presence with actionable suggestions.
 - **Design Studio**: Custom color palettes (*Sapphire Blue, Slate Obsidian, Emerald Forest, Royal Indigo*) and typography selection (*Inter, JetBrains Mono, Roboto, Outfit, Georgia*).
 - **Pixel-Perfect A4 Live Export**: Instant browser print to PDF without third-party watermarks or delays.
 
-### 🎯 3. Campus & Off-Campus Placement Command Center
+### 3. Campus & Off-Campus Placement Command Center
 - **Interactive Kanban Pipeline**: Track applications across 6 workflow stages:
   $$\text{Wishlist} \longrightarrow \text{Applied} \longrightarrow \text{Online Assessment} \longrightarrow \text{Technical Round} \longrightarrow \text{HR / Final} \longrightarrow \text{Offer Received}$$
 - **Package & Metric Insights**: Track CTC / stipend metrics (LPA / USD), application deadlines with live countdown indicators, eligibility criteria, and interview logs.
 - **Archive & Filtering Engine**: Instant search by company name, CTC bracket, or recruitment phase.
 
-### 🧠 4. Timed Quiz & Technical Assessment Engine
+### 4. Timed Quiz & Technical Assessment Engine
 - **Mock Assessment Simulator**: Timed testing environment with question palette, instant flagged questions, and autosave.
 - **Bulk Question Ingestor**: Upload questions via **CSV**, **Aiken `.txt` format**, **Microsoft Word (`.docx`)**, or **Excel (`.xlsx`)**.
 - **Instant Diagnostic Analytics**: Detailed score breakdowns, accuracy percentages, topic-wise strengths/weaknesses, and answer key reviews with explanations.
 
-### 📅 5. AI Preparation Planner & Study Workspace
+### 5. AI Preparation Planner & Study Workspace
 - **Actionable Task Board**: Track daily DSA problem quotas, resume revisions, and project milestones.
 - **Dedicated Rich Notes Hub**: Store algorithmic templates, system design notes, and interview flashcards with instant keyword filtering.
 - **Daily Streak Counter**: Gamified consistency tracking to maintain preparation momentum.
 
-### 🛡️ 6. Role-Based Dual Persona (Student vs. Administrator)
+### 6. Role-Based Dual Persona (Student vs. Administrator)
 - **Student Dashboard**: Personalized performance overview, profile completeness meter, target company tracker, and quick shortcuts.
 - **Admin Command Center (`/pages/admin/`)**: Complete administrative suite with full CRUD over quizzes, DSA problem authoring, user directory management, and platform analytics.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 TechPrep AI is engineered with a **Modular, Client-First Architecture**. It requires **zero build step**, delivers **instant page loads**, and persists state locally through a centralized storage driver.
 
@@ -121,83 +121,83 @@ flowchart TD
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 TechPrepAI/
-├── 📄 index.html                       # Modern landing page & feature showcase
-├── 📄 404.html                         # Error 404 handler with quick navigation
-├── 📄 README.md                        # Project documentation & reference
-├── 📄 .gitignore                       # Git ignore configuration
+├── index.html                       # Modern landing page & feature showcase
+├── 404.html                         # Error 404 handler with quick navigation
+├── README.md                        # Project documentation & reference
+├── .gitignore                       # Git ignore configuration
 │
-├── 📁 css/
-│   └── 🎨 styles.css                   # Global styles, variables, & glassmorphism
+├── css/
+│   └── styles.css                   # Global styles, variables, & glassmorphism
 │
-├── 📁 data/
-│   ├── 📊 sample_quizzes.csv           # Sample bulk quiz questions (CSV format)
-│   └── 📝 sample_quizzes.txt           # Sample bulk quiz questions (Aiken format)
+├── data/
+│   ├── sample_quizzes.csv           # Sample bulk quiz questions (CSV format)
+│   └── sample_quizzes.txt           # Sample bulk quiz questions (Aiken format)
 │
-├── 📁 js/
-│   ├── 📁 core/                        # Core runtime infrastructure
-│   │   ├── ⚙️ app.js                   # Application bootstrap & lifecycle
-│   │   ├── 🔐 auth.js                  # User authentication, RBAC, profile validation
-│   │   ├── 🌓 theme.js                 # Dark/light theme switcher with persistence
-│   │   └── 🖥️ ui.js                    # Modals, toasts, navigation, & responsive UI
+├── js/
+│   ├── core/                        # Core runtime infrastructure
+│   │   ├── app.js                   # Application bootstrap & lifecycle
+│   │   ├── auth.js                  # User authentication, RBAC, profile validation
+│   │   ├── theme.js                 # Dark/light theme switcher with persistence
+│   │   └── ui.js                    # Modals, toasts, navigation, & responsive UI
 │   │
-│   ├── 📁 features/                    # Domain-specific business logic
-│   │   ├── 📁 admin/
-│   │   │   └── 🎛️ hub.js               # Admin management, bulk importers & CRUD
-│   │   ├── 📁 career/
-│   │   │   ├── 📋 placement-tracker.js # Lightweight placement widget state
-│   │   │   └── 💼 placements.js        # Full Kanban placement pipeline engine
-│   │   ├── 📁 dsa/
-│   │   │   ├── 🧩 dsa-engine.js        # Problem bank, templates & test runner
-│   │   │   └── ⚡ dsa-runner.js        # Client-side code execution sandbox
-│   │   ├── 📁 quiz/
-│   │   │   └── ❓ quiz.js              # Quiz runner, timer, and score calculator
-│   │   ├── 📁 resume/
-│   │   │   ├── 🔍 ats-scanner.js       # ATS keyword & format analysis engine
-│   │   │   └── 📑 resume-engine.js     # Resume templates, state & live renderer
-│   │   └── 📁 user/
-│   │       ├── 📊 dashboard.js         # Student dashboard stats & metrics
-│   │       ├── 🗓️ planner.js           # Tasks, notes, and study planner logic
-│   │       └── 🎯 quiz-user.js         # Student assessment portal logic
+│   ├── features/                    # Domain-specific business logic
+│   │   ├── admin/
+│   │   │   └── hub.js               # Admin management, bulk importers & CRUD
+│   │   ├── career/
+│   │   │   ├── placement-tracker.js # Lightweight placement widget state
+│   │   │   └── placements.js        # Full Kanban placement pipeline engine
+│   │   ├── dsa/
+│   │   │   ├── dsa-engine.js        # Problem bank, templates & test runner
+│   │   │   └── dsa-runner.js        # Client-side code execution sandbox
+│   │   ├── quiz/
+│   │   │   └── quiz.js              # Quiz runner, timer, and score calculator
+│   │   ├── resume/
+│   │   │   ├── ats-scanner.js       # ATS keyword & format analysis engine
+│   │   │   └── resume-engine.js     # Resume templates, state & live renderer
+│   │   └── user/
+│   │       ├── dashboard.js         # Student dashboard stats & metrics
+│   │       ├── planner.js           # Tasks, notes, and study planner logic
+│   │       └── quiz-user.js         # Student assessment portal logic
 │   │
-│   └── 📁 components/                  # Modular UI section renderers
-│       ├── 📁 admin/                   # Admin UI modals, users, and quizzes components
-│       ├── 📁 dsa/                     # Code editor UI & admin studio components
-│       ├── 📁 landing/                 # Hero, demo, features, footer, & modal partials
-│       ├── 📁 resume/                  # Builder UI & template selector components
-│       └── 📁 user/                    # User sidebar, history, and profile components
+│   └── components/                  # Modular UI section renderers
+│       ├── admin/                   # Admin UI modals, users, and quizzes components
+│       ├── dsa/                     # Code editor UI & admin studio components
+│       ├── landing/                 # Hero, demo, features, footer, & modal partials
+│       ├── resume/                  # Builder UI & template selector components
+│       └── user/                    # User sidebar, history, and profile components
 │
-└── 📁 pages/
-    ├── 📁 admin/                       # Administrator portal
-    │   ├── 🛡️ admin-hub.html           # Unified admin dashboard & CMS
-    │   ├── 💻 admin-dsa.html           # DSA problem creator & editor studio
-    │   └── 📄 admin-resume-studio.html # Resume template manager
+└── pages/
+    ├── admin/                       # Administrator portal
+    │   ├── admin-hub.html           # Unified admin dashboard & CMS
+    │   ├── admin-dsa.html           # DSA problem creator & editor studio
+    │   └── admin-resume-studio.html # Resume template manager
     │
-    ├── 📁 user/                        # Authenticated student workspace
-    │   ├── 📊 dashboard.html           # Student overview & progress hub
-    │   ├── 💻 dsa-ide.html             # DSA coding environment & compiler
-    │   ├── 💼 placements.html          # Kanban placement tracker
-    │   ├── 🗓️ planner.html             # Task manager & notes workspace
-    │   ├── ❓ quiz-user.html           # Interactive quiz taking portal
-    │   └── 📄 resume-builder.html      # ATS resume creator & PDF export
+    ├── user/                        # Authenticated student workspace
+    │   ├── dashboard.html           # Student overview & progress hub
+    │   ├── dsa-ide.html             # DSA coding environment & compiler
+    │   ├── placements.html          # Kanban placement tracker
+    │   ├── planner.html             # Task manager & notes workspace
+    │   ├── quiz-user.html           # Interactive quiz taking portal
+    │   └── resume-builder.html      # ATS resume creator & PDF export
     │
-    └── 📁 public/                      # Public documentation & static pages
-        ├── 📖 docs.html                # Documentation & platform guide
-        ├── 📑 dsa-sheets.html          # Curated coding preparation sheets
-        ├── 🔑 login.html               # User & Admin login gateway
-        ├── 📝 signup.html              # Account registration
-        ├── 🤝 partners.html            # University & hiring partner info
-        ├── 🔒 privacy.html             # Privacy policy
-        ├── 🛡️ security.html            # Data security standards
-        └── 📜 terms.html               # Terms of service
+    └── public/                      # Public documentation & static pages
+        ├── docs.html                # Documentation & platform guide
+        ├── dsa-sheets.html          # Curated coding preparation sheets
+        ├── login.html               # User & Admin login gateway
+        ├── signup.html              # Account registration
+        ├── partners.html            # University & hiring partner info
+        ├── privacy.html             # Privacy policy
+        ├── security.html            # Data security standards
+        └── terms.html               # Terms of service
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
@@ -211,7 +211,7 @@ TechPrepAI/
 
 ---
 
-## 🚦 Quick Start
+## Quick Start
 
 TechPrep AI runs instantly with **zero dependencies or npm build steps**. You can clone and launch it in seconds using any local web server.
 
@@ -242,7 +242,7 @@ npx serve . -l 3000
 
 ---
 
-## 🔍 Deep-Dive Modules
+## Deep-Dive Modules
 
 ### 1. ATS Resume Studio & Scoring Algorithm
 The ATS scanner evaluates resumes across four dimensions:
@@ -273,7 +273,7 @@ Question,OptionA,OptionB,OptionC,OptionD,Answer,Explanation
 
 ---
 
-## 💾 Data Persistence & Storage Keys
+## Data Persistence & Storage Keys
 
 TechPrep AI uses structured LocalStorage namespaces for predictable client-side persistence:
 
@@ -291,7 +291,7 @@ TechPrep AI uses structured LocalStorage namespaces for predictable client-side 
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] **v1.0**: Core Platform Release (DSA IDE, Resume Builder, Placement Tracker, Quiz Engine, Admin Hub).
 - [ ] **v1.5**: 
@@ -305,7 +305,7 @@ TechPrep AI uses structured LocalStorage namespaces for predictable client-side 
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Follow these steps:
 
@@ -326,12 +326,12 @@ Contributions are welcome! Follow these steps:
 
 ---
 
-## 📜 License
+## License
 
 Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
 <p align="center">
-  Built with ❤️ for ambitious engineers preparing to conquer their dream tech careers.
+  Built for ambitious engineers preparing to conquer their dream tech careers.
 </p>
