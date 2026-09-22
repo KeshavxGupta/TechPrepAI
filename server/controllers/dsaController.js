@@ -32,6 +32,37 @@ exports.getProblemById = async (req, res, next) => {
 // @desc    Execute code and run test cases
 // @route   POST /api/dsa/run
 // @access  Public
+const compilerService = require('../services/compilerService');
+
+const DEFAULT_TEST_CASES = {
+  'two-sum': [
+    { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+    { input: '[3,2,4]\n6', expectedOutput: '[1,2]' },
+    { input: '[3,3]\n6', expectedOutput: '[0,1]' }
+  ],
+  'valid-anagram': [
+    { input: '"anagram"\n"nagaram"', expectedOutput: 'true' },
+    { input: '"rat"\n"car"', expectedOutput: 'false' }
+  ],
+  'reverse-linked-list': [
+    { input: '[1,2,3,4,5]', expectedOutput: '[5,4,3,2,1]' },
+    { input: '[1,2]', expectedOutput: '[2,1]' }
+  ],
+  'container-with-most-water': [
+    { input: '[1,8,6,2,5,4,8,3,7]', expectedOutput: '49' },
+    { input: '[1,1]', expectedOutput: '1' }
+  ],
+  'coin-change': [
+    { input: '[1,2,5]\n11', expectedOutput: '3' },
+    { input: '[2]\n3', expectedOutput: '-1' }
+  ]
+};
+
+function normalizeSlug(id) {
+  if (!id) return 'two-sum';
+  return id.replace(/^p_/, '').replace(/_/g, '-').toLowerCase();
+}
+
 exports.runCode = async (req, res, next) => {
   try {
     const { problemId, language, code, customInput } = req.body;
@@ -40,21 +71,33 @@ exports.runCode = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Code is required' });
     }
 
-    // Interactive safe execution simulation
-    const runtimeMs = Math.floor(Math.random() * 35) + 30; // 30ms-65ms
-    const memoryMb = (Math.random() * 5 + 38).toFixed(1); // ~40MB
+    const slug = normalizeSlug(problemId);
 
-    const output = {
-      success: true,
-      status: 'Accepted',
-      runtime: `${runtimeMs} ms`,
-      memory: `${memoryMb} MB`,
-      output: `> Running test cases...\n> Test 1: [2, 7, 11, 15], Target = 9 -> Output: [0, 1] (PASSED)\n> Test 2: [3, 2, 4], Target = 6 -> Output: [1, 2] (PASSED)\n> All 3/3 Test Cases Passed!`,
-      passedCases: 3,
-      totalCases: 3
-    };
+    // If user specified custom input, run single execution
+    if (customInput !== undefined && customInput !== null && customInput.trim() !== '') {
+      const result = await compilerService.runCode({
+        language: language || 'javascript',
+        code,
+        customInput,
+        problemSlug: slug
+      });
+      return res.status(200).json({ success: true, result });
+    }
 
-    res.status(200).json({ success: true, result: output });
+    // Otherwise, evaluate sample test cases
+    const testCases = DEFAULT_TEST_CASES[slug] || [
+      { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+      { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
+    ];
+
+    const result = await compilerService.evaluateTestCases({
+      language: language || 'javascript',
+      code,
+      problemSlug: slug,
+      testCases
+    });
+
+    res.status(200).json({ success: true, result });
   } catch (error) {
     next(error);
   }
@@ -71,21 +114,36 @@ exports.submitSolution = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Missing problem or code' });
     }
 
-    const submission = await DsaSubmission.create({
-      studentEmail: (studentEmail || 'guest@techprepai.com').toLowerCase(),
-      problemId,
+    const slug = normalizeSlug(problemId);
+    const testCases = DEFAULT_TEST_CASES[slug] || [
+      { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+      { input: '[3,2,4]\n6', expectedOutput: '[1,2]' },
+      { input: '[3,3]\n6', expectedOutput: '[0,1]' }
+    ];
+
+    const evaluation = await compilerService.evaluateTestCases({
       language: language || 'javascript',
       code,
-      status: 'Accepted',
-      runtime: `${Math.floor(Math.random() * 30) + 40} ms`,
-      memory: `${(Math.random() * 4 + 40).toFixed(1)} MB`,
-      passedCases: 15,
-      totalCases: 15
+      problemSlug: slug,
+      testCases
+    });
+
+    const submission = await DsaSubmission.create({
+      studentEmail: (studentEmail || 'guest@techprepai.com').toLowerCase(),
+      problemId: slug,
+      language: language || 'javascript',
+      code,
+      status: evaluation.status || 'Accepted',
+      runtime: evaluation.runtime || '0 ms',
+      memory: `${evaluation.memoryMb || '40.0'} MB`,
+      passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : testCases.length,
+      totalCases: testCases.length
     });
 
     res.status(201).json({
       success: true,
-      message: 'Solution accepted! All test cases passed.',
+      message: evaluation.status === 'Accepted' ? 'Solution accepted! All test cases passed.' : `Submission Verdict: ${evaluation.status}`,
+      evaluation,
       submission
     });
   } catch (error) {
