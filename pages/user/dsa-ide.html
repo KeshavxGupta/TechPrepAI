@@ -170,18 +170,35 @@
         <div class="flex items-center space-x-3">
           <span class="font-mono text-neutral-500 font-bold">Language:</span>
           <select id="dsa-lang-select" onchange="changeDSALanguage(this.value)" class="p-1 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold focus:outline-none">
-            <option value="javascript">JavaScript (Node.js)</option>
-            <option value="python">Python 3</option>
-            <option value="cpp">C++ 20</option>
-            <option value="java">Java 17</option>
+            <option value="javascript">JavaScript (Node.js 22)</option>
+            <option value="python">Python 3.12</option>
+            <option value="cpp">C++ 20 (G++ 14.2)</option>
+            <option value="java">Java 21 (Adoptium JDK)</option>
           </select>
+          <span id="dsa-compiler-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Host Compiler Active
+          </span>
         </div>
 
         <div class="flex items-center space-x-2">
+          <button onclick="toggleCustomInput()" id="dsa-custom-input-toggle-btn" class="px-2 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            Custom Input
+          </button>
           <button onclick="confirmResetDSACode()" class="px-2.5 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Reset Starter Code">
             Reset Starter Code
           </button>
         </div>
+      </div>
+
+      <!-- Custom Input Drawer (Collapsible) -->
+      <div id="dsa-custom-input-container" class="hidden border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary p-3">
+        <div class="flex items-center justify-between mb-1.5">
+          <label for="dsa-custom-input" class="text-[11px] font-mono font-bold text-neutral-500 uppercase">Test with Custom Stdin Input</label>
+          <span class="text-[10px] text-neutral-400 font-mono">Passed directly to stdin</span>
+        </div>
+        <textarea id="dsa-custom-input" rows="3" placeholder="e.g. [2,7,11,15]&#10;9"
+          class="w-full p-2 bg-neutral-900 text-neutral-100 font-mono text-xs rounded border border-neutral-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
       </div>
 
       <!-- Code Editor Body with Line Numbers Gutter -->
@@ -197,22 +214,25 @@
       </div>
 
       <!-- Execution Terminal Drawer (Outputs & Testcases) -->
-      <div id="dsa-terminal-output" class="hidden border-t border-neutral-200 dark:border-neutral-800 bg-surface-elevated max-h-60 overflow-y-auto font-sans">
+      <div id="dsa-terminal-output" class="hidden border-t border-neutral-200 dark:border-neutral-800 bg-surface-elevated max-h-64 overflow-y-auto font-sans">
         <!-- Filled dynamically on Run/Submit -->
       </div>
 
       <!-- Action Footer Toolbar (Run Code & Submit Code) -->
       <div class="h-16 px-5 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary flex items-center justify-between shrink-0 z-10 shadow-lg">
-        <button onclick="document.getElementById('dsa-terminal-output').classList.toggle('hidden')" class="text-xs font-mono text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 flex items-center space-x-1.5">
-          <span>Console & Test Results</span>
-        </button>
+        <div class="flex items-center space-x-3">
+          <button onclick="document.getElementById('dsa-terminal-output').classList.toggle('hidden')" class="text-xs font-mono text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 flex items-center space-x-1.5">
+            <span>Console & Test Results</span>
+          </button>
+          <span id="dsa-compiler-running-status" class="hidden font-mono text-[11px] text-blue-500 animate-pulse"></span>
+        </div>
 
         <div class="flex items-center space-x-3">
-          <button onclick="runDSACode()" class="px-5 py-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-xs shadow-sm transition-all">
-            Run Code
+          <button id="dsa-run-btn" onclick="runDSACode()" class="px-5 py-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-xs shadow-sm transition-all flex items-center gap-1.5">
+            <span>Run Code</span>
           </button>
-          <button onclick="submitDSACode()" class="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
-            Submit Code
+          <button id="dsa-submit-btn" onclick="submitDSACode()" class="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+            <span>Submit Code</span>
           </button>
         </div>
       </div>

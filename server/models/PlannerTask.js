@@ -16,13 +16,13 @@ const plannerTaskSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['DSA', 'Resume', 'Aptitude', 'Core CS', 'Interview', 'General'],
-      default: 'General'
+      default: 'General',
+      trim: true
     },
     priority: {
       type: String,
-      enum: ['Low', 'Medium', 'High', 'Urgent'],
-      default: 'Medium'
+      default: 'Medium',
+      trim: true
     },
     dueDate: {
       type: String,
