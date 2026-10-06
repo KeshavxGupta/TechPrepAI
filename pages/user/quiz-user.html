@@ -426,6 +426,65 @@
     </div>
   </div>
 
+  <template id="dsa-ide-template">
+    <!-- RIGHT PANEL: Multi-Language Code Editor & Terminal Execution Drawer -->
+    <div class="w-full flex flex-col bg-surface-primary overflow-hidden h-full rounded-xl border border-neutral-200 dark:border-neutral-800">
+      
+      <!-- Editor Toolbar Header -->
+      <div class="h-10 px-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between shrink-0 font-sans text-xs">
+        <div class="flex items-center space-x-3">
+          <span class="font-mono text-neutral-500 font-bold">Language:</span>
+          <select id="dsa-lang-select" onchange="changeDSALanguage(this.value)" class="p-1 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold focus:outline-none">
+            <option value="javascript">JavaScript (Node.js)</option>
+            <option value="python">Python 3</option>
+            <option value="cpp">C++ 20</option>
+            <option value="java">Java 17</option>
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <button onclick="confirmResetDSACode()" class="px-2.5 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Reset Starter Code">
+            Reset Starter Code
+          </button>
+        </div>
+      </div>
+
+      <!-- Code Editor Body with Line Numbers Gutter -->
+      <div class="flex-1 flex overflow-hidden relative bg-neutral-950 font-mono text-xs text-neutral-100">
+        <!-- Line Numbers Gutter -->
+        <div id="dsa-line-numbers" class="w-10 py-3 text-right pr-3 select-none text-neutral-600 bg-neutral-900 border-r border-neutral-800 font-mono text-[11px] leading-6 shrink-0">
+          <div>1</div>
+        </div>
+
+        <!-- Textarea Code Input -->
+        <textarea id="dsa-code-textarea" oninput="updateLineNumbers()" spellcheck="false"
+          class="flex-1 p-3 bg-neutral-950 text-neutral-100 font-mono text-xs leading-6 resize-none focus:outline-none selection:bg-blue-600 selection:text-white whitespace-pre tab-4"></textarea>
+      </div>
+
+      <!-- Execution Terminal Drawer (Outputs & Testcases) -->
+      <div id="dsa-terminal-output" class="hidden border-t border-neutral-200 dark:border-neutral-800 bg-surface-elevated max-h-60 overflow-y-auto font-sans">
+        <!-- Filled dynamically on Run/Submit -->
+      </div>
+
+      <!-- Action Footer Toolbar (Run Code & Submit Code) -->
+      <div class="h-16 px-5 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary flex items-center justify-between shrink-0 z-10 shadow-lg">
+        <button onclick="document.getElementById('dsa-terminal-output').classList.toggle('hidden')" class="text-xs font-mono text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 flex items-center space-x-1.5">
+          <span>Console & Test Results</span>
+        </button>
+
+        <div class="flex items-center space-x-3">
+          <button onclick="runDSACode()" class="px-5 py-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-xs shadow-sm transition-all">
+            Run Code
+          </button>
+          <button onclick="submitDSACode()" class="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
+            Submit Code
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </template>
+
   <!-- Page End -->
 
   <script src="/js/features/quiz/quiz.js"></script>
