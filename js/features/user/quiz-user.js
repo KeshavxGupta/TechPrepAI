@@ -1,4 +1,4 @@
-﻿// Mobile Sidebar Toggler
+// Mobile Sidebar Toggler
 window.toggleQuizSidebar = function(forceState) {
   const sidebar = document.getElementById('quiz-sidebar');
   const overlay = document.getElementById('quiz-sidebar-overlay');
@@ -248,32 +248,84 @@ function loadQuestion(idx) {
   renderQuestionGrid();
   
   const q = currentQuiz.questions[idx];
-  document.getElementById('exam-question-number').textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length}`;
-  document.getElementById('exam-question-text').textContent = q.text;
-
+  const qType = q.questionType || 'mcq';
+  
+  const numberEl = document.getElementById('exam-question-number');
+  numberEl.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length}`;
+  
+  const badgeEl = numberEl.nextElementSibling;
+  const questionText = document.getElementById('exam-question-text');
   const optionsContainer = document.getElementById('exam-options-container');
-  optionsContainer.innerHTML = '';
 
-  q.options.forEach((opt, optIdx) => {
-    const optionCard = document.createElement('label');
-    const isSelected = studentAnswers[idx] === optIdx;
-
-    optionCard.className = `flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:border-neutral-300 dark:hover:border-neutral-700 transition-all ${
-      isSelected 
-        ? 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500 dark:border-blue-500' 
-        : 'bg-surface-secondary border-neutral-200 dark:border-neutral-800'
-    }`;
-
-    optionCard.innerHTML = `
-      <div class="flex items-center space-x-3.5 pr-2">
-        <input type="radio" name="question-option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
-          onclick="selectOption(${idx}, ${optIdx})" class="accent-blue-600 w-4 h-4 cursor-pointer">
-        <span class="text-xs font-medium text-neutral-800 dark:text-neutral-200 leading-normal">${opt}</span>
+  if (qType === 'coding') {
+    if (badgeEl) badgeEl.textContent = 'Coding Challenge';
+    
+    questionText.innerHTML = `
+      <div class="mb-4 text-sm font-semibold text-neutral-900 dark:text-white leading-relaxed font-sans">
+        ${q.text}
       </div>
-      ${isSelected ? '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+      ${q.testCases ? `
+      <div class="mb-4 space-y-2">
+        <h3 class="text-xs font-bold uppercase text-neutral-500">Test Cases</h3>
+        ${q.testCases.map(tc => `
+          <div class="p-3 bg-neutral-100 dark:bg-neutral-900 rounded border border-neutral-200 dark:border-neutral-800 font-mono text-[11px]">
+            <div><span class="text-blue-500">Input:</span> ${tc.input}</div>
+            <div><span class="text-green-500">Expected:</span> ${tc.expectedOutput}</div>
+          </div>
+        `).join('')}
+      </div>
+      ` : ''}
     `;
-    optionsContainer.appendChild(optionCard);
-  });
+    
+    optionsContainer.innerHTML = '<div id="ide-mount-point" class="w-full h-96 min-h-[400px]"></div>';
+    
+    const mountPoint = document.getElementById('ide-mount-point');
+    const ideTemplate = document.getElementById('dsa-ide-template');
+    
+    if (ideTemplate) {
+      mountPoint.appendChild(ideTemplate.content.cloneNode(true));
+      
+      const editorTextarea = mountPoint.querySelector('#dsa-code-textarea');
+      if (editorTextarea) {
+        // Load previously saved code if available, otherwise fallback to boilerplate
+        editorTextarea.value = studentAnswers[idx] !== undefined ? studentAnswers[idx] : (q.boilerplateCode || '');
+      }
+      
+      const langSelect = mountPoint.querySelector('#dsa-lang-select');
+      if (langSelect && q.language) {
+        langSelect.value = q.language;
+      }
+      
+      if (typeof window.updateLineNumbers === 'function') {
+        window.updateLineNumbers();
+      }
+    }
+  } else {
+    if (badgeEl) badgeEl.textContent = 'Single Choice';
+    questionText.textContent = q.text;
+    optionsContainer.innerHTML = '';
+
+    q.options.forEach((opt, optIdx) => {
+      const optionCard = document.createElement('label');
+      const isSelected = studentAnswers[idx] === optIdx;
+
+      optionCard.className = `flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:border-neutral-300 dark:hover:border-neutral-700 transition-all ${
+        isSelected 
+          ? 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500 dark:border-blue-500' 
+          : 'bg-surface-secondary border-neutral-200 dark:border-neutral-800'
+      }`;
+
+      optionCard.innerHTML = `
+        <div class="flex items-center space-x-3.5 pr-2">
+          <input type="radio" name="question-option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
+            onclick="selectOption(${idx}, ${optIdx})" class="accent-blue-600 w-4 h-4 cursor-pointer">
+          <span class="text-xs font-medium text-neutral-800 dark:text-neutral-200 leading-normal">${opt}</span>
+        </div>
+        ${isSelected ? '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+      `;
+      optionsContainer.appendChild(optionCard);
+    });
+  }
 
   document.getElementById('btn-prev').disabled = idx === 0;
   
@@ -399,8 +451,16 @@ function submitExam(reason = 'Normal Submission') {
   
   currentQuiz.questions.forEach((q, idx) => {
     const studentAns = studentAnswers[idx];
-    if (studentAns !== undefined && studentAns === q.correctIndex) {
-      scorePoints++;
+    const qType = q.questionType || 'mcq';
+    
+    if (qType === 'coding') {
+      if (studentAns !== undefined && studentAns.trim() !== '') {
+        scorePoints++;
+      }
+    } else {
+      if (studentAns !== undefined && studentAns === q.correctIndex) {
+        scorePoints++;
+      }
     }
   });
 
@@ -459,9 +519,15 @@ function submitExam(reason = 'Normal Submission') {
   reviewContainer.innerHTML = '';
 
   currentQuiz.questions.forEach((q, idx) => {
-    const studentChoiceIdx = studentAnswers[idx];
-    const correctChoiceIdx = q.correctIndex;
-    const isCorrect = studentChoiceIdx === correctChoiceIdx;
+    const studentChoice = studentAnswers[idx];
+    const qType = q.questionType || 'mcq';
+    
+    let isCorrect = false;
+    if (qType === 'coding') {
+      isCorrect = (studentChoice !== undefined && studentChoice.trim() !== '');
+    } else {
+      isCorrect = (studentChoice !== undefined && studentChoice === q.correctIndex);
+    }
 
     const revDiv = document.createElement('div');
     revDiv.className = `p-5 rounded-xl border text-xs text-left space-y-3 ${
@@ -474,8 +540,31 @@ function submitExam(reason = 'Normal Submission') {
       ? '<span class="text-emerald-600 dark:text-emerald-500 font-bold font-mono">CORRECT ANSWER</span>'
       : '<span class="text-rose-600 dark:text-rose-500 font-bold font-mono">INCORRECT ANSWER</span>';
     
-    if (studentChoiceIdx === undefined) {
+    if (studentChoice === undefined || (qType === 'coding' && studentChoice.trim() === '')) {
       statusText = '<span class="text-neutral-500 font-bold font-mono">NOT ATTEMPTED</span>';
+    }
+
+    let choiceHTML = '';
+    if (qType === 'coding') {
+      choiceHTML = `
+        <div class="space-y-2 mt-2">
+          <div class="text-[11px] text-neutral-500 font-semibold">Your Submitted Code:</div>
+          ${(studentChoice && studentChoice.trim() !== '') 
+            ? `<pre class="p-3 bg-[#1e1e1e] text-green-400 rounded text-[11px] font-mono overflow-x-auto whitespace-pre-wrap border border-neutral-800"><code>${studentChoice.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>` 
+            : '<div class="text-[11px] text-rose-500">No code submitted</div>'}
+          <div class="text-[11px] mt-2">Expected result: <strong class="text-emerald-600 dark:text-emerald-400">Passed all test cases.</strong></div>
+        </div>
+      `;
+    } else {
+      choiceHTML = `
+        <div class="space-y-1.5 text-[11px]">
+          <div>Your choice: <strong class="${isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${
+            studentChoice !== undefined ? q.options[studentChoice] : 'No response selected'
+          }</strong></div>
+          
+          ${!isCorrect ? `<div>Correct choice: <strong class="text-emerald-600 dark:text-emerald-400">${q.options[q.correctIndex]}</strong></div>` : ''}
+        </div>
+      `;
     }
 
     revDiv.innerHTML = `
@@ -486,13 +575,7 @@ function submitExam(reason = 'Normal Submission') {
       
       <p class="font-semibold text-neutral-900 dark:text-white leading-relaxed">${q.text}</p>
       
-      <div class="space-y-1.5 text-[11px]">
-        <div>Your choice: <strong class="${isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${
-          studentChoiceIdx !== undefined ? q.options[studentChoiceIdx] : 'No response selected'
-        }</strong></div>
-        
-        ${!isCorrect ? `<div>Correct choice: <strong class="text-emerald-600 dark:text-emerald-400">${q.options[correctChoiceIdx]}</strong></div>` : ''}
-      </div>
+      ${choiceHTML}
 
       ${q.explanation ? `
         <div class="p-3 bg-neutral-100 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded font-mono text-[10px] text-neutral-500 mt-2">
@@ -526,6 +609,111 @@ function showView(viewId) {
     }
   });
 }
+
+// ==========================================
+// IDE Execution & Submission Logic
+// ==========================================
+window.runDSACode = function() {
+  const terminal = document.getElementById('dsa-terminal-output');
+  if (!terminal) return false;
+  
+  // Unhide the terminal drawer
+  terminal.classList.remove('hidden');
+  terminal.innerHTML = '<div class="p-4 text-neutral-400 font-mono text-xs">Running tests...</div>';
+
+  const userCode = document.getElementById('dsa-code-textarea').value;
+  const q = currentQuiz.questions[currentQuestionIdx];
+
+  // Dynamically extract the function name from the user's code 
+  // (Assuming standard function declaration e.g., "function sum(a, b)")
+  const match = userCode.match(/function\s+([a-zA-Z_$][0-9a-zA-Z_$]*)\s*\(/);
+  if (!match) {
+    terminal.innerHTML = '<div class="p-4 text-rose-500 font-mono text-xs border-l-4 border-rose-500 bg-rose-500/10">Error: Could not find a valid function declaration to test. Please ensure you declare a function.</div>';
+    return false;
+  }
+  
+  const funcName = match[1];
+  let allPassed = true;
+  let outputHTML = '<div class="p-4 space-y-3">';
+
+  q.testCases.forEach((tc, i) => {
+    try {
+      // Securely construct the execution context for this specific test case
+      const testFn = new Function(`
+        ${userCode}
+        return ${funcName}(${tc.input});
+      `);
+      
+      const result = testFn();
+      
+      // Coerce outputs to strings for simple prototype comparison
+      const passed = String(result).trim() === String(tc.expectedOutput).trim();
+      
+      if (!passed) allPassed = false;
+
+      outputHTML += `
+        <div class="border ${passed ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'} rounded p-4 text-xs font-mono">
+          <div class="font-bold ${passed ? 'text-emerald-500' : 'text-rose-500'} mb-2 flex items-center space-x-2">
+            <span>Test Case ${i + 1}: ${passed ? 'PASSED' : 'FAILED'}</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
+            <div class="text-neutral-400 truncate">Input: <span class="text-neutral-200">${tc.input}</span></div>
+            <div class="text-neutral-400 truncate">Expected: <span class="text-neutral-200">${tc.expectedOutput}</span></div>
+            <div class="text-neutral-400 truncate">Output: <span class="${passed ? 'text-emerald-400' : 'text-rose-400'}">${result !== undefined ? result : 'undefined'}</span></div>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      allPassed = false;
+      outputHTML += `
+        <div class="border border-rose-500/30 bg-rose-500/5 rounded p-4 text-xs font-mono">
+          <div class="font-bold text-rose-500 mb-2">Test Case ${i + 1}: ERROR</div>
+          <div class="text-rose-400 whitespace-pre-wrap">${err.message}</div>
+        </div>
+      `;
+    }
+  });
+
+  outputHTML += '</div>';
+  terminal.innerHTML = outputHTML;
+  
+  return allPassed;
+};
+
+window.submitDSACode = function() {
+  const allPassed = window.runDSACode();
+  
+  if (allPassed) {
+    const userCode = document.getElementById('dsa-code-textarea').value;
+    
+    // Save successful code to active session state
+    studentAnswers[currentQuestionIdx] = userCode;
+    delete questionFlags[currentQuestionIdx]; // Remove review flag if any
+    
+    // Toast notification mapping for visual feedback
+    if (window.showToast) {
+      window.showToast("All test cases passed! Code saved.");
+    } else {
+      // Fallback
+      alert("Success! All test cases passed and your code is saved.");
+    }
+
+    // Automatically navigate to the next question if available
+    if (currentQuestionIdx < currentQuiz.questions.length - 1) {
+      nextQuestion();
+    } else {
+      // Refresh current question to show "Finish & Submit" state
+      loadQuestion(currentQuestionIdx);
+    }
+  } else {
+    if (window.showToast) {
+      window.showToast("Tests failed. Check the console output.");
+    } else {
+      alert("Some test cases failed or threw errors. Check the terminal output for details.");
+    }
+  }
+};
+
 
 
 
