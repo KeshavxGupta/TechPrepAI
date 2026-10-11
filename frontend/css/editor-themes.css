@@ -1,0 +1,29 @@
+/**
+ * Modern Dark Code Editor Themes & Gutter Styles
+ */
+.code-editor-dark {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-feature-settings: "liga" on, "calt" on;
+}
+
+.code-gutter-dark {
+  background-color: #090d13;
+  border-right: 1px solid #21262d;
+  color: #484f58;
+}
+
+.code-line-active {
+  background-color: rgba(56, 139, 253, 0.08);
+}
+
+.terminal-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.terminal-scroll::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
