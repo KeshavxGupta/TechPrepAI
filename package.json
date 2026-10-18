@@ -7,7 +7,7 @@
     "dev": "npm --prefix backend run dev",
     "seed": "npm --prefix backend run seed",
     "install:backend": "npm --prefix backend install",
-    "build": "npm --prefix backend install"
+    "build": "echo Static build ready"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
