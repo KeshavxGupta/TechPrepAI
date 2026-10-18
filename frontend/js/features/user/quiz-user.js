@@ -210,18 +210,54 @@ function updateTimerDisplay() {
   }
 }
 
+// Coding IDE state per question
+let activeExamLanguage = 'javascript';
+const studentLanguageCode = {}; // { [questionIdx]: { currentLang: 'javascript', javascript: '...', python: '...', cpp: '...', java: '...' } }
+
+function escapeHTML(str) {
+  if (typeof str !== 'string') return String(str || '');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function renderQuestionGrid() {
   const container = document.getElementById('question-nav-grid');
-  container.innerHTML = '';
-  
-  currentQuiz.questions.forEach((q, idx) => {
-    const btn = document.createElement('button');
-    btn.id = `nav-btn-${idx}`;
-    btn.textContent = idx + 1;
-    btn.className = getNavBtnClass(idx);
-    btn.onclick = () => loadQuestion(idx);
-    container.appendChild(btn);
-  });
+  if (container) {
+    container.innerHTML = '';
+    currentQuiz.questions.forEach((q, idx) => {
+      const btn = document.createElement('button');
+      btn.id = `nav-btn-${idx}`;
+      btn.textContent = idx + 1;
+      btn.className = getNavBtnClass(idx);
+      btn.onclick = () => loadQuestion(idx);
+      container.appendChild(btn);
+    });
+  }
+
+  // Also update quick-jump pills in the coding split-screen bar
+  const codingNavContainer = document.getElementById('exam-coding-nav-pills');
+  if (codingNavContainer && currentQuiz && currentQuiz.questions) {
+    codingNavContainer.innerHTML = '';
+    currentQuiz.questions.forEach((q, idx) => {
+      const btn = document.createElement('button');
+      btn.id = `coding-nav-pill-${idx}`;
+      btn.textContent = idx + 1;
+      
+      let pillClass = "w-7 h-7 rounded text-[11px] font-mono font-bold transition-all flex items-center justify-center ";
+      if (idx === currentQuestionIdx) {
+        pillClass += "ring-2 ring-blue-500 border border-blue-400 ";
+      }
+      if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
+        pillClass += "bg-emerald-600 text-white ";
+      } else if (questionFlags[idx]) {
+        pillClass += "bg-amber-500 text-white ";
+      } else {
+        pillClass += "border border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 ";
+      }
+      btn.className = pillClass;
+      btn.onclick = () => loadQuestion(idx);
+      codingNavContainer.appendChild(btn);
+    });
+  }
 }
 
 function getNavBtnClass(idx) {
@@ -231,7 +267,7 @@ function getNavBtnClass(idx) {
     base += "ring-2 ring-blue-500 border-transparent ";
   }
 
-  if (studentAnswers[idx] !== undefined) {
+  if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
     base += "bg-blue-600 border-blue-600 text-white ";
   } else if (questionFlags[idx]) {
     base += "bg-amber-500 border-amber-500 text-white ";
@@ -239,6 +275,89 @@ function getNavBtnClass(idx) {
     base += "border-neutral-300 dark:border-neutral-700 bg-surface-secondary text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 ";
   }
   return base;
+}
+
+function getStarterCodeForExam(q, lang) {
+  const targetLang = (lang || 'javascript').toLowerCase();
+
+  // 1. Explicit templates stored on question
+  if (q.templates && q.templates[targetLang]) {
+    return q.templates[targetLang];
+  }
+
+  // 2. Check SEED_DSA_PROBLEMS if available
+  if (typeof SEED_DSA_PROBLEMS !== 'undefined' && Array.isArray(SEED_DSA_PROBLEMS)) {
+    const matchedSeed = SEED_DSA_PROBLEMS.find(p => 
+      (q.slug && p.slug === q.slug) || 
+      (q.title && p.title.toLowerCase() === q.title.toLowerCase()) ||
+      (q.text && q.text.toLowerCase().includes(p.title.toLowerCase()))
+    );
+    if (matchedSeed && matchedSeed.templates && matchedSeed.templates[targetLang]) {
+      return matchedSeed.templates[targetLang];
+    }
+  }
+
+  // 3. Question default boilerplate
+  if (targetLang === (q.language || 'javascript').toLowerCase() && q.boilerplateCode) {
+    return q.boilerplateCode;
+  }
+
+  // 4. Extract function name and arguments from boilerplateCode or text
+  let funcName = 'solution';
+  let paramNames = ['input'];
+
+  const rawCode = q.boilerplateCode || q.text || '';
+  const fnMatch = rawCode.match(/function\s+([a-zA-Z0-9_$]+)\s*\(([^)]*)\)/);
+  if (fnMatch) {
+    funcName = fnMatch[1];
+    paramNames = fnMatch[2].split(',').map(s => s.trim()).filter(Boolean);
+  } else {
+    const pyMatch = rawCode.match(/def\s+([a-zA-Z0-9_$]+)\s*\(([^)]*)\)/);
+    if (pyMatch) {
+      funcName = pyMatch[1];
+      paramNames = pyMatch[2].split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+
+  const paramList = paramNames.join(', ');
+
+  // Standard LeetCode boilerplate generators
+  switch (targetLang) {
+    case 'python':
+      return `def ${funcName}(${paramList}):\n    # Write your solution here\n    pass\n`;
+
+    case 'cpp':
+      return `#include <iostream>\n#include <vector>\n#include <string>\n\nusing namespace std;\n\nclass Solution {\npublic:\n    // Write your solution here\n};\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    // Read input from cin\n    return 0;\n}\n`;
+
+    case 'java':
+      return `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // Write your solution here\n    }\n}\n`;
+
+    case 'javascript':
+    default:
+      return `/**\n * @return {any}\n */\nfunction ${funcName}(${paramList}) {\n  // Write your solution here\n  \n}\n`;
+  }
+}
+
+function handleExamTextareaTab(e) {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const start = this.selectionStart;
+    const end = this.selectionEnd;
+    const value = this.value;
+
+    if (!e.shiftKey) {
+      this.value = value.substring(0, start) + '  ' + value.substring(end);
+      this.selectionStart = this.selectionEnd = start + 2;
+    } else {
+      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+      if (value.substring(lineStart, lineStart + 2) === '  ') {
+        this.value = value.substring(0, lineStart) + value.substring(lineStart + 2);
+        this.selectionStart = Math.max(lineStart, start - 2);
+        this.selectionEnd = Math.max(lineStart, end - 2);
+      }
+    }
+    updateExamLineNumbers();
+  }
 }
 
 function loadQuestion(idx) {
@@ -249,93 +368,151 @@ function loadQuestion(idx) {
   
   const q = currentQuiz.questions[idx];
   const qType = q.questionType || 'mcq';
-  
-  const numberEl = document.getElementById('exam-question-number');
-  numberEl.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length}`;
-  
-  const badgeEl = numberEl.nextElementSibling;
-  const questionText = document.getElementById('exam-question-text');
-  const optionsContainer = document.getElementById('exam-options-container');
+
+  const mcqContainer = document.getElementById('exam-mcq-container');
+  const codingContainer = document.getElementById('exam-coding-container');
 
   if (qType === 'coding') {
-    if (badgeEl) badgeEl.textContent = 'Coding Challenge';
+    // Show Coding Workspace, hide MCQ layout
+    if (mcqContainer) mcqContainer.classList.add('hidden');
+    if (codingContainer) {
+      codingContainer.classList.remove('hidden');
+      codingContainer.classList.add('flex');
+    }
+
+    // Top Header info
+    const qBadge = document.getElementById('exam-coding-q-badge');
+    if (qBadge) qBadge.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length} • CODING CHALLENGE`;
     
-    questionText.innerHTML = `
-      <div class="mb-4 text-sm font-semibold text-neutral-900 dark:text-white leading-relaxed font-sans">
-        ${q.text}
-      </div>
-      ${q.testCases ? `
-      <div class="mb-4 space-y-2">
-        <h3 class="text-xs font-bold uppercase text-neutral-500">Test Cases</h3>
-        ${q.testCases.map(tc => `
-          <div class="p-3 bg-neutral-100 dark:bg-neutral-900 rounded border border-neutral-200 dark:border-neutral-800 font-mono text-[11px]">
-            <div><span class="text-blue-500">Input:</span> ${tc.input}</div>
-            <div><span class="text-green-500">Expected:</span> ${tc.expectedOutput}</div>
-          </div>
-        `).join('')}
-      </div>
-      ` : ''}
-    `;
-    
-    optionsContainer.innerHTML = '<div id="ide-mount-point" class="w-full h-96 min-h-[400px]"></div>';
-    
-    const mountPoint = document.getElementById('ide-mount-point');
-    const ideTemplate = document.getElementById('dsa-ide-template');
-    
-    if (ideTemplate) {
-      mountPoint.appendChild(ideTemplate.content.cloneNode(true));
-      
-      const editorTextarea = mountPoint.querySelector('#dsa-code-textarea');
-      if (editorTextarea) {
-        // Load previously saved code if available, otherwise fallback to boilerplate
-        editorTextarea.value = studentAnswers[idx] !== undefined ? studentAnswers[idx] : (q.boilerplateCode || '');
-      }
-      
-      const langSelect = mountPoint.querySelector('#dsa-lang-select');
-      if (langSelect && q.language) {
-        langSelect.value = q.language;
-      }
-      
-      if (typeof window.updateLineNumbers === 'function') {
-        window.updateLineNumbers();
+    const warnCount = document.getElementById('exam-coding-warning-count');
+    if (warnCount) warnCount.textContent = `${examWarnings} / 3`;
+
+    // Left Panel Problem Details
+    const titleEl = document.getElementById('exam-coding-title');
+    if (titleEl) {
+      const firstLine = q.text.split(/[:\n]/)[0].replace(/Problem\s*\d*\s*[:\-]?\s*/i, '').trim();
+      titleEl.textContent = q.title || firstLine || `Coding Challenge #${idx + 1}`;
+    }
+
+    const textEl = document.getElementById('exam-coding-text');
+    if (textEl) textEl.textContent = q.text;
+
+    // Sample Testcases
+    const samplesContainer = document.getElementById('exam-coding-samples');
+    if (samplesContainer) {
+      samplesContainer.innerHTML = '';
+      const testCases = q.testCases || [];
+      if (testCases.length === 0) {
+        samplesContainer.innerHTML = '<div class="text-[11px] text-neutral-500 italic">No sample test cases provided.</div>';
+      } else {
+        testCases.forEach((tc, tcIdx) => {
+          const card = document.createElement('div');
+          card.className = "p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs space-y-1.5 font-mono";
+          card.innerHTML = `
+            <div class="font-bold text-neutral-500 text-[11px]">Example ${tcIdx + 1}:</div>
+            <div class="text-[11px]"><strong class="text-neutral-600 dark:text-neutral-400">Input:</strong> <code class="bg-neutral-900 px-1.5 py-0.5 rounded text-blue-400">${escapeHTML(tc.input)}</code></div>
+            <div class="text-[11px]"><strong class="text-neutral-600 dark:text-neutral-400">Expected:</strong> <code class="bg-neutral-900 px-1.5 py-0.5 rounded text-emerald-400">${escapeHTML(tc.expectedOutput)}</code></div>
+          `;
+          samplesContainer.appendChild(card);
+        });
       }
     }
+
+    // Determine current language
+    if (!studentLanguageCode[idx]) studentLanguageCode[idx] = {};
+    activeExamLanguage = studentLanguageCode[idx].currentLang || q.language || 'javascript';
+
+    const langSelect = document.getElementById('exam-lang-select');
+    if (langSelect) langSelect.value = activeExamLanguage;
+
+    // Load code
+    const textarea = document.getElementById('exam-code-textarea');
+    if (textarea) {
+      if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
+        textarea.value = studentAnswers[idx];
+      } else if (studentLanguageCode[idx][activeExamLanguage]) {
+        textarea.value = studentLanguageCode[idx][activeExamLanguage];
+      } else {
+        textarea.value = getStarterCodeForExam(q, activeExamLanguage);
+      }
+      studentLanguageCode[idx][activeExamLanguage] = textarea.value;
+
+      // Ensure Tab key support is attached
+      if (!textarea.dataset.tabAttached) {
+        textarea.addEventListener('keydown', handleExamTextareaTab);
+        textarea.dataset.tabAttached = 'true';
+      }
+
+      updateExamLineNumbers();
+    }
+
+    // Navigation buttons state
+    const prevBtn = document.getElementById('exam-coding-btn-prev');
+    if (prevBtn) prevBtn.disabled = idx === 0;
+
+    const nextBtn = document.getElementById('exam-coding-btn-next');
+    if (nextBtn) {
+      if (idx === currentQuiz.questions.length - 1) {
+        nextBtn.textContent = 'Finish & Submit';
+        nextBtn.onclick = confirmSubmitModal;
+      } else {
+        nextBtn.textContent = 'Save & Next';
+        nextBtn.onclick = nextQuestion;
+      }
+    }
+
   } else {
-    if (badgeEl) badgeEl.textContent = 'Single Choice';
-    questionText.textContent = q.text;
-    optionsContainer.innerHTML = '';
+    // Show MCQ View, hide Coding view
+    if (codingContainer) {
+      codingContainer.classList.add('hidden');
+      codingContainer.classList.remove('flex');
+    }
+    if (mcqContainer) mcqContainer.classList.remove('hidden');
 
-    q.options.forEach((opt, optIdx) => {
-      const optionCard = document.createElement('label');
-      const isSelected = studentAnswers[idx] === optIdx;
+    const numberEl = document.getElementById('exam-question-number');
+    if (numberEl) numberEl.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length}`;
 
-      optionCard.className = `flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:border-neutral-300 dark:hover:border-neutral-700 transition-all ${
-        isSelected 
-          ? 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500 dark:border-blue-500' 
-          : 'bg-surface-secondary border-neutral-200 dark:border-neutral-800'
-      }`;
+    const questionText = document.getElementById('exam-question-text');
+    if (questionText) questionText.textContent = q.text;
 
-      optionCard.innerHTML = `
-        <div class="flex items-center space-x-3.5 pr-2">
-          <input type="radio" name="question-option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
-            onclick="selectOption(${idx}, ${optIdx})" class="accent-blue-600 w-4 h-4 cursor-pointer">
-          <span class="text-xs font-medium text-neutral-800 dark:text-neutral-200 leading-normal">${opt}</span>
-        </div>
-        ${isSelected ? '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
-      `;
-      optionsContainer.appendChild(optionCard);
-    });
-  }
+    const optionsContainer = document.getElementById('exam-options-container');
+    if (optionsContainer) {
+      optionsContainer.innerHTML = '';
+      (q.options || []).forEach((opt, optIdx) => {
+        const optionCard = document.createElement('label');
+        const isSelected = studentAnswers[idx] === optIdx;
 
-  document.getElementById('btn-prev').disabled = idx === 0;
-  
-  const nextBtn = document.getElementById('btn-next');
-  if (idx === currentQuiz.questions.length - 1) {
-    nextBtn.textContent = 'Finish & Submit';
-    nextBtn.onclick = confirmSubmitModal;
-  } else {
-    nextBtn.textContent = 'Save & Next';
-    nextBtn.onclick = nextQuestion;
+        optionCard.className = `flex items-center justify-between p-4 rounded-xl border cursor-pointer hover:border-neutral-300 dark:hover:border-neutral-700 transition-all ${
+          isSelected 
+            ? 'bg-blue-500/5 dark:bg-blue-500/10 border-blue-500 dark:border-blue-500' 
+            : 'bg-surface-secondary border-neutral-200 dark:border-neutral-800'
+        }`;
+
+        optionCard.innerHTML = `
+          <div class="flex items-center space-x-3.5 pr-2">
+            <input type="radio" name="question-option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
+              onclick="selectOption(${idx}, ${optIdx})" class="accent-blue-600 w-4 h-4 cursor-pointer">
+            <span class="text-xs font-medium text-neutral-800 dark:text-neutral-200 leading-normal">${escapeHTML(opt)}</span>
+          </div>
+          ${isSelected ? '<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
+        `;
+        optionsContainer.appendChild(optionCard);
+      });
+    }
+
+    const prevBtn = document.getElementById('btn-prev');
+    if (prevBtn) prevBtn.disabled = idx === 0;
+
+    const nextBtn = document.getElementById('btn-next');
+    if (nextBtn) {
+      if (idx === currentQuiz.questions.length - 1) {
+        nextBtn.textContent = 'Finish & Submit';
+        nextBtn.onclick = confirmSubmitModal;
+      } else {
+        nextBtn.textContent = 'Save & Next';
+        nextBtn.onclick = nextQuestion;
+      }
+    }
   }
 }
 
@@ -611,133 +788,366 @@ function showView(viewId) {
 }
 
 // ==========================================
-// IDE Execution & Submission Logic
+// LeetCode-Grade Host Compiler Execution & Submission Logic
 // ==========================================
-window.runDSACode = function() {
-  const terminal = document.getElementById('dsa-terminal-output');
-  if (!terminal) return false;
-  
-  // Unhide the terminal drawer
-  terminal.classList.remove('hidden');
-  terminal.innerHTML = '<div class="p-4 text-neutral-400 font-mono text-xs">Running tests...</div>';
 
-  const userCode = document.getElementById('dsa-code-textarea').value;
-  const q = currentQuiz.questions[currentQuestionIdx];
-
-  // Dynamically extract the function name from the user's code 
-  // (Assuming standard function declaration e.g., "function sum(a, b)")
-  const match = userCode.match(/function\s+([a-zA-Z_$][0-9a-zA-Z_$]*)\s*\(/);
-  if (!match) {
-    terminal.innerHTML = '<div class="p-4 text-rose-500 font-mono text-xs border-l-4 border-rose-500 bg-rose-500/10">Error: Could not find a valid function declaration to test. Please ensure you declare a function.</div>';
-    return false;
-  }
-  
-  const funcName = match[1];
-  let allPassed = true;
-  let outputHTML = '<div class="p-4 space-y-3">';
-
-  q.testCases.forEach((tc, i) => {
-    try {
-      // Securely construct the execution context for this specific test case
-      const testFn = new Function(`
-        ${userCode}
-        return ${funcName}(${tc.input});
-      `);
-      
-      const result = testFn();
-      
-      // Coerce outputs to strings for simple prototype comparison
-      const passed = String(result).trim() === String(tc.expectedOutput).trim();
-      
-      if (!passed) allPassed = false;
-
-      outputHTML += `
-        <div class="border ${passed ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'} rounded p-4 text-xs font-mono">
-          <div class="font-bold ${passed ? 'text-emerald-500' : 'text-rose-500'} mb-2 flex items-center space-x-2">
-            <span>Test Case ${i + 1}: ${passed ? 'PASSED' : 'FAILED'}</span>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-[11px]">
-            <div class="text-neutral-400 truncate">Input: <span class="text-neutral-200">${tc.input}</span></div>
-            <div class="text-neutral-400 truncate">Expected: <span class="text-neutral-200">${tc.expectedOutput}</span></div>
-            <div class="text-neutral-400 truncate">Output: <span class="${passed ? 'text-emerald-400' : 'text-rose-400'}">${result !== undefined ? result : 'undefined'}</span></div>
-          </div>
-        </div>
-      `;
-    } catch (err) {
-      allPassed = false;
-      outputHTML += `
-        <div class="border border-rose-500/30 bg-rose-500/5 rounded p-4 text-xs font-mono">
-          <div class="font-bold text-rose-500 mb-2">Test Case ${i + 1}: ERROR</div>
-          <div class="text-rose-400 whitespace-pre-wrap">${err.message}</div>
-        </div>
-      `;
-    }
-  });
-
-  outputHTML += '</div>';
-  terminal.innerHTML = outputHTML;
-  
-  return allPassed;
-};
-
-window.submitDSACode = function() {
-  const allPassed = window.runDSACode();
-  
-  if (allPassed) {
-    const userCode = document.getElementById('dsa-code-textarea').value;
-    
-    // Save successful code to active session state
-    studentAnswers[currentQuestionIdx] = userCode;
-    delete questionFlags[currentQuestionIdx]; // Remove review flag if any
-    
-    // Toast notification mapping for visual feedback
-    if (window.showToast) {
-      window.showToast("All test cases passed! Code saved.");
-    } else {
-      // Fallback
-      alert("Success! All test cases passed and your code is saved.");
-    }
-
-    // Automatically navigate to the next question if available
-    if (currentQuestionIdx < currentQuiz.questions.length - 1) {
-      nextQuestion();
-    } else {
-      // Refresh current question to show "Finish & Submit" state
-      loadQuestion(currentQuestionIdx);
-    }
-  } else {
-    if (window.showToast) {
-      window.showToast("Tests failed. Check the console output.");
-    } else {
-      alert("Some test cases failed or threw errors. Check the terminal output for details.");
-    }
-  }
-};
-
-window.updateLineNumbers = function() {
-  const textarea = document.getElementById('dsa-code-textarea');
-  const gutter = document.getElementById('dsa-line-numbers');
-  if (!textarea || !gutter) return;
+window.updateExamLineNumbers = function() {
+  const textarea = document.getElementById('exam-code-textarea') || document.getElementById('dsa-code-textarea');
+  const lineGutter = document.getElementById('exam-line-numbers') || document.getElementById('dsa-line-numbers');
+  if (!textarea || !lineGutter) return;
 
   const lines = textarea.value.split('\n').length;
-  gutter.innerHTML = Array.from({ length: lines }, (_, i) => `<div>${i + 1}</div>`).join('');
+  let lineNumsStr = '';
+  for (let i = 1; i <= lines; i++) {
+    lineNumsStr += `<div>${i}</div>`;
+  }
+  lineGutter.innerHTML = lineNumsStr;
 };
 
-window.changeDSALanguage = function(lang) {
-  const q = currentQuiz && currentQuiz.questions && currentQuiz.questions[currentQuestionIdx];
-  if (q) {
-    q.language = lang;
+window.syncExamLineScroll = function() {
+  const textarea = document.getElementById('exam-code-textarea');
+  const lineGutter = document.getElementById('exam-line-numbers');
+  if (textarea && lineGutter) {
+    lineGutter.scrollTop = textarea.scrollTop;
   }
 };
 
-window.confirmResetDSACode = function() {
-  const q = currentQuiz && currentQuiz.questions && currentQuiz.questions[currentQuestionIdx];
-  const textarea = document.getElementById('dsa-code-textarea');
-  if (!textarea || !q) return;
-  if (confirm("Reset starter code for this question? Any unsaved edits will be discarded.")) {
-    textarea.value = q.boilerplateCode || '';
-    if (typeof window.updateLineNumbers === 'function') {
-      window.updateLineNumbers();
+window.changeExamLanguage = function(newLang) {
+  const textarea = document.getElementById('exam-code-textarea');
+  if (!textarea || !currentQuiz || !currentQuiz.questions) return;
+  const q = currentQuiz.questions[currentQuestionIdx];
+
+  // Save current code to language cache
+  if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+  studentLanguageCode[currentQuestionIdx][activeExamLanguage] = textarea.value;
+  studentLanguageCode[currentQuestionIdx].currentLang = newLang;
+
+  activeExamLanguage = newLang;
+
+  // Restore cached code for target language if typed before, else generate starter code
+  if (studentLanguageCode[currentQuestionIdx][newLang]) {
+    textarea.value = studentLanguageCode[currentQuestionIdx][newLang];
+  } else {
+    textarea.value = getStarterCodeForExam(q, newLang);
+    studentLanguageCode[currentQuestionIdx][newLang] = textarea.value;
+  }
+
+  // Update line numbers
+  window.updateExamLineNumbers();
+
+  // Reset terminal drawer to clean slate
+  const terminal = document.getElementById('exam-terminal-output');
+  if (terminal) terminal.classList.add('hidden');
+};
+
+window.toggleExamCustomInput = function() {
+  const container = document.getElementById('exam-custom-input-container');
+  const btn = document.getElementById('exam-custom-input-toggle-btn');
+  if (!container) return;
+  const isHidden = container.classList.contains('hidden');
+  if (isHidden) {
+    container.classList.remove('hidden');
+    if (btn) btn.classList.add('bg-blue-500/20', 'border-blue-500', 'text-blue-400', 'font-bold');
+    const inputEl = document.getElementById('exam-custom-input');
+    if (inputEl) inputEl.focus();
+  } else {
+    container.classList.add('hidden');
+    if (btn) btn.classList.remove('bg-blue-500/20', 'border-blue-500', 'text-blue-400', 'font-bold');
+  }
+};
+
+window.confirmResetExamCode = function() {
+  const modal = document.getElementById('exam-reset-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+};
+
+window.closeResetExamModal = function() {
+  const modal = document.getElementById('exam-reset-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+};
+
+window.executeResetExamCode = function() {
+  const textarea = document.getElementById('exam-code-textarea');
+  if (!textarea || !currentQuiz || !currentQuiz.questions) return;
+  const q = currentQuiz.questions[currentQuestionIdx];
+
+  const defaultStarter = getStarterCodeForExam(q, activeExamLanguage);
+  textarea.value = defaultStarter;
+  if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+  studentLanguageCode[currentQuestionIdx][activeExamLanguage] = defaultStarter;
+
+  window.updateExamLineNumbers();
+  window.closeResetExamModal();
+};
+
+window.runExamCodingCode = async function() {
+  const textarea = document.getElementById('exam-code-textarea');
+  const code = textarea ? textarea.value : '';
+  const customInputEl = document.getElementById('exam-custom-input');
+  const customContainer = document.getElementById('exam-custom-input-container');
+  const customInput = (customInputEl && customContainer && !customContainer.classList.contains('hidden'))
+    ? customInputEl.value : null;
+
+  const runBtn = document.getElementById('exam-run-btn');
+  const statusEl = document.getElementById('exam-compiler-running-status');
+  const terminalDrawer = document.getElementById('exam-terminal-output');
+
+  if (runBtn) {
+    runBtn.disabled = true;
+    runBtn.innerHTML = `
+      <svg class="animate-spin h-3.5 w-3.5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Compiling...</span>
+    `;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = `Compiling ${activeExamLanguage.toUpperCase()} on host...`;
+    statusEl.classList.remove('hidden');
+  }
+
+  if (terminalDrawer) {
+    terminalDrawer.classList.remove('hidden');
+    terminalDrawer.innerHTML = `
+      <div class="p-4 space-y-2 text-left font-mono text-xs text-neutral-400 animate-pulse">
+        <div class="flex items-center gap-2 text-blue-400">
+          <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+          <strong>Invoking host ${activeExamLanguage.toUpperCase()} compiler/runtime...</strong>
+        </div>
+        <div class="text-[11px] text-neutral-500">> Executing testcases with safety limits...</div>
+      </div>
+    `;
+  }
+
+  const q = currentQuiz.questions[currentQuestionIdx];
+  const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
+
+  try {
+    let res;
+    if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
+      res = await window.TechPrepAPI.runDsaCode({
+        problemId: problemSlug,
+        language: activeExamLanguage,
+        code,
+        customInput: (customInput && customInput.trim() !== '') ? customInput : undefined,
+        testCases: q.testCases
+      });
     }
+
+    if (res && res.result) {
+      renderExamTerminalOutput(res.result, false);
+    } else {
+      renderExamTerminalOutput({ status: 'Error', error: 'No response from compiler service.' }, false);
+    }
+  } catch (err) {
+    console.error('Compiler execution failed:', err);
+    renderExamTerminalOutput({ status: 'Error', error: err.message }, false);
+  } finally {
+    if (runBtn) {
+      runBtn.disabled = false;
+      runBtn.innerHTML = `<span>Run Code</span>`;
+    }
+    if (statusEl) statusEl.classList.add('hidden');
   }
 };
+
+window.submitExamCodingCode = async function() {
+  const textarea = document.getElementById('exam-code-textarea');
+  const code = textarea ? textarea.value : '';
+
+  const submitBtn = document.getElementById('exam-submit-btn');
+  const statusEl = document.getElementById('exam-compiler-running-status');
+  const terminalDrawer = document.getElementById('exam-terminal-output');
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+      <svg class="animate-spin h-3.5 w-3.5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span>Evaluating...</span>
+    `;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = `Testing all test cases on host compiler...`;
+    statusEl.classList.remove('hidden');
+  }
+
+  if (terminalDrawer) {
+    terminalDrawer.classList.remove('hidden');
+    terminalDrawer.innerHTML = `
+      <div class="p-4 space-y-2 text-left font-mono text-xs text-neutral-400 animate-pulse">
+        <div class="flex items-center gap-2 text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <strong>Running full test suite on ${activeExamLanguage.toUpperCase()} toolchain...</strong>
+        </div>
+        <div class="text-[11px] text-neutral-500">> Verifying all testcases and bounds...</div>
+      </div>
+    `;
+  }
+
+  const q = currentQuiz.questions[currentQuestionIdx];
+  const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
+
+  try {
+    let res;
+    if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
+      res = await window.TechPrepAPI.runDsaCode({
+        problemId: problemSlug,
+        language: activeExamLanguage,
+        code,
+        testCases: q.testCases
+      });
+    }
+
+    const evaluation = res && res.result ? res.result : { status: 'Error', error: 'No response received' };
+    
+    // Always persist student's typed code into exam state
+    studentAnswers[currentQuestionIdx] = code;
+    if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+    studentLanguageCode[currentQuestionIdx][activeExamLanguage] = code;
+    delete questionFlags[currentQuestionIdx];
+
+    renderExamTerminalOutput(evaluation, true);
+    renderQuestionGrid();
+
+    if (evaluation.status === 'Accepted') {
+      if (window.showToast) {
+        window.showToast("All test cases passed! Solution verified on host compiler.");
+      } else {
+        alert("Accepted! All test cases passed on host compiler.");
+      }
+    } else {
+      if (window.showToast) {
+        window.showToast(`Verdict: ${evaluation.status}. Review test results below.`);
+      }
+    }
+  } catch (err) {
+    console.error('Submission execution failed:', err);
+    renderExamTerminalOutput({ status: 'Error', error: err.message }, true);
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<span>Submit Code</span>`;
+    }
+    if (statusEl) statusEl.classList.add('hidden');
+  }
+};
+
+function renderExamTerminalOutput(evaluation, isSubmit) {
+  const terminalDrawer = document.getElementById('exam-terminal-output');
+  if (!terminalDrawer) return;
+
+  terminalDrawer.classList.remove('hidden');
+
+  // Compile Error
+  if (evaluation.status === 'Compile Error') {
+    terminalDrawer.innerHTML = `
+      <div class="p-4 space-y-3 text-left">
+        <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+          <div class="flex items-center space-x-3">
+            <span class="px-3 py-1 rounded text-xs font-mono font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              COMPILE ERROR
+            </span>
+            <span class="font-mono text-xs text-neutral-500">Compiler: <strong>${escapeHTML(evaluation.compiler || activeExamLanguage)}</strong></span>
+          </div>
+          <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-200 font-mono text-xs">
+            Close
+          </button>
+        </div>
+        <div class="p-3.5 rounded-lg bg-neutral-900 border border-amber-500/30 text-amber-300 font-mono text-xs whitespace-pre-wrap leading-relaxed overflow-x-auto">
+          ${escapeHTML(evaluation.error || evaluation.stderr || 'Compilation failed with syntax error.')}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Custom Input Execution output
+  if (evaluation.stdout !== undefined && (!evaluation.testResults || evaluation.testResults.length === 0)) {
+    const isSuccess = evaluation.status === 'Success';
+    terminalDrawer.innerHTML = `
+      <div class="p-4 space-y-3 text-left">
+        <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+          <div class="flex items-center space-x-3">
+            <span class="px-3 py-1 rounded text-xs font-mono font-bold ${isSuccess ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'}">
+              ${(evaluation.status || 'SUCCESS').toUpperCase()}
+            </span>
+            <span class="font-mono text-xs text-neutral-500">Runtime: <strong class="text-white">${evaluation.runtime || '0 ms'}</strong></span>
+            <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-white">${evaluation.memory || '40 MB'}</strong></span>
+          </div>
+          <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-200 font-mono text-xs">
+            Close
+          </button>
+        </div>
+        <div class="space-y-2">
+          <div class="text-[11px] font-mono text-neutral-400">Standard Output (stdout):</div>
+          <pre class="p-3 rounded-lg bg-neutral-900 border border-neutral-800 text-emerald-400 font-mono text-xs whitespace-pre-wrap">${escapeHTML(evaluation.stdout || '(No output)')}</pre>
+          ${evaluation.stderr ? `
+            <div class="text-[11px] font-mono text-rose-400 mt-2">Standard Error (stderr):</div>
+            <pre class="p-3 rounded-lg bg-neutral-900 border border-rose-800/40 text-rose-300 font-mono text-xs whitespace-pre-wrap">${escapeHTML(evaluation.stderr)}</pre>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let verdictBadge = '';
+  if (evaluation.status === 'Accepted') {
+    verdictBadge = `<span class="px-3 py-1 rounded text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">ACCEPTED</span>`;
+  } else if (evaluation.status === 'Wrong Answer') {
+    verdictBadge = `<span class="px-3 py-1 rounded text-xs font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">WRONG ANSWER</span>`;
+  } else {
+    verdictBadge = `<span class="px-3 py-1 rounded text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">${(evaluation.status || 'UNKNOWN').toUpperCase()}</span>`;
+  }
+
+  const testResults = evaluation.testResults || [];
+  const testResultsHtml = testResults.map(r => `
+    <div class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs space-y-1">
+      <div class="flex items-center justify-between font-mono font-bold">
+        <span>Test Case ${r.testCaseIndex}:</span>
+        <span class="${r.status === 'Passed' ? 'text-emerald-500' : 'text-rose-500'}">${r.status} (${r.runtimeMs} ms)</span>
+      </div>
+      <div class="font-mono text-[11px] text-neutral-500">Input: <code class="text-neutral-700 dark:text-neutral-300">${escapeHTML(r.input)}</code></div>
+      <div class="font-mono text-[11px] text-neutral-500">Expected: <code class="text-emerald-600 dark:text-emerald-400">${escapeHTML(r.expectedOutput)}</code></div>
+      <div class="font-mono text-[11px] text-neutral-500">Output: <code class="${r.status === 'Passed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${escapeHTML(r.actualOutput)}</code></div>
+    </div>
+  `).join('');
+
+  terminalDrawer.innerHTML = `
+    <div class="p-4 space-y-3 text-left">
+      <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+        <div class="flex items-center space-x-3">
+          ${verdictBadge}
+          <span class="font-mono text-xs text-neutral-500">Runtime: <strong class="text-neutral-900 dark:text-white">${evaluation.runtime || (evaluation.runtimeMs + ' ms')}</strong></span>
+          <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-neutral-900 dark:text-white">${evaluation.memory || (evaluation.memoryMb + ' MB')}</strong></span>
+          ${evaluation.compiler ? `<span class="hidden sm:inline-block font-mono text-[11px] text-neutral-400">(${escapeHTML(evaluation.compiler)})</span>` : ''}
+        </div>
+        <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs flex items-center gap-1">
+          <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          Close
+        </button>
+      </div>
+      <div class="space-y-2 max-h-48 overflow-y-auto">${testResultsHtml}</div>
+    </div>
+  `;
+}
+
+// Backward-compatibility aliases
+window.runDSACode = window.runExamCodingCode;
+window.submitDSACode = window.submitExamCodingCode;
+window.updateLineNumbers = window.updateExamLineNumbers;
+window.changeDSALanguage = window.changeExamLanguage;
+window.confirmResetDSACode = window.confirmResetExamCode;
+

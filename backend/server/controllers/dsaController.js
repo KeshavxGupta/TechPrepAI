@@ -65,7 +65,7 @@ function normalizeSlug(id) {
 
 exports.runCode = async (req, res, next) => {
   try {
-    const { problemId, language, code, customInput } = req.body;
+    const { problemId, language, code, customInput, testCases: reqTestCases } = req.body;
 
     if (!code) {
       return res.status(400).json({ success: false, message: 'Code is required' });
@@ -84,11 +84,13 @@ exports.runCode = async (req, res, next) => {
       return res.status(200).json({ success: true, result });
     }
 
-    // Otherwise, evaluate sample test cases
-    const testCases = DEFAULT_TEST_CASES[slug] || [
-      { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
-      { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
-    ];
+    // Otherwise, evaluate sample or dynamic test cases
+    const testCases = (Array.isArray(reqTestCases) && reqTestCases.length > 0)
+      ? reqTestCases
+      : (DEFAULT_TEST_CASES[slug] || [
+          { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+          { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
+        ]);
 
     const result = await compilerService.evaluateTestCases({
       language: language || 'javascript',
@@ -108,18 +110,20 @@ exports.runCode = async (req, res, next) => {
 // @access  Public
 exports.submitSolution = async (req, res, next) => {
   try {
-    const { studentEmail, problemId, language, code } = req.body;
+    const { studentEmail, problemId, language, code, testCases: reqTestCases } = req.body;
 
     if (!problemId || !code) {
       return res.status(400).json({ success: false, message: 'Missing problem or code' });
     }
 
     const slug = normalizeSlug(problemId);
-    const testCases = DEFAULT_TEST_CASES[slug] || [
-      { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
-      { input: '[3,2,4]\n6', expectedOutput: '[1,2]' },
-      { input: '[3,3]\n6', expectedOutput: '[0,1]' }
-    ];
+    const testCases = (Array.isArray(reqTestCases) && reqTestCases.length > 0)
+      ? reqTestCases
+      : (DEFAULT_TEST_CASES[slug] || [
+          { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+          { input: '[3,2,4]\n6', expectedOutput: '[1,2]' },
+          { input: '[3,3]\n6', expectedOutput: '[0,1]' }
+        ]);
 
     const evaluation = await compilerService.evaluateTestCases({
       language: language || 'javascript',

@@ -17,6 +17,26 @@ function killProcessTree(pid) {
   }
 }
 
+// Robust LeetCode-grade output comparison helper
+function outputsMatch(actual, expected) {
+  if (actual === undefined || expected === undefined) return false;
+  const a = String(actual).trim();
+  const e = String(expected).trim();
+  if (a === e) return true;
+  if (a.toLowerCase() === e.toLowerCase()) return true;
+  // Normalize arrays / objects: strip outer brackets and whitespace
+  const normA = a.replace(/\s+/g, '').replace(/^\[|\]$/g, '').toLowerCase();
+  const normE = e.replace(/\s+/g, '').replace(/^\[|\]$/g, '').toLowerCase();
+  if (normA === normE && normA.length > 0) return true;
+  // Try JSON deep comparison
+  try {
+    const jsonA = JSON.parse(a);
+    const jsonE = JSON.parse(e);
+    if (JSON.stringify(jsonA) === JSON.stringify(jsonE)) return true;
+  } catch (err) {}
+  return false;
+}
+
 // Spawn process with timeout and input
 function executeProcess(cmd, args, options = {}, input = '', timeoutMs = compilerConfig.timeoutMs) {
   return new Promise((resolve) => {
@@ -291,57 +311,98 @@ function getPythonDriver(slug, userCode) {
   return `
 import sys
 import json
+import re
 
 ${userCode}
 
+def _parse_input(raw):
+    raw = raw.strip()
+    if not raw:
+        return []
+    lines = [l.strip() for l in raw.split('\\n') if l.strip()]
+    if len(lines) > 1:
+        parsed = []
+        for line in lines:
+            try:
+                parsed.append(json.loads(line))
+            except Exception:
+                parsed.append(line.strip('"\\''))
+        return parsed
+    try:
+        return json.loads(f"[{raw}]")
+    except Exception:
+        try:
+            return [json.loads(raw)]
+        except Exception:
+            return [raw.strip('"\\'')]
+
 def _main():
-    lines = [line.strip() for line in sys.stdin.read().strip().split('\\n') if line.strip()]
-    if not lines:
+    raw = sys.stdin.read().strip()
+    if not raw:
         return
-    
-    sol = Solution() if 'Solution' in globals() else None
-    
-    ${getPythonInvocation(slug)}
+    args = _parse_input(raw)
+    lines = [l.strip() for l in raw.split('\\n') if l.strip()]
+
+    # Problem-specific handlers
+    if '${slug}' == 'two-sum':
+        nums = args[0] if len(args) > 0 else []
+        target = args[1] if len(args) > 1 else 0
+        sol = Solution() if 'Solution' in globals() else None
+        ans = sol.twoSum(nums, target) if sol and hasattr(sol, 'twoSum') else (twoSum(nums, target) if 'twoSum' in globals() else [])
+        print(json.dumps(ans, separators=(',', ':')))
+        return
+    if '${slug}' == 'valid-anagram':
+        s = str(args[0]) if len(args) > 0 else ""
+        t = str(args[1]) if len(args) > 1 else ""
+        sol = Solution() if 'Solution' in globals() else None
+        ans = sol.isAnagram(s, t) if sol and hasattr(sol, 'isAnagram') else (isAnagram(s, t) if 'isAnagram' in globals() else False)
+        print("true" if ans else "false")
+        return
+    if '${slug}' == 'container-with-most-water':
+        height = args[0] if len(args) > 0 else []
+        sol = Solution() if 'Solution' in globals() else None
+        ans = sol.maxArea(height) if sol and hasattr(sol, 'maxArea') else (maxArea(height) if 'maxArea' in globals() else 0)
+        print(ans)
+        return
+    if '${slug}' == 'coin-change':
+        coins = args[0] if len(args) > 0 else []
+        amount = args[1] if len(args) > 1 else 0
+        sol = Solution() if 'Solution' in globals() else None
+        ans = sol.coinChange(coins, amount) if sol and hasattr(sol, 'coinChange') else (coinChange(coins, amount) if 'coinChange' in globals() else -1)
+        print(ans)
+        return
+
+    # Generic function detection & invocation
+    func = None
+    if 'Solution' in globals() and isinstance(Solution, type):
+        sol_inst = Solution()
+        methods = [m for m in dir(sol_inst) if not m.startswith('_') and callable(getattr(sol_inst, m))]
+        if methods:
+            func = getattr(sol_inst, methods[0])
+            
+    if not func:
+        exclude = {'sys', 'json', 're', '_parse_input', '_main'}
+        candidates = [v for k, v in globals().items() if k not in exclude and callable(v) and not isinstance(v, type)]
+        if candidates:
+            func = candidates[-1]
+            
+    if func:
+        try:
+            res = func(*args)
+        except TypeError:
+            res = func(args[0] if len(args) == 1 else args)
+            
+        if res is not None:
+            if isinstance(res, bool):
+                print("true" if res else "false")
+            elif isinstance(res, (list, dict)):
+                print(json.dumps(res, separators=(',', ':')))
+            else:
+                print(str(res))
 
 if __name__ == '__main__':
     _main()
 `;
-}
-
-function getPythonInvocation(slug) {
-  switch (slug) {
-    case 'two-sum':
-      return `
-    nums = json.loads(lines[0])
-    target = int(lines[1])
-    ans = sol.twoSum(nums, target) if sol else twoSum(nums, target)
-    print(json.dumps(ans, separators=(',', ':')))
-      `;
-    case 'valid-anagram':
-      return `
-    s = lines[0].strip('"')
-    t = lines[1].strip('"')
-    ans = sol.isAnagram(s, t) if sol else isAnagram(s, t)
-    print("true" if ans else "false")
-      `;
-    case 'container-with-most-water':
-      return `
-    height = json.loads(lines[0])
-    ans = sol.maxArea(height) if sol else maxArea(height)
-    print(ans)
-      `;
-    case 'coin-change':
-      return `
-    coins = json.loads(lines[0])
-    amount = int(lines[1])
-    ans = sol.coinChange(coins, amount) if sol else coinChange(coins, amount)
-    print(ans)
-      `;
-    default:
-      return `
-    print("Completed")
-      `;
-  }
 }
 
 // JavaScript Harness generator
@@ -351,50 +412,96 @@ const fs = require('fs');
 
 ${userCode}
 
+function _parseArgs(raw) {
+  if (!raw || !raw.trim()) return [];
+  raw = raw.trim();
+  const lines = raw.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length > 1) {
+    return lines.map(line => {
+      try { return JSON.parse(line); } catch (e) { return line.replace(/^"|"$/g, ''); }
+    });
+  }
+  try {
+    return JSON.parse('[' + raw + ']');
+  } catch (e) {
+    try {
+      return [JSON.parse(raw)];
+    } catch (e2) {
+      return [raw.replace(/^"|"$/g, '')];
+    }
+  }
+}
+
 function _run() {
     const raw = fs.readFileSync(0, 'utf-8').trim();
     if (!raw) return;
     const lines = raw.split(/\\r?\\n/).filter(Boolean);
-    
-    ${getJsInvocation(slug)}
+    const args = _parseArgs(raw);
+
+    // Problem-specific handlers
+    if ('${slug}' === 'two-sum' && typeof twoSum === 'function') {
+      const nums = Array.isArray(args[0]) ? args[0] : (lines[0] ? JSON.parse(lines[0]) : []);
+      const target = args[1] !== undefined ? args[1] : (lines[1] ? parseInt(lines[1], 10) : 0);
+      console.log(JSON.stringify(twoSum(nums, target)));
+      return;
+    }
+    if ('${slug}' === 'valid-anagram' && typeof isAnagram === 'function') {
+      const s = String(args[0] !== undefined ? args[0] : (lines[0] || ''));
+      const t = String(args[1] !== undefined ? args[1] : (lines[1] || ''));
+      console.log(isAnagram(s, t) ? 'true' : 'false');
+      return;
+    }
+    if ('${slug}' === 'container-with-most-water' && typeof maxArea === 'function') {
+      console.log(maxArea(args[0]));
+      return;
+    }
+    if ('${slug}' === 'coin-change' && typeof coinChange === 'function') {
+      console.log(coinChange(args[0], args[1]));
+      return;
+    }
+
+    // Generic function detector & invocation
+    let targetFn = null;
+    if (typeof Solution !== 'undefined') {
+      const sol = new Solution();
+      const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(sol)).filter(m => m !== 'constructor' && typeof sol[m] === 'function');
+      if (methods.length > 0) targetFn = sol[methods[0]].bind(sol);
+    }
+    if (!targetFn) {
+      const userCodeStr = ${JSON.stringify(userCode)};
+      const re = /(?:function\\s+([a-zA-Z0-9_$]+)|(?:var|let|const)\\s+([a-zA-Z0-9_$]+)\\s*=\\s*(?:function|\\([^)]*\\)\\s*=>|[a-zA-Z0-9_$]+\\s*=>))/g;
+      let m;
+      const funcs = [];
+      while ((m = re.exec(userCodeStr)) !== null) {
+        const name = m[1] || m[2];
+        try {
+          if (typeof eval(name) === 'function') funcs.push(eval(name));
+        } catch (e) {}
+      }
+      if (funcs.length > 0) targetFn = funcs[funcs.length - 1];
+    }
+
+    if (targetFn) {
+      let res;
+      try {
+        res = targetFn(...args);
+      } catch (err) {
+        res = targetFn(args[0]);
+      }
+      if (res !== undefined) {
+        if (typeof res === 'boolean') {
+          console.log(res ? 'true' : 'false');
+        } else if (typeof res === 'object' && res !== null) {
+          console.log(JSON.stringify(res));
+        } else {
+          console.log(String(res));
+        }
+      }
+    }
 }
 
 _run();
 `;
-}
-
-function getJsInvocation(slug) {
-  switch (slug) {
-    case 'two-sum':
-      return `
-    const nums = JSON.parse(lines[0]);
-    const target = parseInt(lines[1], 10);
-    const ans = twoSum(nums, target);
-    console.log(JSON.stringify(ans));
-      `;
-    case 'valid-anagram':
-      return `
-    const s = lines[0].replace(/^"|"$/g, '');
-    const t = lines[1].replace(/^"|"$/g, '');
-    const ans = isAnagram(s, t);
-    console.log(ans ? 'true' : 'false');
-      `;
-    case 'container-with-most-water':
-      return `
-    const height = JSON.parse(lines[0]);
-    console.log(maxArea(height));
-      `;
-    case 'coin-change':
-      return `
-    const coins = JSON.parse(lines[0]);
-    const amount = parseInt(lines[1], 10);
-    console.log(coinChange(coins, amount));
-      `;
-    default:
-      return `
-    console.log("Completed");
-      `;
-  }
 }
 
 // Core Compiler Service
@@ -525,10 +632,8 @@ class CompilerService {
           if (overallStatus === 'Accepted') overallStatus = 'Runtime Error';
           allPassed = false;
         } else {
-          // Normalize output comparison
-          const cleanActual = execRes.stdout.replace(/\s+/g, '');
-          const cleanExpected = expected.replace(/\s+/g, '');
-          if (cleanActual !== cleanExpected) {
+          // Normalize output comparison using LeetCode-grade comparator
+          if (!outputsMatch(execRes.stdout, expected)) {
             tcStatus = 'Wrong Answer';
             if (overallStatus === 'Accepted') overallStatus = 'Wrong Answer';
             allPassed = false;

@@ -228,97 +228,252 @@
     </div>
 
     <!-- View 3: Active Exam Environment -->
-    <div id="view-exam" class="hidden w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 text-left unselectable">
+    <div id="view-exam" class="hidden w-full text-left unselectable">
       
-      <!-- Left Panel: Proctoring + Question Grid Navigator (4 cols) -->
-      <div class="lg:col-span-4 space-y-6">
+      <!-- Layout A: Standard MCQ View (proctoring on left, options on right) -->
+      <div id="exam-mcq-container" class="w-full max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <!-- Proctoring status -->
-        <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-3">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-500">Security Telemetry</h3>
+        <!-- Left Panel: Proctoring + Question Grid Navigator (4 cols) -->
+        <div class="lg:col-span-4 space-y-6">
           
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-neutral-500">Violations Warning:</span>
-            <span id="exam-warning-count" class="font-mono font-bold text-amber-500">0 / 3</span>
+          <!-- Proctoring status -->
+          <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-500">Security Telemetry</h3>
+            
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-neutral-500">Violations Warning:</span>
+              <span id="exam-warning-count" class="font-mono font-bold text-amber-500">0 / 3</span>
+            </div>
+
+            <div class="w-full bg-neutral-200 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden">
+              <div id="exam-warning-bar" class="bg-amber-500 h-full w-0 transition-all duration-300"></div>
+            </div>
+            
+            <p class="text-[10px] text-neutral-400 font-mono">Exam will auto-submit on 3rd tab transition.</p>
           </div>
 
-          <div class="w-full bg-neutral-200 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-            <div id="exam-warning-bar" class="bg-amber-500 h-full w-0 transition-all duration-300"></div>
+          <!-- Question Grid -->
+          <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-500">Assessment Progress</h3>
+            
+            <div id="question-nav-grid" class="grid grid-cols-5 gap-2.5 font-mono">
+              <!-- Dynamically populated numbers -->
+            </div>
+
+            <!-- Color guidelines -->
+            <div class="pt-4 border-t border-neutral-200 dark:border-neutral-800/60 grid grid-cols-2 gap-2 text-[10px] text-neutral-500">
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded bg-blue-600"></span>
+                <span>Saved Answer</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded bg-amber-500"></span>
+                <span>Marked Review</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-secondary"></span>
+                <span>Unvisited</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded ring-2 ring-blue-500 border border-neutral-300 dark:border-neutral-700 bg-surface-secondary"></span>
+                <span>Active</span>
+              </div>
+            </div>
           </div>
-          
-          <p class="text-[10px] text-neutral-400 font-mono">Exam will auto-submit on 3rd tab transition.</p>
+
         </div>
 
-        <!-- Question Grid -->
-        <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-500">Assessment Progress</h3>
+        <!-- Right Panel: Active Question Content (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col justify-between p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm min-h-[450px]">
           
-          <div id="question-nav-grid" class="grid grid-cols-5 gap-2.5 font-mono">
-            <!-- Dynamically populated numbers -->
+          <!-- Question Text -->
+          <div class="space-y-6">
+            <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800/60 pb-3">
+              <span id="exam-question-number" class="text-xs font-bold text-neutral-500 font-mono">QUESTION -- OF --</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">Single Choice</span>
+            </div>
+
+            <h2 id="exam-question-text" class="text-sm font-semibold text-neutral-900 dark:text-white leading-relaxed font-sans">
+              Question text loading...
+            </h2>
+
+            <!-- Options container -->
+            <div id="exam-options-container" class="space-y-3">
+              <!-- Radio cards -->
+            </div>
           </div>
 
-          <!-- Color guidelines -->
-          <div class="pt-4 border-t border-neutral-200 dark:border-neutral-800/60 grid grid-cols-2 gap-2 text-[10px] text-neutral-500">
-            <div class="flex items-center space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded bg-blue-600"></span>
-              <span>Saved Answer</span>
+          <!-- Action Buttons -->
+          <div class="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex space-x-2">
+              <button onclick="prevQuestion()" id="btn-prev" class="px-4 py-2 font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                Previous
+              </button>
+              <button onclick="markForReview()" class="px-4 py-2 font-medium rounded-lg border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
+                Mark for Review
+              </button>
             </div>
-            <div class="flex items-center space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded bg-amber-500"></span>
-              <span>Marked Review</span>
-            </div>
-            <div class="flex items-center space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-secondary"></span>
-              <span>Unvisited</span>
-            </div>
-            <div class="flex items-center space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded ring-2 ring-blue-500 border border-neutral-300 dark:border-neutral-700 bg-surface-secondary"></span>
-              <span>Active</span>
+            
+            <div class="flex space-x-2">
+              <button onclick="clearAnswerSelection()" class="px-4 py-2 font-medium text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors">
+                Clear Answer
+              </button>
+              <button onclick="nextQuestion()" id="btn-next" class="px-5 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">
+                Save & Next
+              </button>
             </div>
           </div>
+
         </div>
 
       </div>
 
-      <!-- Right Panel: Active Question Content (8 cols) -->
-      <div class="lg:col-span-8 flex flex-col justify-between p-6 sm:p-8 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm min-h-[450px]">
+      <!-- Layout B: Full LeetCode Split-Screen Workspace (for Coding Challenge questions) -->
+      <div id="exam-coding-container" class="hidden w-full max-w-7xl mx-auto flex flex-col h-[calc(100vh-6.5rem)] min-h-[660px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-primary shadow-2xl overflow-hidden">
         
-        <!-- Question Text -->
-        <div class="space-y-6">
-          <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800/60 pb-3">
-            <span id="exam-question-number" class="text-xs font-bold text-neutral-500 font-mono">QUESTION -- OF --</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">Single Choice</span>
+        <!-- Top Exam Header Bar for Coding Mode -->
+        <div class="h-12 px-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between shrink-0 font-sans text-xs">
+          <div class="flex items-center space-x-3">
+            <span class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold font-mono text-[11px]" id="exam-coding-q-badge">
+              QUESTION 1 OF 3 • CODING CHALLENGE
+            </span>
+            <span id="exam-coding-warning-pill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-mono bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Proctoring Telemetry: <strong id="exam-coding-warning-count" class="ml-1">0 / 3</strong>
+            </span>
           </div>
 
-          <h2 id="exam-question-text" class="text-sm font-semibold text-neutral-900 dark:text-white leading-relaxed font-sans">
-            Question text loading...
-          </h2>
-
-          <!-- Options container -->
-          <div id="exam-options-container" class="space-y-3">
-            <!-- Radio cards -->
+          <!-- Question Quick Jump Nav Buttons Row -->
+          <div class="flex items-center space-x-2">
+            <span class="text-neutral-500 font-mono hidden sm:inline text-[11px]">Jump to:</span>
+            <div id="exam-coding-nav-pills" class="flex items-center space-x-1.5">
+              <!-- Dynamically populated question numbers (1, 2, 3...) -->
+            </div>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div class="flex space-x-2">
-            <button onclick="prevQuestion()" id="btn-prev" class="px-4 py-2 font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:pointer-events-none">
-              Previous
-            </button>
-            <button onclick="markForReview()" class="px-4 py-2 font-medium rounded-lg border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
-              Mark for Review
-            </button>
-          </div>
+        <!-- Main Split Panels Grid: 5 cols Left (Description & Testcases), 7 cols Right (Multi-lang IDE) -->
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden h-full">
           
-          <div class="flex space-x-2">
-            <button onclick="clearAnswerSelection()" class="px-4 py-2 font-medium text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors">
-              Clear Answer
-            </button>
-            <button onclick="nextQuestion()" id="btn-next" class="px-5 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors">
-              Save & Next
-            </button>
+          <!-- LEFT PANEL: Problem Details, Sample Cases, Constraints -->
+          <div class="lg:col-span-5 flex flex-col border-r border-neutral-200 dark:border-neutral-800 bg-surface-elevated overflow-y-auto p-5 text-left space-y-5">
+            <div id="exam-coding-desc-header">
+              <h2 id="exam-coding-title" class="text-lg font-extrabold text-neutral-900 dark:text-white">Loading Coding Problem...</h2>
+              <div class="flex items-center gap-2 mt-1.5">
+                <span id="exam-coding-diff" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Easy</span>
+                <span class="text-[11px] font-mono text-neutral-500">Auto-Evaluated on Host Toolchain</span>
+              </div>
+            </div>
+
+            <div id="exam-coding-text" class="prose dark:prose-invert text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed whitespace-pre-line">
+              <!-- Problem description text -->
+            </div>
+
+            <!-- Sample Testcases Section -->
+            <div class="space-y-2.5">
+              <h3 class="text-xs font-bold font-mono text-neutral-500 uppercase tracking-wider">Sample Testcases</h3>
+              <div id="exam-coding-samples" class="space-y-2">
+                <!-- Dynamically populated sample test cases -->
+              </div>
+            </div>
+
+            <!-- Constraints -->
+            <div class="space-y-2">
+              <h3 class="text-xs font-bold font-mono text-neutral-500 uppercase tracking-wider">Constraints & Rules</h3>
+              <ul id="exam-coding-constraints" class="list-disc pl-5 space-y-1 text-[11px] font-mono text-neutral-600 dark:text-neutral-400">
+                <li>Time limit per test execution: 6000 ms</li>
+                <li>Memory limit: 512 MB</li>
+                <li>Supports JavaScript (Node.js 22), Python 3.12, C++ 20 (G++ 14.2), and Java 21 (Adoptium OpenJDK)</li>
+              </ul>
+            </div>
           </div>
+
+          <!-- RIGHT PANEL: Multi-Language Code Editor & Terminal Execution Drawer -->
+          <div class="lg:col-span-7 flex flex-col bg-surface-primary overflow-hidden h-full">
+            
+            <!-- Editor Toolbar Header -->
+            <div class="h-10 px-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between shrink-0 font-sans text-xs">
+              <div class="flex items-center space-x-3">
+                <span class="font-mono text-neutral-500 font-bold">Language:</span>
+                <select id="exam-lang-select" onchange="changeExamLanguage(this.value)" class="p-1 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold focus:outline-none">
+                  <option value="javascript">JavaScript (Node.js 22)</option>
+                  <option value="python">Python 3.12</option>
+                  <option value="cpp">C++ 20 (G++ 14.2)</option>
+                  <option value="java">Java 21 (Adoptium OpenJDK)</option>
+                </select>
+                <span id="exam-compiler-badge" class="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Host Compiler Active
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <button onclick="toggleExamCustomInput()" id="exam-custom-input-toggle-btn" class="px-2 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                  Custom Input
+                </button>
+                <button onclick="confirmResetExamCode()" class="px-2.5 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Reset Starter Code">
+                  Reset Starter Code
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Input Drawer (Collapsible) -->
+            <div id="exam-custom-input-container" class="hidden border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary p-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="exam-custom-input" class="text-[11px] font-mono font-bold text-neutral-500 uppercase">Test with Custom Stdin Input</label>
+                <span class="text-[10px] text-neutral-400 font-mono">Passed directly to compiler stdin</span>
+              </div>
+              <textarea id="exam-custom-input" rows="3" placeholder="e.g. [2,7,11,15]&#10;9"
+                class="w-full p-2 bg-neutral-900 text-neutral-100 font-mono text-xs rounded border border-neutral-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+            </div>
+
+            <!-- Code Editor Body with Line Numbers Gutter -->
+            <div class="flex-1 flex overflow-hidden relative bg-neutral-950 font-mono text-xs text-neutral-100">
+              <!-- Line Numbers Gutter -->
+              <div id="exam-line-numbers" class="w-10 py-3 text-right pr-3 select-none text-neutral-600 bg-neutral-900 border-r border-neutral-800 font-mono text-[11px] leading-6 shrink-0">
+                <div>1</div>
+              </div>
+
+              <!-- Textarea Code Input -->
+              <textarea id="exam-code-textarea" oninput="updateExamLineNumbers()" onscroll="syncExamLineScroll()" spellcheck="false"
+                class="flex-1 p-3 bg-neutral-950 text-neutral-100 font-mono text-xs leading-6 resize-none focus:outline-none selection:bg-blue-600 selection:text-white whitespace-pre tab-4"></textarea>
+            </div>
+
+            <!-- Execution Terminal Drawer (Outputs & Testcases) -->
+            <div id="exam-terminal-output" class="hidden border-t border-neutral-200 dark:border-neutral-800 bg-surface-elevated max-h-64 overflow-y-auto font-sans">
+              <!-- Filled dynamically on Run/Submit -->
+            </div>
+
+            <!-- Action Footer Toolbar (Run Code, Submit Code & Quiz Navigation) -->
+            <div class="h-16 px-4 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary flex items-center justify-between shrink-0 z-10 shadow-lg">
+              <div class="flex items-center space-x-3">
+                <button onclick="document.getElementById('exam-terminal-output').classList.toggle('hidden')" class="text-xs font-mono text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 flex items-center space-x-1.5">
+                  <span>Console & Test Results</span>
+                </button>
+                <span id="exam-compiler-running-status" class="hidden font-mono text-[11px] text-blue-500 animate-pulse"></span>
+              </div>
+
+              <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="prevQuestion()" id="exam-coding-btn-prev" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-40 disabled:pointer-events-none">
+                  Previous
+                </button>
+                <button onclick="markForReview()" class="hidden sm:inline-block px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 transition-colors">
+                  Review
+                </button>
+                <button id="exam-run-btn" onclick="runExamCodingCode()" class="px-4 py-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-xs shadow-sm transition-all flex items-center gap-1.5">
+                  <span>Run Code</span>
+                </button>
+                <button id="exam-submit-btn" onclick="submitExamCodingCode()" class="px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                  <span>Submit Code</span>
+                </button>
+                <button onclick="nextQuestion()" id="exam-coding-btn-next" class="px-4 py-2 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors text-xs">
+                  Save & Next
+                </button>
+              </div>
+            </div>
+
+          </div>
+
         </div>
 
       </div>
@@ -426,69 +581,41 @@
     </div>
   </div>
 
-  <template id="dsa-ide-template">
-    <!-- RIGHT PANEL: Multi-Language Code Editor & Terminal Execution Drawer -->
-    <div class="w-full flex flex-col bg-surface-primary overflow-hidden h-full rounded-xl border border-neutral-200 dark:border-neutral-800">
+  <!-- RESET STARTER CODE CONFIRMATION MODAL -->
+  <div id="exam-reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-sm transition-opacity">
+    <div class="w-full max-w-md bg-surface-elevated border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl p-6 text-left space-y-4 font-sans animate-in fade-in zoom-in duration-200">
       
-      <!-- Editor Toolbar Header -->
-      <div class="h-10 px-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between shrink-0 font-sans text-xs">
-        <div class="flex items-center space-x-3">
-          <span class="font-mono text-neutral-500 font-bold">Language:</span>
-          <select id="dsa-lang-select" onchange="changeDSALanguage(this.value)" class="p-1 rounded border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold focus:outline-none">
-            <option value="javascript">JavaScript (Node.js)</option>
-            <option value="python">Python 3</option>
-            <option value="cpp">C++ 20</option>
-            <option value="java">Java 17</option>
-          </select>
+      <div class="flex items-center space-x-3.5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center font-bold shrink-0 text-base font-mono">
+          !
         </div>
-
-        <div class="flex items-center space-x-2">
-          <button onclick="confirmResetDSACode()" class="px-2.5 py-1 rounded border border-neutral-300 dark:border-neutral-700 text-[11px] font-mono hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors" title="Reset Starter Code">
-            Reset Starter Code
-          </button>
+        <div>
+          <h3 class="text-base font-extrabold text-neutral-900 dark:text-white tracking-tight">Reset Starter Code?</h3>
+          <p class="text-xs text-neutral-500 mt-0.5">Restore default starter code template</p>
         </div>
       </div>
 
-      <!-- Code Editor Body with Line Numbers Gutter -->
-      <div class="flex-1 flex overflow-hidden relative bg-neutral-950 font-mono text-xs text-neutral-100">
-        <!-- Line Numbers Gutter -->
-        <div id="dsa-line-numbers" class="w-10 py-3 text-right pr-3 select-none text-neutral-600 bg-neutral-900 border-r border-neutral-800 font-mono text-[11px] leading-6 shrink-0">
-          <div>1</div>
-        </div>
+      <p class="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed bg-surface-secondary p-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 font-sans">
+        Are you sure you want to reset your code to the default starter template for the selected language? All unsubmitted changes in the code editor will be replaced.
+      </p>
 
-        <!-- Textarea Code Input -->
-        <textarea id="dsa-code-textarea" oninput="updateLineNumbers()" spellcheck="false"
-          class="flex-1 p-3 bg-neutral-950 text-neutral-100 font-mono text-xs leading-6 resize-none focus:outline-none selection:bg-blue-600 selection:text-white whitespace-pre tab-4"></textarea>
-      </div>
-
-      <!-- Execution Terminal Drawer (Outputs & Testcases) -->
-      <div id="dsa-terminal-output" class="hidden border-t border-neutral-200 dark:border-neutral-800 bg-surface-elevated max-h-60 overflow-y-auto font-sans">
-        <!-- Filled dynamically on Run/Submit -->
-      </div>
-
-      <!-- Action Footer Toolbar (Run Code & Submit Code) -->
-      <div class="h-16 px-5 border-t border-neutral-200 dark:border-neutral-800 bg-surface-primary flex items-center justify-between shrink-0 z-10 shadow-lg">
-        <button onclick="document.getElementById('dsa-terminal-output').classList.toggle('hidden')" class="text-xs font-mono text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 flex items-center space-x-1.5">
-          <span>Console & Test Results</span>
+      <div class="flex items-center justify-end space-x-3 pt-2">
+        <button onclick="closeResetExamModal()" class="px-4 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+          Cancel
         </button>
-
-        <div class="flex items-center space-x-3">
-          <button onclick="runDSACode()" class="px-5 py-2 rounded-lg bg-neutral-800 dark:bg-neutral-700 hover:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-semibold text-xs shadow-sm transition-all">
-            Run Code
-          </button>
-          <button onclick="submitDSACode()" class="px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
-            Submit Code
-          </button>
-        </div>
+        <button onclick="executeResetExamCode()" class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all">
+          Reset Code
+        </button>
       </div>
 
     </div>
-  </template>
+  </div>
 
   <!-- Page End -->
 
   <script src="../../js/core/api.js"></script>
   <script src="../../js/features/quiz/quiz.js"></script>
+  <script src="../../js/features/dsa/dsa-engine.js"></script>
   <script src="../../js/core/ui.js"></script>
   <script src="../../js/core/auth.js"></script>
   <script src="../../js/core/app.js"></script>
