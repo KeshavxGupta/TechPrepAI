@@ -58,18 +58,22 @@ app.use((req, res) => {
 // Central Error Handling Middleware
 app.use(errorHandler);
 
-// Start HTTP Server
+// Start HTTP Server (when running directly or in standalone dev/prod, not on Vercel serverless)
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(` TechPrep AI MERN Server running on port ${PORT}`);
-  console.log(` Web Frontend: http://localhost:${PORT}`);
-  console.log(` REST API:     http://localhost:${PORT}/api/health`);
-  console.log(` Mode:         ${process.env.NODE_ENV || 'development'}`);
-  console.log(`====================================================`);
-});
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(` TechPrep AI MERN Server running on port ${PORT}`);
+    console.log(` Web Frontend: http://localhost:${PORT}`);
+    console.log(` REST API:     http://localhost:${PORT}/api/health`);
+    console.log(` Mode:         ${process.env.NODE_ENV || 'development'}`);
+    console.log(`====================================================`);
+  });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-  console.error(`[Unhandled Server Rejection]: ${err.message}`);
-});
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err, promise) => {
+    console.error(`[Unhandled Server Rejection]: ${err.message}`);
+  });
+}
+
+module.exports = app;
