@@ -1,3 +1,8 @@
+node_modules/
+backend/node_modules/
+.env
+backend/.env
+backend/server/temp/
 .vscode/
 .DS_Store
 Thumbs.db
