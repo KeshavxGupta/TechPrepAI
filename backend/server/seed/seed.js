@@ -110,6 +110,51 @@ const SEED_QUIZZES = [
         explanation: 'B+ Trees keep data sorted, allowing efficient search, sequential access, and range selections (O(log n)).'
       }
     ]
+  },
+  {
+    customId: 'quiz_fullstack_coding',
+    title: 'Full-Stack JavaScript & DSA Coding Challenge',
+    description: 'Solve real-time coding challenges with automated test-case runner, split-screen IDE, and instant code evaluation.',
+    timeLimit: 15,
+    passPercentage: 70,
+    category: 'Coding & Algorithms',
+    questions: [
+      {
+        text: 'Two Sum Problem: Write a function `twoSum(nums, target)` that returns the indices of the two numbers such that they add up to target. Return as array `[idx1, idx2]`.',
+        questionType: 'coding',
+        language: 'javascript',
+        boilerplateCode: 'function twoSum(nums, target) {\n  // Write your solution here\n  const map = {};\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map[complement] !== undefined) {\n      return [map[complement], i];\n    }\n    map[nums[i]] = i;\n  }\n  return [];\n}',
+        testCases: [
+          { input: '[2, 7, 11, 15], 9', expectedOutput: '0,1' },
+          { input: '[3, 2, 4], 6', expectedOutput: '1,2' },
+          { input: '[3, 3], 6', expectedOutput: '0,1' }
+        ],
+        options: [],
+        correctIndex: 0,
+        explanation: 'Uses a hash map to achieve O(n) linear time complexity.'
+      },
+      {
+        text: 'Valid Palindrome: Write a function `isPalindrome(s)` that returns true if the string is a palindrome ignoring cases and non-alphanumeric characters, otherwise false.',
+        questionType: 'coding',
+        language: 'javascript',
+        boilerplateCode: 'function isPalindrome(s) {\n  // Write your solution here\n  const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");\n  return clean === clean.split("").reverse().join("");\n}',
+        testCases: [
+          { input: '"A man, a plan, a canal: Panama"', expectedOutput: 'true' },
+          { input: '"race a car"', expectedOutput: 'false' },
+          { input: '" "', expectedOutput: 'true' }
+        ],
+        options: [],
+        correctIndex: 0,
+        explanation: 'Check symmetry after cleaning string.'
+      },
+      {
+        text: 'Which data structure offers average O(1) time complexity for lookup, insert, and delete operations?',
+        questionType: 'mcq',
+        options: ['Binary Search Tree', 'Hash Map (Hash Table)', 'Linked List', 'Array'],
+        correctIndex: 1,
+        explanation: 'A Hash Table computes index using hash function for average O(1) operations.'
+      }
+    ]
   }
 ];
 

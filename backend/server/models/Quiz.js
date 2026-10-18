@@ -6,20 +6,37 @@ const questionSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  questionType: {
+    type: String,
+    enum: ['mcq', 'coding'],
+    default: 'mcq'
+  },
   options: {
     type: [String],
-    required: true,
-    validate: [arr => arr.length >= 2, 'Quiz questions must have at least 2 options']
+    default: []
   },
   correctIndex: {
     type: Number,
-    required: true,
     default: 0
   },
   explanation: {
     type: String,
     default: ''
-  }
+  },
+  language: {
+    type: String,
+    default: 'javascript'
+  },
+  boilerplateCode: {
+    type: String,
+    default: ''
+  },
+  testCases: [
+    {
+      input: { type: String, default: '' },
+      expectedOutput: { type: String, default: '' }
+    }
+  ]
 });
 
 const quizSchema = new mongoose.Schema(

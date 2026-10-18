@@ -373,78 +373,203 @@ function closeQuizModal() {
   document.getElementById('form-questions-container').innerHTML = '';
 }
 
+// Helper to add a test case row inside a coding question card
+window.addTestCaseToQuestion = function(btn, testCase = null) {
+  const card = btn.closest('.question-form-card');
+  const container = card.querySelector('.test-cases-container');
+  if (!container) return;
+
+  const row = document.createElement('div');
+  row.className = "test-case-row flex items-center gap-2 p-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary";
+  row.innerHTML = `
+    <div class="flex-1">
+      <span class="block text-[10px] font-mono text-neutral-500 font-semibold mb-1">Input Argument(s)</span>
+      <input type="text" placeholder="e.g. [2, 7, 11, 15], 9" value="${testCase ? (testCase.input || '') : ''}"
+        class="tc-input w-full p-2 rounded border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs font-mono text-neutral-900 dark:text-white focus:outline-none">
+    </div>
+    <div class="flex-1">
+      <span class="block text-[10px] font-mono text-neutral-500 font-semibold mb-1">Expected Output</span>
+      <input type="text" placeholder="e.g. 0,1 or true" value="${testCase ? (testCase.expectedOutput || '') : ''}"
+        class="tc-output w-full p-2 rounded border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs font-mono text-neutral-900 dark:text-white focus:outline-none">
+    </div>
+    <button type="button" onclick="this.closest('.test-case-row').remove()" 
+      class="mt-4 p-2 text-rose-500 hover:bg-rose-500/10 rounded transition-colors" title="Delete Test Case">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+    </button>
+  `;
+  container.appendChild(row);
+};
+
+// Switch view between MCQ fields and Coding challenge fields
+window.onQuestionTypeChange = function(selectEl) {
+  const card = selectEl.closest('.question-form-card');
+  const type = selectEl.value;
+  const mcqSection = card.querySelector('.mcq-section');
+  const codingSection = card.querySelector('.coding-section');
+
+  if (type === 'coding') {
+    mcqSection.classList.add('hidden');
+    codingSection.classList.remove('hidden');
+  } else {
+    codingSection.classList.add('hidden');
+    mcqSection.classList.remove('hidden');
+  }
+};
+
 // Add Dynamic Question inside Modal Form
 function addQuestionDOM(questionData = null) {
   const container = document.getElementById('form-questions-container');
   const questionCount = container.children.length + 1;
   
+  const qType = questionData ? (questionData.questionType || 'mcq') : 'mcq';
   const qText = questionData ? questionData.text : '';
-  const opts = questionData ? questionData.options : ['', '', '', ''];
-  const correctIdx = questionData ? questionData.correctIndex : 0;
-  const explanation = questionData ? questionData.explanation : '';
+  const opts = questionData && questionData.options ? questionData.options : ['', '', '', ''];
+  const correctIdx = questionData ? (questionData.correctIndex || 0) : 0;
+  const explanation = questionData ? (questionData.explanation || '') : '';
+  const language = questionData ? (questionData.language || 'javascript') : 'javascript';
+  const boilerplate = questionData ? (questionData.boilerplateCode || '') : '';
+  const testCases = (questionData && Array.isArray(questionData.testCases) && questionData.testCases.length > 0)
+    ? questionData.testCases
+    : [{ input: '', expectedOutput: '' }];
   
   const qDiv = document.createElement('div');
-  qDiv.className = "question-form-card p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary space-y-3 relative";
+  qDiv.className = "question-form-card p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-secondary space-y-4 relative shadow-sm";
   
   qDiv.innerHTML = `
-    <button type="button" onclick="this.closest('.question-form-card').remove(); reorderQuestionIndices();" 
-      class="absolute top-4 right-4 text-xs text-rose-500 hover:underline font-semibold">
-      Remove
-    </button>
-    
-    <div>
-      <span class="text-xs font-bold text-neutral-500 font-mono block mb-1">Question #${questionCount}</span>
-      <textarea placeholder="Type the question content here..." required
-        class="question-text-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">${qText}</textarea>
+    <!-- Top Header: Question Index + Question Type Selector + Remove Button -->
+    <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-3">
+      <div class="flex items-center space-x-3">
+        <span class="text-xs font-bold text-neutral-500 font-mono question-number-label">Question #${questionCount}</span>
+        <div class="flex items-center space-x-1.5">
+          <span class="text-[10px] font-semibold text-neutral-400 uppercase">Type:</span>
+          <select onchange="onQuestionTypeChange(this)" class="question-type-select px-2.5 py-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+            <option value="mcq" ${qType === 'mcq' ? 'selected' : ''}>Multiple Choice (MCQ)</option>
+            <option value="coding" ${qType === 'coding' ? 'selected' : ''}>Coding Challenge (Split-Screen IDE)</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" onclick="this.closest('.question-form-card').remove(); reorderQuestionIndices();" 
+        class="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center space-x-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <span>Remove</span>
+      </button>
     </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div>
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option A</label>
-        <input type="text" placeholder="First option choice" value="${opts[0]}" required
-          class="option-a-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+    <!-- Problem / Question Textarea Prompt -->
+    <div>
+      <label class="block text-[11px] font-bold text-neutral-600 dark:text-neutral-400 mb-1">Problem Statement / Question Text</label>
+      <textarea placeholder="e.g. Write a function twoSum(nums, target) that returns indices of the two numbers..." required rows="2"
+        class="question-text-input w-full p-3 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">${qText}</textarea>
+    </div>
+    
+    <!-- SECTION 1: MCQ FIELDS -->
+    <div class="mcq-section space-y-3 ${qType === 'coding' ? 'hidden' : ''}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option A</label>
+          <input type="text" placeholder="First option choice" value="${opts[0] || ''}"
+            class="option-a-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option B</label>
+          <input type="text" placeholder="Second option choice" value="${opts[1] || ''}"
+            class="option-b-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option C</label>
+          <input type="text" placeholder="Third option choice" value="${opts[2] || ''}"
+            class="option-c-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option D</label>
+          <input type="text" placeholder="Fourth option choice" value="${opts[3] || ''}"
+            class="option-d-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
       </div>
-      <div>
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option B</label>
-        <input type="text" placeholder="Second option choice" value="${opts[1]}" required
-          class="option-b-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
-      </div>
-      <div>
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option C</label>
-        <input type="text" placeholder="Third option choice" value="${opts[2]}" required
-          class="option-c-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
-      </div>
-      <div>
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Option D</label>
-        <input type="text" placeholder="Fourth option choice" value="${opts[3]}" required
-          class="option-d-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Correct Answer</label>
+          <select class="correct-index-select w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+            <option value="0" ${correctIdx === 0 ? 'selected' : ''}>Option A</option>
+            <option value="1" ${correctIdx === 1 ? 'selected' : ''}>Option B</option>
+            <option value="2" ${correctIdx === 2 ? 'selected' : ''}>Option C</option>
+            <option value="3" ${correctIdx === 3 ? 'selected' : ''}>Option D</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Explanation (Optional)</label>
+          <input type="text" placeholder="Add educational context for correct answer..." value="${explanation}"
+            class="explanation-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div>
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Correct Answer</label>
-        <select class="correct-index-select w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
-          <option value="0" ${correctIdx === 0 ? 'selected' : ''}>Option A</option>
-          <option value="1" ${correctIdx === 1 ? 'selected' : ''}>Option B</option>
-          <option value="2" ${correctIdx === 2 ? 'selected' : ''}>Option C</option>
-          <option value="3" ${correctIdx === 3 ? 'selected' : ''}>Option D</option>
-        </select>
+    <!-- SECTION 2: CODING CHALLENGE FIELDS -->
+    <div class="coding-section space-y-4 ${qType === 'coding' ? '' : 'hidden'}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1 font-mono uppercase">Target Language</label>
+          <select class="coding-lang-select w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+            <option value="javascript" ${language === 'javascript' ? 'selected' : ''}>JavaScript (Node.js)</option>
+            <option value="python" ${language === 'python' ? 'selected' : ''}>Python 3</option>
+            <option value="cpp" ${language === 'cpp' ? 'selected' : ''}>C++ 20</option>
+            <option value="java" ${language === 'java' ? 'selected' : ''}>Java 17</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-neutral-500 mb-1 font-mono uppercase">Explanation / Hint (Optional)</label>
+          <input type="text" placeholder="e.g. Use hash map for O(n) solution..." value="${explanation}"
+            class="coding-explanation-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+        </div>
       </div>
-      <div class="md:col-span-2">
-        <label class="block text-[10px] font-semibold text-neutral-500 mb-1">Explanation (Optional)</label>
-        <input type="text" placeholder="Add educational context for correct answer..." value="${explanation}"
-          class="explanation-input w-full p-2.5 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-surface-primary text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 text-neutral-900 dark:text-white">
+
+      <!-- Boilerplate Code -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-[10px] font-bold text-neutral-500 font-mono uppercase">Starter / Boilerplate Code</label>
+          <span class="text-[10px] text-neutral-400">Pre-loaded inside student split-screen editor</span>
+        </div>
+        <textarea placeholder="function solution(args) {\n  // Write solution here\n}" rows="4"
+          class="boilerplate-code-input w-full p-3 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-neutral-950 text-neutral-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">${boilerplate}</textarea>
+      </div>
+
+      <!-- Test Cases Manager -->
+      <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold text-neutral-600 dark:text-neutral-400 font-mono uppercase">Automated Test Cases</span>
+            <span class="text-[10px] text-neutral-400">(Used by auto-grader during quiz execution)</span>
+          </div>
+          <button type="button" onclick="addTestCaseToQuestion(this)" 
+            class="px-2.5 py-1 text-xs font-semibold rounded bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Add Test Case</span>
+          </button>
+        </div>
+
+        <div class="test-cases-container space-y-2">
+          <!-- Filled dynamically below -->
+        </div>
       </div>
     </div>
   `;
+
+  // Populate test cases if coding type
+  const tcContainer = qDiv.querySelector('.test-cases-container');
+  testCases.forEach(tc => {
+    window.addTestCaseToQuestion(qDiv.querySelector('.coding-section button'), tc);
+  });
+
   container.appendChild(qDiv);
 }
 
 function reorderQuestionIndices() {
   const cards = document.querySelectorAll('.question-form-card');
   cards.forEach((card, idx) => {
-    const span = card.querySelector('span');
+    const span = card.querySelector('.question-number-label');
     if (span) span.textContent = `Question #${idx + 1}`;
   });
 }
@@ -462,6 +587,9 @@ function editQuiz(id) {
   document.getElementById('form-quiz-time').value = quiz.timeLimit;
   document.getElementById('form-quiz-pass').value = quiz.passPercentage;
   
+  const container = document.getElementById('form-questions-container');
+  container.innerHTML = '';
+
   if (quiz.questions && quiz.questions.length > 0) {
     quiz.questions.forEach(q => addQuestionDOM(q));
   } else {
@@ -494,30 +622,70 @@ function saveQuizForm() {
   const questionsList = [];
   let questionsValid = true;
 
-  qCards.forEach(card => {
+  qCards.forEach((card, idx) => {
+    const qType = card.querySelector('.question-type-select').value;
     const text = card.querySelector('.question-text-input').value.trim();
-    const optA = card.querySelector('.option-a-input').value.trim();
-    const optB = card.querySelector('.option-b-input').value.trim();
-    const optC = card.querySelector('.option-c-input').value.trim();
-    const optD = card.querySelector('.option-d-input').value.trim();
-    const correctIndex = parseInt(card.querySelector('.correct-index-select').value);
-    const explanation = card.querySelector('.explanation-input').value.trim();
 
-    if (!text || !optA || !optB || !optC || !optD) {
+    if (!text) {
       questionsValid = false;
       return;
     }
 
-    questionsList.push({
-      text,
-      options: [optA, optB, optC, optD],
-      correctIndex,
-      explanation
-    });
+    if (qType === 'coding') {
+      const language = card.querySelector('.coding-lang-select').value;
+      const boilerplateCode = card.querySelector('.boilerplate-code-input').value;
+      const explanation = card.querySelector('.coding-explanation-input').value.trim();
+      
+      const tcRows = card.querySelectorAll('.test-case-row');
+      const testCases = [];
+      tcRows.forEach(row => {
+        const inp = row.querySelector('.tc-input').value.trim();
+        const exp = row.querySelector('.tc-output').value.trim();
+        if (inp || exp) {
+          testCases.push({ input: inp, expectedOutput: exp });
+        }
+      });
+
+      if (testCases.length === 0) {
+        testCases.push({ input: '', expectedOutput: '' });
+      }
+
+      questionsList.push({
+        text,
+        questionType: 'coding',
+        language,
+        boilerplateCode,
+        testCases,
+        options: [],
+        correctIndex: 0,
+        explanation
+      });
+    } else {
+      // Standard MCQ Question
+      const optA = card.querySelector('.option-a-input').value.trim();
+      const optB = card.querySelector('.option-b-input').value.trim();
+      const optC = card.querySelector('.option-c-input').value.trim();
+      const optD = card.querySelector('.option-d-input').value.trim();
+      const correctIndex = parseInt(card.querySelector('.correct-index-select').value);
+      const explanation = card.querySelector('.explanation-input').value.trim();
+
+      if (!optA || !optB || !optC || !optD) {
+        questionsValid = false;
+        return;
+      }
+
+      questionsList.push({
+        text,
+        questionType: 'mcq',
+        options: [optA, optB, optC, optD],
+        correctIndex,
+        explanation
+      });
+    }
   });
 
   if (!questionsValid) {
-    showModalError("Please write questions and all option choices completely.");
+    showModalError("Please ensure all questions and required options/prompts are completed.");
     return;
   }
 
