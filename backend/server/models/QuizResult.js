@@ -42,6 +42,18 @@ const quizResultSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    violations: {
+      type: Number,
+      default: 0
+    },
+    status: {
+      type: String,
+      default: 'FAILED'
+    },
+    submissionReason: {
+      type: String,
+      default: 'Normal Submission'
+    },
     userAnswers: {
       type: Array,
       default: []

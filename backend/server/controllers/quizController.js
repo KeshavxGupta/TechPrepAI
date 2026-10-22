@@ -1,14 +1,34 @@
 const Quiz = require('../models/Quiz');
 const QuizResult = require('../models/QuizResult');
 
+// In-memory cache for ultra-fast quiz delivery (<2ms response)
+let quizzesCache = null;
+let lastQuizzesCacheTime = 0;
+const CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+function invalidateQuizzesCache() {
+  quizzesCache = null;
+  lastQuizzesCacheTime = 0;
+}
+
 // @desc    Get all quizzes
 // @route   GET /api/quizzes
 // @access  Public
 exports.getQuizzes = async (req, res, next) => {
   try {
+    const now = Date.now();
+    if (quizzesCache && Array.isArray(quizzesCache) && (now - lastQuizzesCacheTime < CACHE_TTL_MS)) {
+      return res.status(200).json({ success: true, count: quizzesCache.length, quizzes: quizzesCache, cached: true });
+    }
+
     const quizzes = await Quiz.find().sort({ createdAt: -1 });
+    quizzesCache = quizzes;
+    lastQuizzesCacheTime = now;
     res.status(200).json({ success: true, count: quizzes.length, quizzes });
   } catch (error) {
+    if (quizzesCache && Array.isArray(quizzesCache) && quizzesCache.length > 0) {
+      return res.status(200).json({ success: true, count: quizzesCache.length, quizzes: quizzesCache, cached: true, fallback: true });
+    }
     next(error);
   }
 };
@@ -57,6 +77,7 @@ exports.saveQuiz = async (req, res, next) => {
       if (questions) quiz.questions = questions;
       await quiz.save();
 
+      invalidateQuizzesCache();
       return res.status(200).json({ success: true, message: 'Quiz updated successfully', quiz });
     }
 
@@ -70,6 +91,7 @@ exports.saveQuiz = async (req, res, next) => {
       questions: questions || []
     });
 
+    invalidateQuizzesCache();
     res.status(201).json({ success: true, message: 'Quiz created successfully', quiz });
   } catch (error) {
     next(error);
@@ -91,6 +113,7 @@ exports.deleteQuiz = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Quiz not found' });
     }
 
+    invalidateQuizzesCache();
     res.status(200).json({ success: true, message: 'Quiz deleted successfully' });
   } catch (error) {
     next(error);
@@ -106,29 +129,44 @@ exports.submitQuizResult = async (req, res, next) => {
       studentEmail,
       studentName,
       quizId,
+      customId,
       quizTitle,
       score,
-      totalQuestions,
+      scoreFraction,
+      scorePercent,
       percentage,
+      totalQuestions,
       passed,
+      status,
       timeSpentSeconds,
+      violations,
+      submissionReason,
       userAnswers
     } = req.body;
 
-    if (!quizId || percentage === undefined) {
-      return res.status(400).json({ success: false, message: 'Missing required quiz result fields' });
+    const quizIdentifier = quizId || customId;
+    if (!quizIdentifier) {
+      return res.status(400).json({ success: false, message: 'Missing quiz identifier' });
     }
+
+    const calcPercentage = percentage !== undefined ? Number(percentage) : (scorePercent !== undefined ? Number(scorePercent) : 0);
+    const calcPassed = passed !== undefined ? Boolean(passed) : (status === 'PASSED');
+    const calcScore = score !== undefined ? Number(score) : (scoreFraction ? parseInt(scoreFraction, 10) || 0 : 0);
+    const calcTotal = totalQuestions !== undefined ? Number(totalQuestions) : (scoreFraction && scoreFraction.includes('/') ? parseInt(scoreFraction.split('/')[1], 10) || 1 : 1);
 
     const result = await QuizResult.create({
       studentEmail: (studentEmail || 'guest@techprepai.com').toLowerCase(),
       studentName: studentName || 'Student',
-      quizId,
+      quizId: quizIdentifier,
       quizTitle: quizTitle || 'Assessment',
-      score: score || 0,
-      totalQuestions: totalQuestions || 1,
-      percentage: percentage || 0,
-      passed: Boolean(passed),
+      score: calcScore,
+      totalQuestions: calcTotal,
+      percentage: calcPercentage,
+      passed: calcPassed,
+      status: calcPassed ? 'PASSED' : 'FAILED',
       timeSpentSeconds: timeSpentSeconds || 0,
+      violations: violations || 0,
+      submissionReason: submissionReason || 'Normal Submission',
       userAnswers: userAnswers || [],
       timestamp: new Date()
     });

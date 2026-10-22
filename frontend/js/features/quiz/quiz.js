@@ -184,49 +184,69 @@ function getCurrentUserEmail() {
 const QuizStorage = {
   // Sync memory cache
   _cachedQuizzes: null,
+  _isSyncingQuizzes: false,
 
   getQuizzes() {
-    // 1. Trigger asynchronous background sync with MongoDB
-    if (window.TechPrepAPI && window.TechPrepAPI.getQuizzes) {
-      window.TechPrepAPI.getQuizzes().then(res => {
-        if (res.success && Array.isArray(res.quizzes) && res.quizzes.length > 0) {
-          const formatted = res.quizzes.map(q => ({
-            ...q,
-            id: q.customId || q._id || q.id
-          }));
-          localStorage.setItem(QUIZZES_KEY, JSON.stringify(formatted));
-          this._cachedQuizzes = formatted;
-        }
-      }).catch(() => {});
+    if (this._cachedQuizzes && Array.isArray(this._cachedQuizzes) && this._cachedQuizzes.length > 0) {
+      return this._cachedQuizzes;
     }
-
-    if (this._cachedQuizzes) return this._cachedQuizzes;
 
     try {
-      let data = localStorage.getItem(QUIZZES_KEY);
-      if (!data) {
-        localStorage.setItem(QUIZZES_KEY, JSON.stringify(SEED_QUIZZES));
-        return SEED_QUIZZES;
+      const data = localStorage.getItem(QUIZZES_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this._cachedQuizzes = parsed;
+          return this._cachedQuizzes;
+        }
       }
-      return JSON.parse(data);
     } catch (e) {
-      console.error('Error fetching quizzes:', e);
-      return SEED_QUIZZES;
+      console.warn('Error reading quizzes cache:', e);
     }
+
+    this._cachedQuizzes = SEED_QUIZZES;
+    try {
+      localStorage.setItem(QUIZZES_KEY, JSON.stringify(SEED_QUIZZES));
+    } catch (e) {}
+    return this._cachedQuizzes;
   },
 
-  async fetchQuizzesAsync() {
-    if (window.TechPrepAPI && window.TechPrepAPI.getQuizzes) {
-      const res = await window.TechPrepAPI.getQuizzes();
-      if (res.success && Array.isArray(res.quizzes)) {
+  syncQuizzesInBackground(onUpdated) {
+    if (this._isSyncingQuizzes || !window.TechPrepAPI || !window.TechPrepAPI.getQuizzes) return;
+    this._isSyncingQuizzes = true;
+    window.TechPrepAPI.getQuizzes().then(res => {
+      this._isSyncingQuizzes = false;
+      if (res && res.success && Array.isArray(res.quizzes) && res.quizzes.length > 0) {
         const formatted = res.quizzes.map(q => ({
           ...q,
           id: q.customId || q._id || q.id
         }));
         localStorage.setItem(QUIZZES_KEY, JSON.stringify(formatted));
         this._cachedQuizzes = formatted;
-        return formatted;
+        if (typeof onUpdated === 'function') {
+          onUpdated(formatted);
+        }
       }
+    }).catch(err => {
+      this._isSyncingQuizzes = false;
+      console.warn('Quizzes sync background error:', err);
+    });
+  },
+
+  async fetchQuizzesAsync() {
+    if (window.TechPrepAPI && window.TechPrepAPI.getQuizzes) {
+      try {
+        const res = await window.TechPrepAPI.getQuizzes();
+        if (res && res.success && Array.isArray(res.quizzes) && res.quizzes.length > 0) {
+          const formatted = res.quizzes.map(q => ({
+            ...q,
+            id: q.customId || q._id || q.id
+          }));
+          localStorage.setItem(QUIZZES_KEY, JSON.stringify(formatted));
+          this._cachedQuizzes = formatted;
+          return formatted;
+        }
+      } catch (e) {}
     }
     return this.getQuizzes();
   },
@@ -312,10 +332,19 @@ const QuizStorage = {
       const record = {
         ...result,
         studentEmail: activeEmail,
+        score: result.score !== undefined ? Number(result.score) : (result.scoreFraction ? parseInt(result.scoreFraction, 10) || 0 : 0),
+        totalQuestions: result.totalQuestions !== undefined ? Number(result.totalQuestions) : (result.scoreFraction && result.scoreFraction.includes('/') ? parseInt(result.scoreFraction.split('/')[1], 10) || 1 : 1),
+        percentage: result.percentage !== undefined ? Number(result.percentage) : (result.scorePercent !== undefined ? Number(result.scorePercent) : 0),
+        scorePercent: result.scorePercent !== undefined ? Number(result.scorePercent) : (result.percentage !== undefined ? Number(result.percentage) : 0),
+        passed: result.passed !== undefined ? Boolean(result.passed) : (result.status === 'PASSED'),
+        status: (result.passed === true || result.status === 'PASSED') ? 'PASSED' : 'FAILED',
+        violations: result.violations || 0,
+        submissionReason: result.submissionReason || 'Normal Submission',
         timestamp: new Date().toISOString()
       };
       results.push(record);
       localStorage.setItem(key, JSON.stringify(results));
+      localStorage.setItem('techprep_user_quiz_results', JSON.stringify(results));
 
       // Sync to MongoDB backend
       if (window.TechPrepAPI && window.TechPrepAPI.submitQuizResult) {

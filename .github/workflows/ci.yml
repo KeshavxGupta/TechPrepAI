@@ -26,4 +26,9 @@ jobs:
       run: npm install
 
     - name: Run Syntax Checks
-      run: node -c frontend/js/features/user/quiz-user.js
+      run: |
+        node -c frontend/js/features/user/quiz-user.js
+        node -c frontend/js/features/user/dashboard.js
+
+    - name: Run Integrity & Proctoring Tests
+      run: npm test

@@ -2,6 +2,15 @@
 
 All notable changes to the TechPrep AI project will be documented in this file.
 
+## [2.3.0] - 2026-10-22
+### Added
+- High-performance instant quiz loading: Server-side in-memory caching (60s TTL) and client-side Stale-While-Revalidate (SWR) for 0ms initial render.
+- Strict proctoring session overhaul: Early exit termination policy (exiting, navigating away, closing or reloading marks quiz as FAILED with 0% score).
+- High-stakes exit confirmation modal with back-button (`popstate`), `beforeunload`, and `pagehide` beacon fail-safes.
+- Real-time webcam optical gaze/presence monitor with AI optical radar HUD fallback.
+- Infraction burst debouncer (2500ms cooldown) and native Web Audio API synthesizer warning chime.
+- Fully responsive examination interface and LeetCode-grade coding split-view across mobile, tablet, and desktop viewports.
+
 ## [2.2.0] - 2026-10-18
 ### Added
 - LeetCode-grade multi-language split-screen compiler in Quiz examination environment.

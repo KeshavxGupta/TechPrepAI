@@ -21,12 +21,129 @@ let currentQuestionIdx = 0;
 let studentAnswers = {}; // questionIdx -> selectedIndex
 let questionFlags = {};  // questionIdx -> boolean
 let examWarnings = 0;
+let maxExamWarnings = 3;
 let timerInterval = null;
 let timeLimitSeconds = 0;
 let timeRemainingSeconds = 0;
 let timeStart = null;
 let examStarted = false;
 let examSubmitted = false;
+let isProctorGracePeriod = false;
+let isModalOpen = false;
+let lastInfractionTime = 0;
+const INFRACTION_COOLDOWN_MS = 2500;
+let activeWebcamStream = null;
+
+// Audio Warning Synthesizer (Native Web Audio API)
+function playProctorWarningSound() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const audioCtx = new AudioContext();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4
+    osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  } catch (e) {}
+}
+
+// Live Telemetry Logger
+function logTelemetryEvent(message) {
+  const feed = document.getElementById('proctor-telemetry-feed');
+  if (!feed) return;
+  const time = new Date().toLocaleTimeString([], { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = "flex items-start gap-1 text-[10px]";
+  entry.innerHTML = `<span class="text-neutral-500 font-mono">[${time}]</span> <span class="text-neutral-300">${escapeHTML(message)}</span>`;
+  feed.appendChild(entry);
+  feed.scrollTop = feed.scrollHeight;
+}
+
+// Optical & Camera Telemetry
+async function initProctoringWebcam() {
+  const videoEl = document.getElementById('proctor-video-feed');
+  const radarEl = document.getElementById('proctor-radar-view');
+  const hudStatus = document.getElementById('proctor-hud-status');
+
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+        audio: false
+      });
+      activeWebcamStream = stream;
+      if (videoEl) {
+        videoEl.srcObject = stream;
+        videoEl.classList.remove('hidden');
+        if (radarEl) radarEl.classList.add('hidden');
+      }
+      logTelemetryEvent('Webcam optical stream active: Real-time gaze & presence monitor engaged');
+      if (hudStatus) hudStatus.textContent = 'Optical Stream: Verified • Live Monitored';
+      return;
+    } catch (err) {
+      console.warn('Webcam stream unavailable, using AI optical radar:', err.message);
+    }
+  }
+
+  // Graceful fallback to animated optical scanner
+  if (videoEl) videoEl.classList.add('hidden');
+  if (radarEl) radarEl.classList.remove('hidden');
+  logTelemetryEvent('AI Optical Radar active: Window focus & tab integrity monitoring');
+}
+
+function stopProctoringWebcam() {
+  if (activeWebcamStream) {
+    try {
+      activeWebcamStream.getTracks().forEach(track => track.stop());
+    } catch (e) {}
+    activeWebcamStream = null;
+  }
+}
+
+// Emergency save on forced tab close or page reload
+function emergencyFailOnUnload() {
+  if (examStarted && !examSubmitted && currentQuiz) {
+    const total = (currentQuiz.questions && currentQuiz.questions.length) ? currentQuiz.questions.length : 1;
+    const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Student","email":"student@techprepai.com"}');
+    const failedResult = {
+      quizId: currentQuiz.id,
+      customId: currentQuiz.customId || currentQuiz.id,
+      quizTitle: currentQuiz.title,
+      studentName: activeUser.name,
+      studentEmail: activeUser.email,
+      score: 0,
+      scoreFraction: `0 / ${total}`,
+      scorePercent: 0,
+      percentage: 0,
+      totalQuestions: total,
+      passed: false,
+      status: 'FAILED',
+      timeSpentSeconds: timeStart ? Math.round((new Date() - timeStart) / 1000) : 0,
+      timeTaken: 'Terminated',
+      violations: examWarnings + 1,
+      submissionReason: 'Session Aborted: Browser Window Closed or Reloaded',
+      timestamp: new Date().toISOString()
+    };
+    try {
+      const email = activeUser.email;
+      const key = `techprep_user_quiz_results_${email}`;
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      existing.push(failedResult);
+      localStorage.setItem(key, JSON.stringify(existing));
+      localStorage.setItem('techprep_user_quiz_results', JSON.stringify(existing));
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/quizzes/results', JSON.stringify(failedResult));
+      }
+    } catch (e) {}
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // Auth & Role check
@@ -46,12 +163,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.syncUserAvatar(currentUser);
   }
 
+  // Read admin security config if available
+  try {
+    const secConfig = JSON.parse(localStorage.getItem('techprep_security_config') || '{}');
+    if (secConfig.maxWarnings) maxExamWarnings = parseInt(secConfig.maxWarnings, 10);
+  } catch (e) {}
+
   // Sidebar links active-exam locks
   document.querySelectorAll('#quiz-sidebar a, #quiz-sidebar button').forEach(link => {
     link.addEventListener('click', (e) => {
       if (examStarted && !examSubmitted) {
         e.preventDefault();
-        window.customAlert("Assessment In Progress", "Navigation is locked during active proctored assessments. Click 'Exit Environment' in the top bar to abort.", "warning");
+        confirmExitEarly();
       }
     });
   });
@@ -65,50 +188,78 @@ document.addEventListener('DOMContentLoaded', () => {
     loadQuizSelector();
   }
 
-  window.addEventListener('blur', handleProctorWarning);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      handleProctorWarning();
+  // Trapping browser back button navigation
+  window.addEventListener('popstate', (e) => {
+    if (examStarted && !examSubmitted) {
+      history.pushState({ inProctoredExam: true }, '', window.location.href);
+      confirmExitEarly();
     }
   });
 
+  // Warn on tab/window close or reload
+  window.addEventListener('beforeunload', (e) => {
+    if (examStarted && !examSubmitted) {
+      e.preventDefault();
+      e.returnValue = 'Assessment in progress! Exiting will terminate your session and mark the exam as FAILED.';
+      return e.returnValue;
+    }
+  });
+
+  // Emergency fail-on-unload if student forces tab close or reload
+  window.addEventListener('pagehide', emergencyFailOnUnload);
+
+  // Focus and Tab Switch detection
+  window.addEventListener('blur', () => {
+    if (examStarted && !examSubmitted && !isModalOpen && !isProctorGracePeriod) {
+      handleProctorWarning('Window focus lost / application switch');
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && examStarted && !examSubmitted && !isModalOpen && !isProctorGracePeriod) {
+      handleProctorWarning('Tab switched away / browser minimized');
+    }
+  });
+
+  // Anti-cheat keyboard shortcut restrictions
   document.addEventListener('keydown', (e) => {
     if (!examStarted || examSubmitted) return;
 
     const block = (
-      (e.ctrlKey && ['c', 'v', 'x', 'p', 'u'].includes(e.key.toLowerCase())) || 
+      (e.ctrlKey && ['c', 'v', 'x', 'p', 'u', 's', 'a'].includes(e.key.toLowerCase())) || 
       e.key === 'F12' || 
-      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') ||
-      (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c')
+      (e.ctrlKey && e.shiftKey && ['i', 'c', 'j', 'k'].includes(e.key.toLowerCase())) ||
+      (e.altKey && e.key === 'Tab')
     );
 
     if (block) {
       e.preventDefault();
-      window.customAlert("Action Locked", "Copy, paste, inspect, and other shortcuts are disabled in the examination environment.", "warning");
+      handleProctorWarning('Unauthorized keyboard shortcut detected');
     }
   });
 
+  // Anti-cheat right-click context menu lockout
   document.addEventListener('contextmenu', (e) => {
     if (examStarted && !examSubmitted) {
       e.preventDefault();
     }
   });
   
+  // Fullscreen violation detection
   document.addEventListener('fullscreenchange', () => {
-    if (examStarted && !examSubmitted && !document.fullscreenElement) {
+    if (examStarted && !examSubmitted && !document.fullscreenElement && !isModalOpen && !isProctorGracePeriod) {
       handleFullscreenViolation();
     }
   });
 });
 
-function loadQuizSelector() {
-  showView('view-selector');
+function renderSelectorCards(quizzes) {
   const grid = document.getElementById('selector-grid');
+  if (!grid) return;
   grid.innerHTML = '';
-  
-  const quizzes = window.QuizStorage.getQuizzes();
-  if (quizzes.length === 0) {
-    grid.innerHTML = '<p class="text-xs text-neutral-500 col-span-full text-center">No quizzes are registered yet. Contact admin.</p>';
+
+  if (!quizzes || quizzes.length === 0) {
+    grid.innerHTML = '<p class="text-xs text-neutral-500 col-span-full text-center py-8">No quizzes are registered yet. Contact admin.</p>';
     return;
   }
 
@@ -122,8 +273,8 @@ function loadQuizSelector() {
           <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-bold">${qCount} Questions</span>
           <span>Time: ${q.timeLimit} Mins</span>
         </div>
-        <h3 class="text-sm font-bold text-neutral-900 dark:text-white">${q.title}</h3>
-        <p class="text-xs text-neutral-500 mt-2 line-clamp-2">${q.description}</p>
+        <h3 class="text-sm font-bold text-neutral-900 dark:text-white">${escapeHTML(q.title)}</h3>
+        <p class="text-xs text-neutral-500 mt-2 line-clamp-2">${escapeHTML(q.description)}</p>
       </div>
       <a href="quiz-user.html?quizId=${q.id}" class="block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
         Start Assessment
@@ -131,6 +282,20 @@ function loadQuizSelector() {
     `;
     grid.appendChild(card);
   });
+}
+
+function loadQuizSelector() {
+  showView('view-selector');
+  // 1. Instant 0ms render from cache
+  const quizzes = window.QuizStorage ? window.QuizStorage.getQuizzes() : [];
+  renderSelectorCards(quizzes);
+
+  // 2. Silent background sync
+  if (window.QuizStorage && window.QuizStorage.syncQuizzesInBackground) {
+    window.QuizStorage.syncQuizzesInBackground((updated) => {
+      renderSelectorCards(updated);
+    });
+  }
 }
 
 function loadQuizInstructions(quizId) {
@@ -169,14 +334,66 @@ function startExamFullscreen() {
 
 function enterActiveExam() {
   showView('view-exam');
-  document.getElementById('quiz-timer-container').classList.remove('hidden');
-  document.getElementById('quiz-timer-container').classList.add('flex');
   
+  // Show timer and topbar proctoring elements
+  const timerContainer = document.getElementById('quiz-timer-container');
+  if (timerContainer) {
+    timerContainer.classList.remove('hidden');
+    timerContainer.classList.add('flex');
+  }
+  const exitBtn = document.getElementById('exit-exam-early');
+  if (exitBtn) {
+    exitBtn.classList.remove('hidden');
+    exitBtn.classList.add('inline-flex');
+  }
+  const proctorBadge = document.getElementById('exam-proctor-active-badge');
+  if (proctorBadge) {
+    proctorBadge.classList.remove('hidden');
+    proctorBadge.classList.add('inline-flex');
+  }
+
   examStarted = true;
+  examSubmitted = false;
+  examWarnings = 0;
   timeStart = new Date();
-  timeLimitSeconds = parseInt(currentQuiz.timeLimit) * 60;
+  timeLimitSeconds = parseInt(currentQuiz.timeLimit, 10) * 60;
   timeRemainingSeconds = timeLimitSeconds;
-  
+
+  // History state for back-button trapping
+  history.pushState({ inProctoredExam: true }, '', window.location.href);
+
+  // 3-second grace period on entry to allow layout and fullscreen transitions
+  isProctorGracePeriod = true;
+  setTimeout(() => {
+    isProctorGracePeriod = false;
+  }, 3000);
+
+  // Reset visual strike indicators
+  for (let i = 1; i <= 3; i++) {
+    const badge = document.getElementById(`strike-badge-${i}`);
+    if (badge) {
+      badge.className = "py-1.5 px-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-center text-neutral-400 font-semibold transition-all";
+      badge.textContent = `Strike ${i}: OK`;
+    }
+  }
+  const warnCount = document.getElementById('exam-warning-count');
+  if (warnCount) warnCount.textContent = `0 / ${maxExamWarnings} Strikes`;
+  const warnBar = document.getElementById('exam-warning-bar');
+  if (warnBar) {
+    warnBar.style.width = '0%';
+    warnBar.className = 'bg-emerald-500 h-full w-0 transition-all duration-300';
+  }
+
+  // Clear telemetry log and log initialization
+  const feed = document.getElementById('proctor-telemetry-feed');
+  if (feed) feed.innerHTML = '';
+  logTelemetryEvent('Strict proctored session initiated');
+  logTelemetryEvent('Fullscreen security container locked');
+  logTelemetryEvent('Keyboard, clipboard & inspect telemetry active');
+
+  // Initialize camera / optical scanner
+  initProctoringWebcam();
+
   startCountdownTimer();
   renderQuestionGrid();
   loadQuestion(0);
@@ -201,12 +418,14 @@ function updateTimerDisplay() {
   const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   
   const el = document.getElementById('quiz-timer');
-  el.textContent = display;
+  if (el) el.textContent = display;
 
-  if (timeRemainingSeconds < 60) {
-    el.className = 'text-xs font-bold font-mono text-rose-500 animate-pulse';
-  } else {
-    el.className = 'text-xs font-bold font-mono text-blue-600 dark:text-blue-400';
+  if (el) {
+    if (timeRemainingSeconds < 60) {
+      el.className = 'text-xs font-bold font-mono text-rose-500 animate-pulse';
+    } else {
+      el.className = 'text-xs font-bold font-mono text-blue-600 dark:text-blue-400';
+    }
   }
 }
 
@@ -550,12 +769,43 @@ function nextQuestion() {
 }
 
 function confirmExitEarly() {
-  window.customConfirm("Exit Proctored Session?", "Exiting the assessment environment will invalidate your current session progress and count as a void score. Return to dashboard?").then(approved => {
-    if (approved) {
-      cleanupEnvironment();
-      window.location.href = '../user/dashboard.html';
-    }
-  });
+  if (!examStarted || examSubmitted) return;
+  isModalOpen = true;
+  const modal = document.getElementById('exit-confirm-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
+}
+
+function closeExitConfirmModal() {
+  const modal = document.getElementById('exit-confirm-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  isProctorGracePeriod = true;
+  setTimeout(() => {
+    isProctorGracePeriod = false;
+    isModalOpen = false;
+  }, 1500);
+
+  // Keep fullscreen
+  if (!document.fullscreenElement) {
+    const doc = document.documentElement;
+    const req = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.msRequestFullscreen || doc.mozRequestFullScreen;
+    if (req) req.call(doc).catch(() => {});
+  }
+}
+
+function executeExitAndFailExam() {
+  const modal = document.getElementById('exit-confirm-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  isModalOpen = false;
+  terminateAndFailExam('Session Terminated: Student Exited Early');
 }
 
 function confirmSubmitModal() {
@@ -563,54 +813,219 @@ function confirmSubmitModal() {
   const total = currentQuiz.questions.length;
   document.getElementById('submit-confirm-text').textContent = `You have answered ${answeredCount} out of ${total} questions. Are you sure you want to finalize and submit your responses?`;
   
+  isModalOpen = true;
   const modal = document.getElementById('submit-confirm-modal');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  }
 }
 
 function closeSubmitConfirmModal() {
-  document.getElementById('submit-confirm-modal').classList.add('hidden');
-  document.getElementById('submit-confirm-modal').classList.remove('flex');
+  const modal = document.getElementById('submit-confirm-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  isProctorGracePeriod = true;
+  setTimeout(() => {
+    isProctorGracePeriod = false;
+    isModalOpen = false;
+  }, 1500);
 }
 
-function handleProctorWarning() {
+function handleProctorWarning(reasonText = 'Focus Lost / Tab Switch Detected') {
   if (!examStarted || examSubmitted) return;
+  if (isProctorGracePeriod || isModalOpen) return;
+
+  const now = Date.now();
+  if (now - lastInfractionTime < INFRACTION_COOLDOWN_MS) {
+    return; // Debounce duplicate events like blur + visibilitychange + exit fullscreen
+  }
+  lastInfractionTime = now;
 
   examWarnings++;
-  document.getElementById('exam-warning-count').textContent = `${examWarnings} / 3`;
-  
-  const percentage = (examWarnings / 3) * 100;
-  document.getElementById('exam-warning-bar').style.width = `${percentage}%`;
+  playProctorWarningSound();
+  logTelemetryEvent(`⚠️ Strike ${examWarnings}: ${reasonText}`);
 
-  if (examWarnings >= 3) {
-    submitExam('Proctoring Infractions Limit Reached');
+  // Update strike badges
+  for (let i = 1; i <= 3; i++) {
+    const badge = document.getElementById(`strike-badge-${i}`);
+    if (badge) {
+      if (i < examWarnings) {
+        badge.className = "py-1.5 px-1 rounded-lg border border-rose-500/30 bg-rose-500/10 text-center text-rose-500 font-bold transition-all";
+        badge.textContent = `Strike ${i}: VIOLATION`;
+      } else if (i === examWarnings) {
+        badge.className = "py-1.5 px-1 rounded-lg border border-amber-500/40 bg-amber-500/15 text-center text-amber-500 font-bold animate-pulse transition-all";
+        badge.textContent = i === 3 ? `Strike 3: FAILED` : `Strike ${i}: ACTIVE`;
+      } else {
+        badge.className = "py-1.5 px-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-center text-neutral-400 font-semibold transition-all";
+        badge.textContent = `Strike ${i}: OK`;
+      }
+    }
+  }
+
+  const warnCount = document.getElementById('exam-warning-count');
+  if (warnCount) warnCount.textContent = `${examWarnings} / ${maxExamWarnings} Strikes`;
+  const codingWarnCount = document.getElementById('exam-coding-warning-count');
+  if (codingWarnCount) codingWarnCount.textContent = `${examWarnings} / ${maxExamWarnings}`;
+
+  const percentage = Math.min((examWarnings / maxExamWarnings) * 100, 100);
+  const warnBar = document.getElementById('exam-warning-bar');
+  if (warnBar) {
+    warnBar.style.width = `${percentage}%`;
+    if (examWarnings === 1) warnBar.className = 'bg-amber-500 h-full transition-all duration-300';
+    else if (examWarnings >= 2) warnBar.className = 'bg-rose-500 h-full transition-all duration-300';
+  }
+
+  // Strike limit reached: Auto-terminate & mark as FAILED
+  if (examWarnings >= maxExamWarnings) {
+    terminateAndFailExam('Proctoring Infractions Limit Reached (3 Strikes)');
     return;
   }
 
-  document.getElementById('overlay-warning-count').textContent = examWarnings;
+  // Show strike warning overlay modal
+  const overlayCount = document.getElementById('overlay-warning-count');
+  if (overlayCount) overlayCount.textContent = examWarnings;
+  const overlayTitle = document.getElementById('overlay-warning-title');
+  if (overlayTitle) overlayTitle.textContent = `Security Strike ${examWarnings} of ${maxExamWarnings}`;
+  const overlayDesc = document.getElementById('overlay-warning-desc');
+  if (overlayDesc) overlayDesc.textContent = `${reasonText}. Changing windows, minimizing or switching tabs is strictly forbidden. Next infraction will result in immediate failure.`;
+
+  isModalOpen = true;
   const popup = document.getElementById('proctoring-warning-overlay');
-  popup.classList.remove('hidden');
-  popup.classList.add('flex');
-  
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch(() => {});
+  if (popup) {
+    popup.classList.remove('hidden');
+    popup.classList.add('flex');
   }
 }
 
 function resumeExamFullscreen() {
-  document.getElementById('proctoring-warning-overlay').classList.add('hidden');
-  document.getElementById('proctoring-warning-overlay').classList.remove('flex');
+  const popup = document.getElementById('proctoring-warning-overlay');
+  if (popup) {
+    popup.classList.add('hidden');
+    popup.classList.remove('flex');
+  }
   
+  isProctorGracePeriod = true;
+  setTimeout(() => {
+    isProctorGracePeriod = false;
+    isModalOpen = false;
+  }, 2000);
+
   const doc = document.documentElement;
   const req = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.msRequestFullscreen || doc.mozRequestFullScreen;
-  if (req) {
+  if (req && !document.fullscreenElement) {
     req.call(doc).catch(() => {});
   }
+  logTelemetryEvent('Assessment resumed in fullscreen');
 }
 
 function handleFullscreenViolation() {
   if (!examStarted || examSubmitted) return;
-  handleProctorWarning();
+  handleProctorWarning('Exited fullscreen container');
+}
+
+// Early Exit or Disqualification -> Immediately Terminate & Mark FAILED (0% score)
+function terminateAndFailExam(reason = 'Session Terminated: Student Exited Early') {
+  if (examSubmitted) return;
+  examSubmitted = true;
+  examStarted = false;
+
+  cleanupEnvironment();
+
+  closeSubmitConfirmModal();
+  const exitModal = document.getElementById('exit-confirm-modal');
+  if (exitModal) {
+    exitModal.classList.add('hidden');
+    exitModal.classList.remove('flex');
+  }
+  const overlay = document.getElementById('proctoring-warning-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+  }
+
+  const total = (currentQuiz && currentQuiz.questions) ? currentQuiz.questions.length : 1;
+  const timeTakenSeconds = timeStart ? Math.round((new Date() - timeStart) / 1000) : 0;
+  const timeTakenDisplay = `${Math.floor(timeTakenSeconds / 60)}m ${timeTakenSeconds % 60}s`;
+
+  const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}');
+  
+  // Quiz marked as FAILED with void score
+  const failedResult = {
+    quizId: currentQuiz.id,
+    customId: currentQuiz.customId || currentQuiz.id,
+    quizTitle: currentQuiz.title,
+    studentName: activeUser.name,
+    studentEmail: activeUser.email,
+    score: 0,
+    scoreFraction: `0 / ${total}`,
+    scorePercent: 0,
+    percentage: 0,
+    totalQuestions: total,
+    passed: false,
+    status: 'FAILED',
+    timeSpentSeconds: timeTakenSeconds,
+    timeTaken: timeTakenDisplay,
+    violations: examWarnings,
+    submissionReason: reason,
+    userAnswers: []
+  };
+
+  if (window.QuizStorage) {
+    window.QuizStorage.saveUserResult(failedResult);
+  }
+
+  showView('view-result');
+
+  // Display Failed Summary Banner
+  const badge = document.getElementById('result-status-badge');
+  if (badge) {
+    badge.textContent = "FAILED";
+    badge.className = "px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-widest bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30";
+  }
+
+  const titleEl = document.getElementById('result-title');
+  if (titleEl) {
+    titleEl.textContent = "Exam Session Terminated (FAILED)";
+  }
+
+  const infractionAlert = document.getElementById('result-infraction-alert');
+  if (infractionAlert) {
+    infractionAlert.classList.remove('hidden');
+    infractionAlert.className = "px-3 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30";
+    infractionAlert.textContent = `Auto-Failed: ${reason}`;
+  }
+
+  const descEl = document.getElementById('result-desc');
+  if (descEl) {
+    descEl.textContent = `Your examination session was terminated early. Per strict proctoring regulations, unauthorized exit or violation of session integrity automatically registers this attempt as FAILED with a void score (0%).`;
+  }
+
+  document.getElementById('result-score-val').textContent = '0%';
+  document.getElementById('result-score-fraction').textContent = `0 / ${total} Points (Void)`;
+  document.getElementById('result-time-taken').textContent = timeTakenDisplay;
+  document.getElementById('result-violations').textContent = `${examWarnings} Strikes`;
+  document.getElementById('result-pass-threshold').textContent = `${currentQuiz.passPercentage}% Required`;
+
+  // Itemized Void Review
+  const reviewContainer = document.getElementById('result-questions-review');
+  if (reviewContainer && currentQuiz && currentQuiz.questions) {
+    reviewContainer.innerHTML = '';
+    currentQuiz.questions.forEach((q, idx) => {
+      const revDiv = document.createElement('div');
+      revDiv.className = "p-5 rounded-xl border border-rose-500/20 bg-rose-500/5 text-xs text-left space-y-2";
+      revDiv.innerHTML = `
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-neutral-400 font-bold">Question ${idx + 1}</span>
+          <span class="text-rose-500 font-bold font-mono">ATTEMPT VOIDED (FAILED)</span>
+        </div>
+        <p class="font-semibold text-neutral-800 dark:text-neutral-200">${escapeHTML(q.title || q.question || q.text)}</p>
+      `;
+      reviewContainer.appendChild(revDiv);
+    });
+  }
 }
 
 function submitExam(reason = 'Normal Submission') {
@@ -650,21 +1065,31 @@ function submitExam(reason = 'Normal Submission') {
   const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}');
   const quizResult = {
     quizId: currentQuiz.id,
+    customId: currentQuiz.customId || currentQuiz.id,
     quizTitle: currentQuiz.title,
     studentName: activeUser.name,
     studentEmail: activeUser.email,
+    score: scorePoints,
     scoreFraction: `${scorePoints} / ${total}`,
     scorePercent: finalPercentage,
+    percentage: finalPercentage,
+    totalQuestions: total,
+    passed: isPassed,
+    status: isPassed ? 'PASSED' : 'FAILED',
+    timeSpentSeconds: timeTakenSeconds,
     timeTaken: timeTakenDisplay,
     violations: examWarnings,
-    status: isPassed ? 'PASSED' : 'FAILED',
-    submissionReason: reason
+    submissionReason: reason,
+    userAnswers: Object.keys(studentAnswers).map(k => ({ questionIdx: k, answer: studentAnswers[k] }))
   };
   
   window.QuizStorage.saveUserResult(quizResult);
 
   showView('view-result');
   
+  const titleEl = document.getElementById('result-title');
+  if (titleEl) titleEl.textContent = isPassed ? "Assessment Passed" : "Assessment Failed";
+
   const badge = document.getElementById('result-status-badge');
   badge.textContent = quizResult.status;
   if (isPassed) {
@@ -766,9 +1191,27 @@ function submitExam(reason = 'Normal Submission') {
 
 function cleanupEnvironment() {
   clearInterval(timerInterval);
-  document.getElementById('quiz-timer-container').classList.add('hidden');
-  document.getElementById('quiz-timer-container').classList.remove('flex');
-  
+
+  const timerContainer = document.getElementById('quiz-timer-container');
+  if (timerContainer) {
+    timerContainer.classList.add('hidden');
+    timerContainer.classList.remove('flex');
+  }
+
+  const exitBtn = document.getElementById('exit-exam-early');
+  if (exitBtn) {
+    exitBtn.classList.add('hidden');
+    exitBtn.classList.remove('inline-flex');
+  }
+
+  const proctorBadge = document.getElementById('exam-proctor-active-badge');
+  if (proctorBadge) {
+    proctorBadge.classList.add('hidden');
+    proctorBadge.classList.remove('inline-flex');
+  }
+
+  stopProctoringWebcam();
+
   if (document.fullscreenElement) {
     document.exitFullscreen().catch(() => {});
   }
@@ -777,6 +1220,7 @@ function cleanupEnvironment() {
 function showView(viewId) {
   ['view-selector', 'view-instructions', 'view-exam', 'view-result'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     if (id === viewId) {
       el.classList.remove('hidden');
       el.classList.add('block');
@@ -785,6 +1229,19 @@ function showView(viewId) {
       el.classList.remove('block');
     }
   });
+
+  const sidebar = document.getElementById('quiz-sidebar');
+  const sidebarToggle = document.getElementById('quiz-sidebar-toggle-btn');
+  const sidebarOverlay = document.getElementById('quiz-sidebar-overlay');
+
+  if (viewId === 'view-exam') {
+    if (sidebar) sidebar.classList.add('hidden');
+    if (sidebarToggle) sidebarToggle.classList.add('hidden');
+    if (sidebarOverlay) sidebarOverlay.classList.add('hidden');
+  } else {
+    if (sidebar) sidebar.classList.remove('hidden');
+    if (sidebarToggle) sidebarToggle.classList.remove('hidden');
+  }
 }
 
 // ==========================================

@@ -239,8 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  loadStudentPortal();
+  // 1. Instant 0ms render from cache
+  renderDashboardQuizzes();
 
+  // 2. Tab initialization
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
   if (tabParam) {
@@ -248,42 +250,15 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     switchDashboardTab('quizzes');
   }
+
+  // 3. Silent background SWR sync with MongoDB
+  syncStudentPortalWithBackend();
 });
 
-async function loadStudentPortal() {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  if (window.TechPrepAPI) {
-    try {
-      const [qRes, rRes] = await Promise.all([
-        window.TechPrepAPI.getQuizzes ? window.TechPrepAPI.getQuizzes() : Promise.resolve(null),
-        (window.TechPrepAPI.getUserQuizResults && currentUser && currentUser.email) ? window.TechPrepAPI.getUserQuizResults(currentUser.email) : Promise.resolve(null)
-      ]);
-      if (qRes && qRes.success && Array.isArray(qRes.quizzes) && qRes.quizzes.length > 0) {
-        const formattedQ = qRes.quizzes.map(q => ({ ...q, id: q.customId || q._id || q.id }));
-        localStorage.setItem('techprep_quizzes', JSON.stringify(formattedQ));
-      }
-      if (rRes && rRes.success && Array.isArray(rRes.results)) {
-        const formattedR = rRes.results.map(r => ({
-          ...r,
-          id: r.customId || r._id || r.id,
-          quizId: r.quizId,
-          quizTitle: r.quizTitle,
-          scorePercent: r.percentage,
-          scoreFraction: `${r.score}/${r.totalQuestions}`,
-          status: r.passed ? 'PASSED' : 'FAILED',
-          timestamp: r.submittedAt || r.createdAt || Date.now()
-        }));
-        const email = currentUser ? currentUser.email : 'guest';
-        localStorage.setItem(`techprep_user_quiz_results_${email}`, JSON.stringify(formattedR));
-        localStorage.setItem('techprep_user_quiz_results', JSON.stringify(formattedR));
-      }
-    } catch (e) {
-      console.warn('API loadStudentPortal fallback:', e);
-    }
-  }
-
-  const quizzes = window.QuizStorage.getQuizzes();
-  const results = window.QuizStorage.getUserResults();
+// Fast, synchronous render of stats and available quizzes (0ms load time)
+function renderDashboardQuizzes() {
+  const quizzes = window.QuizStorage ? window.QuizStorage.getQuizzes() : [];
+  const results = window.QuizStorage ? window.QuizStorage.getUserResults() : [];
 
   const totalTaken = results.length;
   let totalPercentage = 0;
@@ -291,11 +266,12 @@ async function loadStudentPortal() {
   let totalWarningsCount = 0;
 
   results.forEach(res => {
-    totalPercentage += parseInt(res.scorePercent || 0);
-    if (res.scorePercent > highestPercentage) {
-      highestPercentage = res.scorePercent;
+    totalPercentage += parseInt(res.scorePercent || res.percentage || 0, 10);
+    const p = parseInt(res.scorePercent || res.percentage || 0, 10);
+    if (p > highestPercentage) {
+      highestPercentage = p;
     }
-    totalWarningsCount += parseInt(res.violations || 0);
+    totalWarningsCount += parseInt(res.violations || 0, 10);
   });
 
   const avgPercentage = totalTaken ? Math.round(totalPercentage / totalTaken) : 0;
@@ -313,7 +289,7 @@ async function loadStudentPortal() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  if (quizzes.length === 0) {
+  if (!quizzes || quizzes.length === 0) {
     grid.innerHTML = '<p class="text-xs text-neutral-500 text-center col-span-full py-8">No quizzes have been created yet. Open Admin console.</p>';
     return;
   }
@@ -326,9 +302,9 @@ async function loadStudentPortal() {
     let buttonText = 'Start Assessment';
     
     if (matchedAttempts.length > 0) {
-      matchedAttempts.sort((a,b) => b.scorePercent - a.scorePercent);
-      const bestScore = matchedAttempts[0].scorePercent;
-      const passed = bestScore >= q.passPercentage;
+      matchedAttempts.sort((a,b) => (b.scorePercent || b.percentage || 0) - (a.scorePercent || a.percentage || 0));
+      const bestScore = matchedAttempts[0].scorePercent !== undefined ? matchedAttempts[0].scorePercent : matchedAttempts[0].percentage;
+      const passed = matchedAttempts[0].passed !== undefined ? matchedAttempts[0].passed : (bestScore >= q.passPercentage);
 
       statusBadgeHTML = `
         <span class="px-2 py-0.5 rounded text-[9px] font-semibold border ${
@@ -365,7 +341,7 @@ async function loadStudentPortal() {
         </div>
       </div>
       
-      <a href="quiz-user.html?quizId=${q.id}" class="mt-6 block w-full text-center py-2 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
+      <a href="quiz-user.html?quizId=${q.id}" class="mt-6 block w-full text-center py-2.5 text-xs font-semibold rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors shadow-sm">
         ${buttonText}
       </a>
     `;
@@ -373,69 +349,150 @@ async function loadStudentPortal() {
   });
 }
 
-async function renderHistoryLogs() {
+window.renderDashboardQuizzes = renderDashboardQuizzes;
+window.loadStudentPortal = renderDashboardQuizzes;
+
+// Asynchronous background SWR sync
+let isSyncingPortal = false;
+async function syncStudentPortalWithBackend() {
+  if (isSyncingPortal) return;
+  isSyncingPortal = true;
   const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  if (window.TechPrepAPI && window.TechPrepAPI.getUserQuizResults && currentUser && currentUser.email) {
+  if (window.TechPrepAPI) {
     try {
-      const rRes = await window.TechPrepAPI.getUserQuizResults(currentUser.email);
-      if (rRes && rRes.success && Array.isArray(rRes.results)) {
-        const formattedR = rRes.results.map(r => ({
+      const email = currentUser ? currentUser.email : '';
+      const [qRes, rRes] = await Promise.allSettled([
+        window.TechPrepAPI.getQuizzes ? window.TechPrepAPI.getQuizzes() : Promise.resolve(null),
+        (window.TechPrepAPI.getStudentQuizResults && email) ? window.TechPrepAPI.getStudentQuizResults(email) : Promise.resolve(null)
+      ]);
+
+      if (qRes.status === 'fulfilled' && qRes.value && qRes.value.success && Array.isArray(qRes.value.quizzes) && qRes.value.quizzes.length > 0) {
+        const formattedQ = qRes.value.quizzes.map(q => ({ ...q, id: q.customId || q._id || q.id }));
+        localStorage.setItem('techprep_quizzes', JSON.stringify(formattedQ));
+        if (window.QuizStorage) window.QuizStorage._cachedQuizzes = formattedQ;
+      }
+
+      if (rRes.status === 'fulfilled' && rRes.value && rRes.value.success && Array.isArray(rRes.value.results)) {
+        const formattedR = rRes.value.results.map(r => ({
           ...r,
           id: r.customId || r._id || r.id,
           quizId: r.quizId,
           quizTitle: r.quizTitle,
-          scorePercent: r.percentage,
-          scoreFraction: `${r.score}/${r.totalQuestions}`,
+          score: r.score,
+          scorePercent: r.percentage !== undefined ? r.percentage : r.scorePercent,
+          percentage: r.percentage !== undefined ? r.percentage : r.scorePercent,
+          scoreFraction: `${r.score || 0}/${r.totalQuestions || 1}`,
+          passed: r.passed,
           status: r.passed ? 'PASSED' : 'FAILED',
-          timestamp: r.submittedAt || r.createdAt || Date.now()
+          violations: r.violations || 0,
+          submissionReason: r.submissionReason || 'Normal Submission',
+          timestamp: r.submittedAt || r.createdAt || r.timestamp || Date.now()
         }));
-        localStorage.setItem(`techprep_user_quiz_results_${currentUser.email}`, JSON.stringify(formattedR));
+        if (email) {
+          localStorage.setItem(`techprep_user_quiz_results_${email}`, JSON.stringify(formattedR));
+        }
         localStorage.setItem('techprep_user_quiz_results', JSON.stringify(formattedR));
       }
+
+      // Re-render with freshly synced data
+      renderDashboardQuizzes();
     } catch (e) {
-      console.warn('API renderHistoryLogs fallback:', e);
+      console.warn('API syncStudentPortalWithBackend fallback:', e);
+    } finally {
+      isSyncingPortal = false;
     }
   }
+}
 
-  const results = window.QuizStorage.getUserResults();
+function populateHistoryTable(results) {
   const tbody = document.getElementById('history-table-body');
   const emptyMsg = document.getElementById('history-empty');
   if (!tbody || !emptyMsg) return;
 
   tbody.innerHTML = '';
-  if (results.length === 0) {
+  if (!results || results.length === 0) {
     emptyMsg.classList.remove('hidden');
     return;
   }
   emptyMsg.classList.add('hidden');
 
   const reversed = [...results].reverse();
-
   reversed.forEach(res => {
     const tr = document.createElement('tr');
     tr.className = "hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors";
     
     const dateStr = new Date(res.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-    const passed = res.status === 'PASSED';
-    
+    const passed = res.status === 'PASSED' || res.passed === true;
+    const scoreVal = res.scorePercent !== undefined ? res.scorePercent : (res.percentage !== undefined ? res.percentage : 0);
+    const scoreFrac = res.scoreFraction || `${res.score || 0}/${res.totalQuestions || 1}`;
+    const violationsCount = res.violations || 0;
+    const subReason = res.submissionReason ? `<span class="block text-[10px] text-neutral-400 mt-0.5">${res.submissionReason}</span>` : '';
+
     tr.innerHTML = `
-      <td class="py-3.5 px-4 font-mono text-neutral-500">${dateStr}</td>
-      <td class="py-3.5 px-4 font-semibold text-neutral-900 dark:text-white">${res.quizTitle}</td>
-      <td class="py-3.5 px-4 font-mono font-semibold text-neutral-800 dark:text-neutral-200">${res.scorePercent}% (${res.scoreFraction})</td>
-      <td class="py-3.5 px-4 font-mono text-amber-500 font-bold">${res.violations || 0}</td>
-      <td class="py-3.5 px-4">
-        <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${
+      <td class="px-5 py-4 whitespace-nowrap text-xs font-semibold text-neutral-900 dark:text-white">
+        ${res.quizTitle || 'Technical Assessment'}
+        ${subReason}
+      </td>
+      <td class="px-5 py-4 whitespace-nowrap text-xs text-neutral-500 font-mono">
+        ${scoreFrac} (${scoreVal}%)
+      </td>
+      <td class="px-5 py-4 whitespace-nowrap">
+        <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${
           passed 
             ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' 
             : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
         }">
-          ${res.status}
+          ${passed ? 'PASSED' : 'FAILED'}
         </span>
       </td>
-      <td class="py-3.5 px-4 text-neutral-400 font-mono italic">${res.submissionReason || 'Normal'}</td>
+      <td class="px-5 py-4 whitespace-nowrap text-xs text-neutral-500 font-mono">
+        ${violationsCount > 0 ? `<span class="text-amber-500 font-bold">${violationsCount} Strikes</span>` : '0 Clean'}
+      </td>
+      <td class="px-5 py-4 whitespace-nowrap text-xs text-neutral-400 font-mono">
+        ${dateStr}
+      </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+async function renderHistoryLogs() {
+  // 1. Instant 0ms render from cache
+  const cachedResults = window.QuizStorage ? window.QuizStorage.getUserResults() : [];
+  populateHistoryTable(cachedResults);
+
+  // 2. Background sync
+  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  if (window.TechPrepAPI && currentUser && currentUser.email) {
+    try {
+      const apiMethod = window.TechPrepAPI.getStudentQuizResults || window.TechPrepAPI.getUserQuizResults;
+      if (apiMethod) {
+        const rRes = await apiMethod.call(window.TechPrepAPI, currentUser.email);
+        if (rRes && rRes.success && Array.isArray(rRes.results)) {
+          const formattedR = rRes.results.map(r => ({
+            ...r,
+            id: r.customId || r._id || r.id,
+            quizId: r.quizId,
+            quizTitle: r.quizTitle,
+            score: r.score,
+            scorePercent: r.percentage !== undefined ? r.percentage : r.scorePercent,
+            percentage: r.percentage !== undefined ? r.percentage : r.scorePercent,
+            scoreFraction: `${r.score || 0}/${r.totalQuestions || 1}`,
+            passed: r.passed,
+            status: r.passed ? 'PASSED' : 'FAILED',
+            violations: r.violations || 0,
+            submissionReason: r.submissionReason || 'Normal Submission',
+            timestamp: r.submittedAt || r.createdAt || r.timestamp || Date.now()
+          }));
+          localStorage.setItem(`techprep_user_quiz_results_${currentUser.email}`, JSON.stringify(formattedR));
+          localStorage.setItem('techprep_user_quiz_results', JSON.stringify(formattedR));
+          populateHistoryTable(formattedR);
+        }
+      }
+    } catch (e) {
+      console.warn('API renderHistoryLogs fallback:', e);
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

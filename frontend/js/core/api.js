@@ -37,7 +37,7 @@
     }
   }
 
-  // Base HTTP Request Wrapper with JSON handling
+  // Base HTTP Request Wrapper with JSON handling and timeout
   async function request(endpoint, options = {}) {
     const base = getApiBase();
     const url = `${base}${endpoint}`;
@@ -52,11 +52,17 @@
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const controller = new AbortController();
+    const timeoutMs = options.timeout || 3500;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     try {
       const res = await fetch(url, {
         ...options,
+        signal: options.signal || controller.signal,
         headers
       });
+      clearTimeout(timeoutId);
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -69,6 +75,7 @@
       }
       return data;
     } catch (err) {
+      clearTimeout(timeoutId);
       console.warn(`[TechPrep API] Network/Offline request to ${endpoint}:`, err.message);
       return {
         success: false,
@@ -153,6 +160,10 @@
 
     async getStudentQuizResults(email) {
       return await request(`/quizzes/results/user/${encodeURIComponent(email || getCurrentUserEmail())}`);
+    },
+
+    async getUserQuizResults(email) {
+      return await this.getStudentQuizResults(email);
     },
 
     async getAllQuizResults() {

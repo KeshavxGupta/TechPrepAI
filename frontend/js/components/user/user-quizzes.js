@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
   const container = document.getElementById('component-user-quizzes');
   if (!container) return;
 
@@ -16,8 +16,8 @@
     </div>
 
     <!-- Student Stats Counter -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div class="p-4 sm:p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm">
         <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">Assessments Finished</span>
         <div class="flex items-baseline space-x-2 mt-2">
           <span id="stat-completed" class="text-3xl font-extrabold font-mono text-neutral-900 dark:text-white">0</span>
