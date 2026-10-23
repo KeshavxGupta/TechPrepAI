@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TechPrep AI - Core DSA Engine
  * Handles DSA problem persistence, multi-language starter templates,
  * client-side testcase evaluator, and user progress metrics.
@@ -481,15 +481,28 @@ function evaluateCodeSubmission(problem, code, language, isSubmit) {
           }
           return dp[amount] > amount ? -1 : dp[amount];
         };
+      case 'valid-palindrome':
+        return (s) => {
+          const clean = String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+          return clean === clean.split('').reverse().join('');
+        };
       default:
         return null;
     }
   };
 
-  const fnName = problem.slug === 'two-sum' ? 'twoSum' :
-                 problem.slug === 'valid-anagram' ? 'isAnagram' :
-                 problem.slug === 'reverse-linked-list' ? 'reverseList' :
-                 problem.slug === 'container-with-most-water' ? 'maxArea' : 'coinChange';
+  let fnName = problem.slug === 'two-sum' ? 'twoSum' :
+               problem.slug === 'valid-palindrome' ? 'isPalindrome' :
+               problem.slug === 'valid-anagram' ? 'isAnagram' :
+               problem.slug === 'reverse-linked-list' ? 'reverseList' :
+               problem.slug === 'container-with-most-water' ? 'maxArea' :
+               problem.slug === 'coin-change' ? 'coinChange' : '';
+
+  if (!fnName) {
+    const fnMatch = (code || '').match(/function\s+([a-zA-Z0-9_$]+)\s*\(/) || 
+                    (problem.boilerplateCode && problem.boilerplateCode.match(/function\s+([a-zA-Z0-9_$]+)\s*\(/));
+    fnName = fnMatch ? fnMatch[1] : 'solution';
+  }
 
   for (let i = 0; i < testCasesToRun.length; i++) {
     const tc = testCasesToRun[i];
@@ -512,9 +525,12 @@ function evaluateCodeSubmission(problem, code, language, isSubmit) {
         // Execute JS code provided in editor
         const evalFunc = new Function(`
           ${code}
-          if (typeof ${fnName} === 'function') {
-            return ${fnName}.apply(null, arguments);
-          }
+          let target = null;
+          if (typeof ${fnName} === 'function') target = ${fnName};
+          if (!target && typeof twoSum === 'function') target = twoSum;
+          if (!target && typeof isPalindrome === 'function') target = isPalindrome;
+          if (!target && typeof isAnagram === 'function') target = isAnagram;
+          if (target) return target.apply(null, arguments);
           return undefined;
         `);
 
@@ -550,7 +566,7 @@ function evaluateCodeSubmission(problem, code, language, isSubmit) {
 
       // Format comparison
       if (status === 'Passed') {
-        const normalize = str => String(str).replace(/\s+/g, '').toLowerCase();
+        const normalize = str => String(str).trim().replace(/\s+/g, '').replace(/^\[|\]$/g, '').toLowerCase();
         if (normalize(userOutput) !== normalize(tc.expectedOutput)) {
           status = 'Failed';
           allPassed = false;

@@ -124,17 +124,17 @@ const SEED_QUIZZES = [
         questionType: 'coding',
         language: 'javascript',
         slug: 'two-sum',
-        boilerplateCode: 'function twoSum(nums, target) {\n  // Write your solution here\n  const map = {};\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map[complement] !== undefined) {\n      return [map[complement], i];\n    }\n    map[nums[i]] = i;\n  }\n  return [];\n}',
+        boilerplateCode: '/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nfunction twoSum(nums, target) {\n  // Write your solution here\n  \n}',
         templates: {
-          javascript: 'function twoSum(nums, target) {\n  // Write your solution here\n  const map = {};\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (map[complement] !== undefined) return [map[complement], i];\n    map[nums[i]] = i;\n  }\n  return [];\n}',
-          python: 'def twoSum(nums: list[int], target: int) -> list[int]:\n    # Write your solution here\n    seen = {}\n    for i, x in enumerate(nums):\n        comp = target - x\n        if comp in seen:\n            return [seen[comp], i]\n        seen[x] = i\n    return []',
-          cpp: '#include <vector>\n#include <unordered_map>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> seen;\n        for (int i = 0; i < nums.size(); i++) {\n            int comp = target - nums[i];\n            if (seen.count(comp)) return {seen[comp], i};\n            seen[nums[i]] = i;\n        }\n        return {};\n    }\n};',
-          java: 'import java.util.*;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        Map<Integer, Integer> seen = new HashMap<>();\n        for (int i = 0; i < nums.length; i++) {\n            int comp = target - nums[i];\n            if (seen.containsKey(comp)) return new int[]{seen.get(comp), i};\n            seen.put(nums[i], i);\n        }\n        return new int[]{};\n    }\n}'
+          javascript: '/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nfunction twoSum(nums, target) {\n  // Write your solution here\n  \n}',
+          python: 'def twoSum(nums: list[int], target: int) -> list[int]:\n    # Write your solution here\n    pass',
+          cpp: '#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Write your solution here\n        return {};\n    }\n};',
+          java: 'import java.util.*;\n\nclass Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[]{};\n    }\n}'
         },
         testCases: [
-          { input: '[2, 7, 11, 15], 9', expectedOutput: '0,1' },
-          { input: '[3, 2, 4], 6', expectedOutput: '1,2' },
-          { input: '[3, 3], 6', expectedOutput: '0,1' }
+          { input: '[2, 7, 11, 15]\n9', expectedOutput: '[0,1]' },
+          { input: '[3, 2, 4]\n6', expectedOutput: '[1,2]' },
+          { input: '[3, 3]\n6', expectedOutput: '[0,1]' }
         ],
         options: [],
         correctIndex: 0,
@@ -145,12 +145,12 @@ const SEED_QUIZZES = [
         questionType: 'coding',
         language: 'javascript',
         slug: 'valid-palindrome',
-        boilerplateCode: 'function isPalindrome(s) {\n  // Write your solution here\n  const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");\n  return clean === clean.split("").reverse().join("");\n}',
+        boilerplateCode: '/**\n * @param {string} s\n * @return {boolean}\n */\nfunction isPalindrome(s) {\n  // Write your solution here\n  \n}',
         templates: {
-          javascript: 'function isPalindrome(s) {\n  // Write your solution here\n  const clean = s.toLowerCase().replace(/[^a-z0-9]/g, "");\n  return clean === clean.split("").reverse().join("");\n}',
-          python: 'def isPalindrome(s: str) -> bool:\n    # Write your solution here\n    clean = [c.lower() for c in s if c.isalnum()]\n    return clean == clean[::-1]',
-          cpp: '#include <string>\n#include <cctype>\nusing namespace std;\n\nclass Solution {\npublic:\n    bool isPalindrome(string s) {\n        string clean = "";\n        for (char c : s) if (isalnum(c)) clean += tolower(c);\n        int l = 0, r = clean.length() - 1;\n        while (l < r) {\n            if (clean[l++] != clean[r--]) return false;\n        }\n        return true;\n    }\n};',
-          java: 'class Solution {\n    public boolean isPalindrome(String s) {\n        String clean = s.toLowerCase().replaceAll("[^a-z0-9]", "");\n        return clean.equals(new StringBuilder(clean).reverse().toString());\n    }\n}'
+          javascript: '/**\n * @param {string} s\n * @return {boolean}\n */\nfunction isPalindrome(s) {\n  // Write your solution here\n  \n}',
+          python: 'def isPalindrome(s: str) -> bool:\n    # Write your solution here\n    pass',
+          cpp: '#include <string>\nusing namespace std;\n\nclass Solution {\npublic:\n    bool isPalindrome(string s) {\n        // Write your solution here\n        return false;\n    }\n};',
+          java: 'class Solution {\n    public boolean isPalindrome(String s) {\n        // Write your solution here\n        return false;\n    }\n}'
         },
         testCases: [
           { input: '"A man, a plan, a canal: Panama"', expectedOutput: 'true' },
@@ -194,8 +194,23 @@ const QuizStorage = {
     try {
       const data = localStorage.getItem(QUIZZES_KEY);
       if (data) {
-        const parsed = JSON.parse(data);
+        let parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // If cached coding quiz still contains the legacy pre-filled solutions, refresh them
+          const hasLegacyPreFilledCode = parsed.some(q => 
+            q.questions && q.questions.some(qn => 
+              qn.questionType === 'coding' && 
+              qn.boilerplateCode && 
+              qn.boilerplateCode.includes('complement')
+            )
+          );
+
+          if (hasLegacyPreFilledCode) {
+            const seedCoding = SEED_QUIZZES.find(s => s.id === 'quiz_fullstack_coding');
+            parsed = parsed.map(q => q.id === 'quiz_fullstack_coding' ? seedCoding : q);
+            localStorage.setItem(QUIZZES_KEY, JSON.stringify(parsed));
+          }
+
           this._cachedQuizzes = parsed;
           return this._cachedQuizzes;
         }

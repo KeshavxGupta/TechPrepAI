@@ -52,6 +52,11 @@ const DEFAULT_TEST_CASES = {
     { input: '[1,8,6,2,5,4,8,3,7]', expectedOutput: '49' },
     { input: '[1,1]', expectedOutput: '1' }
   ],
+  'valid-palindrome': [
+    { input: '"A man, a plan, a canal: Panama"', expectedOutput: 'true' },
+    { input: '"race a car"', expectedOutput: 'false' },
+    { input: '" "', expectedOutput: 'true' }
+  ],
   'coin-change': [
     { input: '[1,2,5]\n11', expectedOutput: '3' },
     { input: '[2]\n3', expectedOutput: '-1' }
@@ -67,11 +72,42 @@ exports.runCode = async (req, res, next) => {
   try {
     const { problemId, language, code, customInput, testCases: reqTestCases } = req.body;
 
-    if (!code) {
+    if (code === undefined || code === null) {
       return res.status(400).json({ success: false, message: 'Code is required' });
     }
 
     const slug = normalizeSlug(problemId);
+
+    // Otherwise, evaluate sample or dynamic test cases
+    const testCases = (Array.isArray(reqTestCases) && reqTestCases.length > 0)
+      ? reqTestCases
+      : (DEFAULT_TEST_CASES[slug] || [
+          { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
+          { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
+        ]);
+
+    // Handle empty code submission as evaluated zero-pass
+    if (typeof code === 'string' && code.trim() === '') {
+      return res.status(200).json({
+        success: true,
+        result: {
+          status: 'Wrong Answer',
+          runtime: '0 ms',
+          memory: '0 MB',
+          passedCases: 0,
+          totalCases: testCases.length,
+          error: 'No code submitted. Function body is empty.',
+          testResults: testCases.map((tc, idx) => ({
+            testCaseIndex: idx + 1,
+            status: 'Failed',
+            runtimeMs: 0,
+            input: tc.input || '',
+            expectedOutput: tc.expectedOutput || '',
+            actualOutput: '(Empty code submission)'
+          }))
+        }
+      });
+    }
 
     // If user specified custom input, run single execution
     if (customInput !== undefined && customInput !== null && customInput.trim() !== '') {
@@ -83,14 +119,6 @@ exports.runCode = async (req, res, next) => {
       });
       return res.status(200).json({ success: true, result });
     }
-
-    // Otherwise, evaluate sample or dynamic test cases
-    const testCases = (Array.isArray(reqTestCases) && reqTestCases.length > 0)
-      ? reqTestCases
-      : (DEFAULT_TEST_CASES[slug] || [
-          { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]' },
-          { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
-        ]);
 
     const result = await compilerService.evaluateTestCases({
       language: language || 'javascript',
@@ -112,7 +140,7 @@ exports.submitSolution = async (req, res, next) => {
   try {
     const { studentEmail, problemId, language, code, testCases: reqTestCases } = req.body;
 
-    if (!problemId || !code) {
+    if (!problemId || code === undefined || code === null) {
       return res.status(400).json({ success: false, message: 'Missing problem or code' });
     }
 
@@ -125,12 +153,33 @@ exports.submitSolution = async (req, res, next) => {
           { input: '[3,3]\n6', expectedOutput: '[0,1]' }
         ]);
 
-    const evaluation = await compilerService.evaluateTestCases({
-      language: language || 'javascript',
-      code,
-      problemSlug: slug,
-      testCases
-    });
+    let evaluation;
+    if (typeof code === 'string' && code.trim() === '') {
+      evaluation = {
+        success: false,
+        status: 'Wrong Answer',
+        runtime: '0 ms',
+        memory: '0 MB',
+        passedCases: 0,
+        totalCases: testCases.length,
+        error: 'Empty code submission',
+        testResults: testCases.map((tc, idx) => ({
+          testCaseIndex: idx + 1,
+          status: 'Failed',
+          runtimeMs: 0,
+          input: tc.input || '',
+          expectedOutput: tc.expectedOutput || '',
+          actualOutput: '(Empty code submission)'
+        }))
+      };
+    } else {
+      evaluation = await compilerService.evaluateTestCases({
+        language: language || 'javascript',
+        code,
+        problemSlug: slug,
+        testCases
+      });
+    }
 
     const submission = await DsaSubmission.create({
       studentEmail: (studentEmail || 'guest@techprepai.com').toLowerCase(),

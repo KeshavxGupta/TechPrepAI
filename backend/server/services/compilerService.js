@@ -206,6 +206,11 @@ function getJavaInvocation(slug) {
         String t = lines[1].replace("\\"", "").trim();
         System.out.println(sol.isAnagram(s, t));
       `;
+    case 'valid-palindrome':
+      return `
+        String s = lines[0].replace("\\"", "").trim();
+        System.out.println(sol.isPalindrome(s));
+      `;
     case 'reverse-linked-list':
       return `
         int[] nums = parseArray(lines[0]);
@@ -288,6 +293,12 @@ function getCppInvocation(slug) {
         if (!t.empty() && t.front() == '"') t = t.substr(1, t.length() - 2);
         cout << (sol.isAnagram(s, t) ? "true" : "false") << endl;
       `;
+    case 'valid-palindrome':
+      return `
+        string s = line1;
+        if (!s.empty() && s.front() == '"') s = s.substr(1, s.length() - 2);
+        cout << (sol.isPalindrome(s) ? "true" : "false") << endl;
+      `;
     case 'container-with-most-water':
       return `
         vector<int> height = parseVector(line1);
@@ -356,6 +367,12 @@ def _main():
         t = str(args[1]) if len(args) > 1 else ""
         sol = Solution() if 'Solution' in globals() else None
         ans = sol.isAnagram(s, t) if sol and hasattr(sol, 'isAnagram') else (isAnagram(s, t) if 'isAnagram' in globals() else False)
+        print("true" if ans else "false")
+        return
+    if '${slug}' == 'valid-palindrome':
+        s = str(args[0]) if len(args) > 0 else ""
+        sol = Solution() if 'Solution' in globals() else None
+        ans = sol.isPalindrome(s) if sol and hasattr(sol, 'isPalindrome') else (isPalindrome(s) if 'isPalindrome' in globals() else False)
         print("true" if ans else "false")
         return
     if '${slug}' == 'container-with-most-water':
@@ -449,6 +466,11 @@ function _run() {
       const s = String(args[0] !== undefined ? args[0] : (lines[0] || ''));
       const t = String(args[1] !== undefined ? args[1] : (lines[1] || ''));
       console.log(isAnagram(s, t) ? 'true' : 'false');
+      return;
+    }
+    if ('${slug}' === 'valid-palindrome' && typeof isPalindrome === 'function') {
+      const s = String(args[0] !== undefined ? args[0] : (lines[0] || ''));
+      console.log(isPalindrome(s) ? 'true' : 'false');
       return;
     }
     if ('${slug}' === 'container-with-most-water' && typeof maxArea === 'function') {

@@ -18,7 +18,8 @@ window.toggleQuizSidebar = function(forceState) {
 // Active state tracker variables
 let currentQuiz = null;
 let currentQuestionIdx = 0;
-let studentAnswers = {}; // questionIdx -> selectedIndex
+let studentAnswers = {}; // questionIdx -> selectedIndex (MCQ) or code string (Coding)
+let studentCodingEvaluations = {}; // questionIdx -> evaluation result object
 let questionFlags = {};  // questionIdx -> boolean
 let examWarnings = 0;
 let maxExamWarnings = 3;
@@ -440,7 +441,7 @@ function escapeHTML(str) {
 
 function renderQuestionGrid() {
   const container = document.getElementById('question-nav-grid');
-  if (container) {
+  if (container && currentQuiz && currentQuiz.questions) {
     container.innerHTML = '';
     currentQuiz.questions.forEach((q, idx) => {
       const btn = document.createElement('button');
@@ -465,8 +466,18 @@ function renderQuestionGrid() {
       if (idx === currentQuestionIdx) {
         pillClass += "ring-2 ring-blue-500 border border-blue-400 ";
       }
-      if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
-        pillClass += "bg-emerald-600 text-white ";
+
+      const qType = q.questionType || 'mcq';
+      const evalRes = studentCodingEvaluations[idx];
+
+      if (qType === 'coding' && evalRes) {
+        if (evalRes.status === 'Accepted') {
+          pillClass += "bg-emerald-600 text-white ";
+        } else {
+          pillClass += "bg-rose-600 text-white ";
+        }
+      } else if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
+        pillClass += "bg-blue-600 text-white ";
       } else if (questionFlags[idx]) {
         pillClass += "bg-amber-500 text-white ";
       } else {
@@ -486,7 +497,17 @@ function getNavBtnClass(idx) {
     base += "ring-2 ring-blue-500 border-transparent ";
   }
 
-  if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
+  const q = currentQuiz && currentQuiz.questions ? currentQuiz.questions[idx] : null;
+  const qType = q ? (q.questionType || 'mcq') : 'mcq';
+  const evalRes = studentCodingEvaluations[idx];
+
+  if (qType === 'coding' && evalRes) {
+    if (evalRes.status === 'Accepted') {
+      base += "bg-emerald-600 border-emerald-600 text-white ";
+    } else {
+      base += "bg-rose-600 border-rose-600 text-white ";
+    }
+  } else if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
     base += "bg-blue-600 border-blue-600 text-white ";
   } else if (questionFlags[idx]) {
     base += "bg-amber-500 border-amber-500 text-white ";
@@ -579,9 +600,26 @@ function handleExamTextareaTab(e) {
   }
 }
 
+function autoSaveCurrentQuestionCode() {
+  if (!currentQuiz || !currentQuiz.questions) return;
+  const q = currentQuiz.questions[currentQuestionIdx];
+  if (q && (q.questionType || 'mcq') === 'coding') {
+    const textarea = document.getElementById('exam-code-textarea');
+    if (textarea) {
+      const code = textarea.value;
+      studentAnswers[currentQuestionIdx] = code;
+      if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+      studentLanguageCode[currentQuestionIdx][activeExamLanguage] = code;
+    }
+  }
+}
+
 function loadQuestion(idx) {
-  if (idx < 0 || idx >= currentQuiz.questions.length) return;
+  if (!currentQuiz || !currentQuiz.questions || idx < 0 || idx >= currentQuiz.questions.length) return;
   
+  // Auto-save existing question code before switching
+  autoSaveCurrentQuestionCode();
+
   currentQuestionIdx = idx;
   renderQuestionGrid();
   
@@ -592,9 +630,13 @@ function loadQuestion(idx) {
   const codingContainer = document.getElementById('exam-coding-container');
 
   if (qType === 'coding') {
-    // Show Coding Workspace, hide MCQ layout
-    if (mcqContainer) mcqContainer.classList.add('hidden');
+    // Show Coding Workspace, hide MCQ layout completely
+    if (mcqContainer) {
+      mcqContainer.style.setProperty('display', 'none', 'important');
+      mcqContainer.classList.add('hidden');
+    }
     if (codingContainer) {
+      codingContainer.style.removeProperty('display');
       codingContainer.classList.remove('hidden');
       codingContainer.classList.add('flex');
     }
@@ -604,7 +646,7 @@ function loadQuestion(idx) {
     if (qBadge) qBadge.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length} • CODING CHALLENGE`;
     
     const warnCount = document.getElementById('exam-coding-warning-count');
-    if (warnCount) warnCount.textContent = `${examWarnings} / 3`;
+    if (warnCount) warnCount.textContent = `${examWarnings} / ${maxExamWarnings}`;
 
     // Left Panel Problem Details
     const titleEl = document.getElementById('exam-coding-title');
@@ -647,9 +689,9 @@ function loadQuestion(idx) {
     // Load code
     const textarea = document.getElementById('exam-code-textarea');
     if (textarea) {
-      if (studentAnswers[idx] !== undefined && String(studentAnswers[idx]).trim() !== '') {
+      if (studentAnswers[idx] !== undefined) {
         textarea.value = studentAnswers[idx];
-      } else if (studentLanguageCode[idx][activeExamLanguage]) {
+      } else if (studentLanguageCode[idx][activeExamLanguage] !== undefined) {
         textarea.value = studentLanguageCode[idx][activeExamLanguage];
       } else {
         textarea.value = getStarterCodeForExam(q, activeExamLanguage);
@@ -676,17 +718,29 @@ function loadQuestion(idx) {
         nextBtn.onclick = confirmSubmitModal;
       } else {
         nextBtn.textContent = 'Save & Next';
-        nextBtn.onclick = nextQuestion;
+        nextBtn.onclick = saveAndNextQuestion;
       }
     }
 
+    // Restore or hide terminal drawer based on question evaluation
+    const terminal = document.getElementById('exam-terminal-output');
+    if (studentCodingEvaluations[idx]) {
+      renderExamTerminalOutput(studentCodingEvaluations[idx], true);
+    } else if (terminal) {
+      terminal.classList.add('hidden');
+    }
+
   } else {
-    // Show MCQ View, hide Coding view
+    // Show MCQ View, hide Coding view completely
     if (codingContainer) {
+      codingContainer.style.setProperty('display', 'none', 'important');
       codingContainer.classList.add('hidden');
       codingContainer.classList.remove('flex');
     }
-    if (mcqContainer) mcqContainer.classList.remove('hidden');
+    if (mcqContainer) {
+      mcqContainer.style.removeProperty('display');
+      mcqContainer.classList.remove('hidden');
+    }
 
     const numberEl = document.getElementById('exam-question-number');
     if (numberEl) numberEl.textContent = `QUESTION ${idx + 1} OF ${currentQuiz.questions.length}`;
@@ -742,7 +796,20 @@ function selectOption(qIdx, optIdx) {
 }
 
 function clearAnswerSelection() {
+  const q = currentQuiz && currentQuiz.questions ? currentQuiz.questions[currentQuestionIdx] : null;
   delete studentAnswers[currentQuestionIdx];
+  delete studentCodingEvaluations[currentQuestionIdx];
+  delete questionFlags[currentQuestionIdx];
+
+  if (q && (q.questionType || 'mcq') === 'coding') {
+    const textarea = document.getElementById('exam-code-textarea');
+    if (textarea) {
+      textarea.value = '';
+      if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+      studentLanguageCode[currentQuestionIdx][activeExamLanguage] = '';
+      updateExamLineNumbers();
+    }
+  }
   loadQuestion(currentQuestionIdx);
 }
 
@@ -757,14 +824,37 @@ function markForReview() {
 }
 
 function prevQuestion() {
+  autoSaveCurrentQuestionCode();
   if (currentQuestionIdx > 0) {
     loadQuestion(currentQuestionIdx - 1);
   }
 }
 
 function nextQuestion() {
+  autoSaveCurrentQuestionCode();
   if (currentQuestionIdx < currentQuiz.questions.length - 1) {
     loadQuestion(currentQuestionIdx + 1);
+  } else {
+    confirmSubmitModal();
+  }
+}
+
+function saveAndNextQuestion() {
+  autoSaveCurrentQuestionCode();
+  const q = currentQuiz.questions[currentQuestionIdx];
+  if (q && (q.questionType || 'mcq') === 'coding') {
+    const code = studentAnswers[currentQuestionIdx] || '';
+    if (!studentCodingEvaluations[currentQuestionIdx] || studentCodingEvaluations[currentQuestionIdx]._evaluatedCode !== code) {
+      const evaluation = evaluateExamCodingCodeLocally(q, code, activeExamLanguage, true);
+      evaluation._evaluatedCode = code;
+      studentCodingEvaluations[currentQuestionIdx] = evaluation;
+    }
+  }
+
+  if (currentQuestionIdx < currentQuiz.questions.length - 1) {
+    loadQuestion(currentQuestionIdx + 1);
+  } else {
+    confirmSubmitModal();
   }
 }
 
@@ -1046,7 +1136,25 @@ function submitExam(reason = 'Normal Submission') {
     const qType = q.questionType || 'mcq';
     
     if (qType === 'coding') {
-      if (studentAns !== undefined && studentAns.trim() !== '') {
+      let evalResult = studentCodingEvaluations[idx];
+      const codeStr = typeof studentAns === 'string' ? studentAns : '';
+
+      // If code was typed but never submitted via Submit Code button, evaluate now
+      if (!evalResult || evalResult._evaluatedCode !== codeStr) {
+        const lang = (studentLanguageCode[idx] && studentLanguageCode[idx].currentLang) || q.language || 'javascript';
+        evalResult = evaluateExamCodingCodeLocally(q, codeStr, lang, true);
+        studentCodingEvaluations[idx] = evalResult;
+      }
+
+      // STRICT SCORING: Must be Accepted AND all testcases passed AND not empty
+      const isPassed = Boolean(
+        evalResult && 
+        evalResult.status === 'Accepted' && 
+        evalResult.totalCases > 0 && 
+        evalResult.passedCases === evalResult.totalCases
+      );
+
+      if (isPassed) {
         scorePoints++;
       }
     } else {
@@ -1059,7 +1167,7 @@ function submitExam(reason = 'Normal Submission') {
   const finalPercentage = total ? Math.round((scorePoints / total) * 100) : 0;
   const isPassed = finalPercentage >= parseInt(currentQuiz.passPercentage);
   
-  const timeTakenSeconds = Math.round((new Date() - timeStart) / 1000);
+  const timeTakenSeconds = timeStart ? Math.round((new Date() - timeStart) / 1000) : 0;
   const timeTakenDisplay = `${Math.floor(timeTakenSeconds / 60)}m ${timeTakenSeconds % 60}s`;
 
   const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}');
@@ -1125,8 +1233,15 @@ function submitExam(reason = 'Normal Submission') {
     const qType = q.questionType || 'mcq';
     
     let isCorrect = false;
+    let evalResult = null;
     if (qType === 'coding') {
-      isCorrect = (studentChoice !== undefined && studentChoice.trim() !== '');
+      evalResult = studentCodingEvaluations[idx];
+      isCorrect = Boolean(
+        evalResult && 
+        evalResult.status === 'Accepted' && 
+        evalResult.totalCases > 0 && 
+        evalResult.passedCases === evalResult.totalCases
+      );
     } else {
       isCorrect = (studentChoice !== undefined && studentChoice === q.correctIndex);
     }
@@ -1138,33 +1253,76 @@ function submitExam(reason = 'Normal Submission') {
         : 'bg-rose-500/5 border-rose-500/20 dark:border-rose-500/10'
     }`;
 
-    let statusText = isCorrect 
-      ? '<span class="text-emerald-600 dark:text-emerald-500 font-bold font-mono">CORRECT ANSWER</span>'
-      : '<span class="text-rose-600 dark:text-rose-500 font-bold font-mono">INCORRECT ANSWER</span>';
-    
-    if (studentChoice === undefined || (qType === 'coding' && studentChoice.trim() === '')) {
-      statusText = '<span class="text-neutral-500 font-bold font-mono">NOT ATTEMPTED</span>';
+    let statusText = '';
+    if (qType === 'coding') {
+      if (!studentChoice || !String(studentChoice).trim()) {
+        statusText = '<span class="text-neutral-500 font-bold font-mono">NOT ATTEMPTED (EMPTY CODE)</span>';
+      } else if (isCorrect) {
+        statusText = `<span class="text-emerald-600 dark:text-emerald-500 font-bold font-mono">CORRECT - ACCEPTED (${evalResult?.passedCases || 0}/${evalResult?.totalCases || 0} CASES PASSED)</span>`;
+      } else {
+        const statusLabel = evalResult?.status ? evalResult.status.toUpperCase() : 'WRONG ANSWER';
+        statusText = `<span class="text-rose-600 dark:text-rose-500 font-bold font-mono">${statusLabel} (${evalResult?.passedCases || 0}/${evalResult?.totalCases || (q.testCases ? q.testCases.length : 0)} PASSED)</span>`;
+      }
+    } else {
+      if (studentChoice === undefined) {
+        statusText = '<span class="text-neutral-500 font-bold font-mono">NOT ATTEMPTED</span>';
+      } else if (isCorrect) {
+        statusText = '<span class="text-emerald-600 dark:text-emerald-500 font-bold font-mono">CORRECT ANSWER</span>';
+      } else {
+        statusText = '<span class="text-rose-600 dark:text-rose-500 font-bold font-mono">INCORRECT ANSWER</span>';
+      }
     }
 
     let choiceHTML = '';
     if (qType === 'coding') {
+      const codeDisplay = studentChoice && String(studentChoice).trim() !== '' 
+        ? escapeHTML(studentChoice)
+        : null;
+
       choiceHTML = `
         <div class="space-y-2 mt-2">
-          <div class="text-[11px] text-neutral-500 font-semibold">Your Submitted Code:</div>
-          ${(studentChoice && studentChoice.trim() !== '') 
-            ? `<pre class="p-3 bg-[#1e1e1e] text-green-400 rounded text-[11px] font-mono overflow-x-auto whitespace-pre-wrap border border-neutral-800"><code>${studentChoice.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>` 
-            : '<div class="text-[11px] text-rose-500">No code submitted</div>'}
-          <div class="text-[11px] mt-2">Expected result: <strong class="text-emerald-600 dark:text-emerald-400">Passed all test cases.</strong></div>
+          <div class="flex items-center justify-between text-[11px] font-mono">
+            <span class="text-neutral-500 font-semibold">Your Submitted Solution:</span>
+            ${evalResult ? `<span class="text-neutral-400">Runtime: <strong class="text-neutral-200">${evalResult.runtime || '0 ms'}</strong> • Memory: <strong class="text-neutral-200">${evalResult.memory || '38 MB'}</strong></span>` : ''}
+          </div>
+          ${codeDisplay 
+            ? `<pre class="p-3 bg-neutral-950 text-neutral-200 rounded-lg text-[11px] font-mono overflow-x-auto whitespace-pre-wrap border border-neutral-800"><code>${codeDisplay}</code></pre>` 
+            : '<div class="p-2.5 rounded bg-neutral-900 border border-neutral-800 text-[11px] text-rose-400 font-mono">No code submitted</div>'}
+          
+          ${evalResult && evalResult.error ? `
+            <div class="p-2.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 font-mono text-[11px]">
+              <strong>Compiler Diagnostic:</strong> ${escapeHTML(evalResult.error)}
+            </div>
+          ` : ''}
+
+          ${evalResult && Array.isArray(evalResult.testResults) && evalResult.testResults.length > 0 ? `
+            <div class="space-y-1.5 pt-1">
+              <div class="text-[10px] uppercase font-mono font-bold text-neutral-500">Test Case Breakdown:</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                ${evalResult.testResults.slice(0, 4).map(tr => `
+                  <div class="p-2 rounded bg-surface-secondary border border-neutral-200 dark:border-neutral-800 font-mono text-[10px] space-y-0.5">
+                    <div class="flex items-center justify-between font-bold ${tr.status === 'Passed' ? 'text-emerald-500' : 'text-rose-500'}">
+                      <span>Case ${tr.testCaseIndex}:</span>
+                      <span>${tr.status}</span>
+                    </div>
+                    <div class="text-neutral-500 truncate">In: <code>${escapeHTML(tr.input)}</code></div>
+                    <div class="text-neutral-500 truncate">Exp: <code class="text-emerald-400">${escapeHTML(tr.expectedOutput)}</code></div>
+                    <div class="text-neutral-500 truncate">Out: <code class="${tr.status === 'Passed' ? 'text-emerald-400' : 'text-rose-400'}">${escapeHTML(tr.actualOutput)}</code></div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
         </div>
       `;
     } else {
       choiceHTML = `
         <div class="space-y-1.5 text-[11px]">
           <div>Your choice: <strong class="${isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${
-            studentChoice !== undefined ? q.options[studentChoice] : 'No response selected'
+            studentChoice !== undefined ? escapeHTML(q.options[studentChoice]) : 'No response selected'
           }</strong></div>
           
-          ${!isCorrect ? `<div>Correct choice: <strong class="text-emerald-600 dark:text-emerald-400">${q.options[q.correctIndex]}</strong></div>` : ''}
+          ${!isCorrect ? `<div>Correct choice: <strong class="text-emerald-600 dark:text-emerald-400">${escapeHTML(q.options[q.correctIndex])}</strong></div>` : ''}
         </div>
       `;
     }
@@ -1343,6 +1501,194 @@ window.executeResetExamCode = function() {
   window.closeResetExamModal();
 };
 
+window.clearExamCodingCode = function() {
+  const textarea = document.getElementById('exam-code-textarea');
+  if (textarea) {
+    textarea.value = '';
+  }
+  studentAnswers[currentQuestionIdx] = '';
+  if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+  studentLanguageCode[currentQuestionIdx][activeExamLanguage] = '';
+  delete studentCodingEvaluations[currentQuestionIdx];
+  window.updateExamLineNumbers();
+  const terminal = document.getElementById('exam-terminal-output');
+  if (terminal) terminal.classList.add('hidden');
+  renderQuestionGrid();
+};
+
+function evaluateExamCodingCodeLocally(q, code, lang = 'javascript', isSubmit = false) {
+  const codeStr = typeof code === 'string' ? code : '';
+  const trimmed = codeStr.trim();
+  const testCases = (q && q.testCases && q.testCases.length) ? q.testCases : [
+    { input: '[2,7,11,15]\n9', expectedOutput: '[0,1]', isSample: true }
+  ];
+  const testCasesToRun = isSubmit ? testCases : testCases.filter(t => t.isSample !== false);
+  const activeCases = testCasesToRun.length ? testCasesToRun : testCases;
+
+  // 1. Check for empty code
+  if (!trimmed) {
+    const results = activeCases.map((tc, idx) => ({
+      testCaseIndex: idx + 1,
+      input: tc.input || '',
+      expectedOutput: tc.expectedOutput || '',
+      actualOutput: 'Empty submission (No code provided)',
+      status: 'Failed',
+      runtimeMs: 0
+    }));
+    return {
+      status: 'Wrong Answer',
+      runtime: '0 ms',
+      runtimeMs: 0,
+      memory: '0 MB',
+      memoryMb: '0.0',
+      totalCases: activeCases.length,
+      passedCases: 0,
+      testResults: results,
+      _evaluatedCode: codeStr,
+      compiler: `${(lang || 'code').toUpperCase()} (Local Validator)`
+    };
+  }
+
+  // 2. Check for unmodified starter code
+  const starter = getStarterCodeForExam(q, lang).trim();
+  const isStarterUnchanged = (trimmed === starter) || 
+    (trimmed.includes('// Write your solution here') && !trimmed.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').trim().includes('return')) ||
+    (trimmed.includes('# Write your solution here') && !trimmed.replace(/#.*/g, '').trim().includes('return'));
+
+  if (isStarterUnchanged) {
+    const results = activeCases.map((tc, idx) => ({
+      testCaseIndex: idx + 1,
+      input: tc.input || '',
+      expectedOutput: tc.expectedOutput || '',
+      actualOutput: 'Starter template unmodified (No solution implemented)',
+      status: 'Failed',
+      runtimeMs: 0
+    }));
+    return {
+      status: 'Wrong Answer',
+      runtime: '0 ms',
+      runtimeMs: 0,
+      memory: '38 MB',
+      memoryMb: '38.0',
+      totalCases: activeCases.length,
+      passedCases: 0,
+      testResults: results,
+      _evaluatedCode: codeStr,
+      compiler: `${(lang || 'code').toUpperCase()} (Local Validator)`
+    };
+  }
+
+  // 3. Try evaluateCodeSubmission if defined from dsa-engine.js
+  if (typeof evaluateCodeSubmission === 'function') {
+    try {
+      const prob = {
+        id: q.id || q.slug || 'prob',
+        slug: q.slug || (q.id && q.id.replace('p_', '')) || 'two-sum',
+        templates: q.templates || {},
+        testCases: q.testCases || activeCases,
+        boilerplateCode: q.boilerplateCode || ''
+      };
+      const res = evaluateCodeSubmission(prob, codeStr, lang, isSubmit);
+      if (res && res.testResults) {
+        const passed = res.testResults.filter(r => r.status === 'Passed').length;
+        const total = res.testResults.length;
+        res.passedCases = passed;
+        res.totalCases = total;
+        res.runtime = res.runtime || `${res.runtimeMs || 15} ms`;
+        res.memory = res.memory || `${res.memoryMb || '41.2'} MB`;
+        res.compiler = `${lang.toUpperCase()} (Client Engine)`;
+        res._evaluatedCode = codeStr;
+        if (passed !== total && res.status === 'Accepted') {
+          res.status = 'Wrong Answer';
+        }
+        return res;
+      }
+    } catch (e) {
+      console.warn('evaluateCodeSubmission threw:', e);
+    }
+  }
+
+  // 4. In-browser JS execution fallback
+  let allPassed = true;
+  let passedCases = 0;
+  const results = [];
+  const normalize = (val) => String(val === undefined ? 'undefined' : val).trim().replace(/\s+/g, '').replace(/^\[|\]$/g, '').toLowerCase();
+
+  for (let i = 0; i < activeCases.length; i++) {
+    const tc = activeCases[i];
+    let actualOutput = '';
+    let status = 'Failed';
+    const t0 = performance.now();
+
+    try {
+      if (lang === 'javascript' || lang === 'node') {
+        const inputLines = (tc.input || '').split('\n');
+        const args = inputLines.map(line => {
+          try { return JSON.parse(line); } catch (e) { return line.replace(/^"|"$/g, ''); }
+        });
+
+        const fnMatch = codeStr.match(/function\s+([a-zA-Z0-9_$]+)\s*\(/);
+        const fnName = fnMatch ? fnMatch[1] : (q.slug === 'valid-palindrome' ? 'isPalindrome' : 'twoSum');
+
+        const runner = new Function(`
+          ${codeStr}
+          let fn = null;
+          if (typeof ${fnName} === 'function') fn = ${fnName};
+          if (!fn && typeof twoSum === 'function') fn = twoSum;
+          if (!fn && typeof isPalindrome === 'function') fn = isPalindrome;
+          if (fn) return fn.apply(null, arguments);
+          throw new Error('Solution function not defined');
+        `);
+
+        const execRes = runner.apply(null, args);
+        actualOutput = JSON.stringify(execRes);
+        if (normalize(actualOutput) === normalize(tc.expectedOutput)) {
+          status = 'Passed';
+          passedCases++;
+        } else {
+          status = 'Failed';
+          allPassed = false;
+        }
+      } else {
+        actualOutput = 'Language offline execution fallback (Result unverified)';
+        status = 'Failed';
+        allPassed = false;
+      }
+    } catch (err) {
+      status = 'Runtime Error';
+      actualOutput = `Error: ${err.message}`;
+      allPassed = false;
+    }
+
+    const tDuration = Math.round(performance.now() - t0) || 5;
+    results.push({
+      testCaseIndex: i + 1,
+      input: tc.input,
+      expectedOutput: tc.expectedOutput,
+      actualOutput,
+      status,
+      runtimeMs: tDuration
+    });
+
+    if (!allPassed && isSubmit) break;
+  }
+
+  const finalStatus = (allPassed && passedCases === activeCases.length && activeCases.length > 0) ? 'Accepted' : 'Wrong Answer';
+
+  return {
+    status: finalStatus,
+    runtime: '12 ms',
+    runtimeMs: 12,
+    memory: '41.2 MB',
+    memoryMb: '41.2',
+    totalCases: activeCases.length,
+    passedCases,
+    testResults: results,
+    compiler: `${lang.toUpperCase()} (Client Sandbox)`,
+    _evaluatedCode: codeStr
+  };
+}
+
 window.runExamCodingCode = async function() {
   const textarea = document.getElementById('exam-code-textarea');
   const code = textarea ? textarea.value : '';
@@ -1362,12 +1708,12 @@ window.runExamCodingCode = async function() {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
-      <span>Compiling...</span>
+      <span>Running...</span>
     `;
   }
 
   if (statusEl) {
-    statusEl.textContent = `Compiling ${activeExamLanguage.toUpperCase()} on host...`;
+    statusEl.textContent = `Running ${activeExamLanguage.toUpperCase()}...`;
     statusEl.classList.remove('hidden');
   }
 
@@ -1377,9 +1723,9 @@ window.runExamCodingCode = async function() {
       <div class="p-4 space-y-2 text-left font-mono text-xs text-neutral-400 animate-pulse">
         <div class="flex items-center gap-2 text-blue-400">
           <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
-          <strong>Invoking host ${activeExamLanguage.toUpperCase()} compiler/runtime...</strong>
+          <strong>Executing code on ${activeExamLanguage.toUpperCase()} runtime...</strong>
         </div>
-        <div class="text-[11px] text-neutral-500">> Executing testcases with safety limits...</div>
+        <div class="text-[11px] text-neutral-500">> Running sample testcases...</div>
       </div>
     `;
   }
@@ -1387,33 +1733,37 @@ window.runExamCodingCode = async function() {
   const q = currentQuiz.questions[currentQuestionIdx];
   const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
 
+  let evaluation = null;
+
   try {
-    let res;
     if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
-      res = await window.TechPrepAPI.runDsaCode({
+      const res = await window.TechPrepAPI.runDsaCode({
         problemId: problemSlug,
         language: activeExamLanguage,
         code,
         customInput: (customInput && customInput.trim() !== '') ? customInput : undefined,
         testCases: q.testCases
       });
+      if (res && res.result && res.result.status !== 'Error') {
+        evaluation = res.result;
+      }
     }
-
-    if (res && res.result) {
-      renderExamTerminalOutput(res.result, false);
-    } else {
-      renderExamTerminalOutput({ status: 'Error', error: 'No response from compiler service.' }, false);
-    }
-  } catch (err) {
-    console.error('Compiler execution failed:', err);
-    renderExamTerminalOutput({ status: 'Error', error: err.message }, false);
-  } finally {
-    if (runBtn) {
-      runBtn.disabled = false;
-      runBtn.innerHTML = `<span>Run Code</span>`;
-    }
-    if (statusEl) statusEl.classList.add('hidden');
+  } catch (backendErr) {
+    console.warn('Backend compiler unreachable, utilizing client-side sandbox execution:', backendErr.message);
   }
+
+  if (!evaluation) {
+    evaluation = evaluateExamCodingCodeLocally(q, code, activeExamLanguage, false);
+    evaluation.compiler = `${activeExamLanguage.toUpperCase()} (Client Engine)`;
+  }
+
+  renderExamTerminalOutput(evaluation, false);
+
+  if (runBtn) {
+    runBtn.disabled = false;
+    runBtn.innerHTML = `<span>Run Code</span>`;
+  }
+  if (statusEl) statusEl.classList.add('hidden');
 };
 
 window.submitExamCodingCode = async function() {
@@ -1436,7 +1786,7 @@ window.submitExamCodingCode = async function() {
   }
 
   if (statusEl) {
-    statusEl.textContent = `Testing all test cases on host compiler...`;
+    statusEl.textContent = `Testing all test cases on ${activeExamLanguage.toUpperCase()}...`;
     statusEl.classList.remove('hidden');
   }
 
@@ -1456,49 +1806,71 @@ window.submitExamCodingCode = async function() {
   const q = currentQuiz.questions[currentQuestionIdx];
   const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
 
+  let evaluation = null;
+
   try {
-    let res;
     if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
-      res = await window.TechPrepAPI.runDsaCode({
+      const res = await window.TechPrepAPI.runDsaCode({
         problemId: problemSlug,
         language: activeExamLanguage,
         code,
         testCases: q.testCases
       });
-    }
-
-    const evaluation = res && res.result ? res.result : { status: 'Error', error: 'No response received' };
-    
-    // Always persist student's typed code into exam state
-    studentAnswers[currentQuestionIdx] = code;
-    if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
-    studentLanguageCode[currentQuestionIdx][activeExamLanguage] = code;
-    delete questionFlags[currentQuestionIdx];
-
-    renderExamTerminalOutput(evaluation, true);
-    renderQuestionGrid();
-
-    if (evaluation.status === 'Accepted') {
-      if (window.showToast) {
-        window.showToast("All test cases passed! Solution verified on host compiler.");
-      } else {
-        alert("Accepted! All test cases passed on host compiler.");
-      }
-    } else {
-      if (window.showToast) {
-        window.showToast(`Verdict: ${evaluation.status}. Review test results below.`);
+      if (res && res.result && res.result.status !== 'Error') {
+        evaluation = res.result;
       }
     }
-  } catch (err) {
-    console.error('Submission execution failed:', err);
-    renderExamTerminalOutput({ status: 'Error', error: err.message }, true);
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = `<span>Submit Code</span>`;
-    }
-    if (statusEl) statusEl.classList.add('hidden');
+  } catch (backendErr) {
+    console.warn('Backend compiler unreachable, utilizing client-side sandbox evaluation:', backendErr.message);
   }
+
+  if (!evaluation) {
+    evaluation = evaluateExamCodingCodeLocally(q, code, activeExamLanguage, true);
+    evaluation.compiler = `${activeExamLanguage.toUpperCase()} (Client Engine)`;
+  }
+
+  if (evaluation.testResults && evaluation.testResults.length) {
+    evaluation.totalCases = evaluation.testResults.length;
+    evaluation.passedCases = evaluation.testResults.filter(r => r.status === 'Passed').length;
+  }
+  evaluation._evaluatedCode = code;
+
+  // Persist student's typed code and evaluation into exam state
+  studentAnswers[currentQuestionIdx] = code;
+  if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
+  studentLanguageCode[currentQuestionIdx][activeExamLanguage] = code;
+  studentCodingEvaluations[currentQuestionIdx] = evaluation;
+  delete questionFlags[currentQuestionIdx];
+
+  renderExamTerminalOutput(evaluation, true);
+  renderQuestionGrid();
+
+  const isAccepted = Boolean(
+    evaluation.status === 'Accepted' && 
+    evaluation.passedCases === evaluation.totalCases && 
+    evaluation.totalCases > 0
+  );
+
+  if (isAccepted) {
+    if (window.showToast) {
+      window.showToast("All test cases passed! Solution verified.");
+    } else {
+      alert("Accepted! All test cases passed.");
+    }
+  } else {
+    const verdict = evaluation.status || 'Wrong Answer';
+    const passed = evaluation.passedCases || 0;
+    const total = evaluation.totalCases || (q.testCases ? q.testCases.length : 1);
+    if (window.showToast) {
+      window.showToast(`Verdict: ${verdict} (${passed}/${total} test cases passed).`);
+    }
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<span>Submit Code</span>`;
+  }
+  if (statusEl) statusEl.classList.add('hidden');
 };
 
 function renderExamTerminalOutput(evaluation, isSubmit) {
