@@ -24,16 +24,38 @@ const dsaSubmissionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Accepted', 'Wrong Answer', 'Time Limit Exceeded', 'Runtime Error', 'Compile Error'],
       default: 'Accepted'
+    },
+    actionType: {
+      type: String,
+      enum: ['run', 'submit'],
+      default: 'submit',
+      index: true
+    },
+    source: {
+      type: String,
+      enum: ['ide', 'quiz'],
+      default: 'ide'
+    },
+    problemTitle: {
+      type: String,
+      default: ''
     },
     runtime: {
       type: String,
-      default: '54ms'
+      default: '0 ms'
+    },
+    runtimeMs: {
+      type: Number,
+      default: 0
     },
     memory: {
       type: String,
-      default: '42.1MB'
+      default: '40.0 MB'
+    },
+    memoryMb: {
+      type: Number,
+      default: 0
     },
     passedCases: {
       type: Number,
@@ -42,6 +64,15 @@ const dsaSubmissionSchema = new mongoose.Schema(
     totalCases: {
       type: Number,
       default: 0
+    },
+    testResults: {
+      type: Array,
+      default: []
+    },
+    quizContext: {
+      quizId: String,
+      quizTitle: String,
+      questionIdx: Number
     }
   },
   {

@@ -164,7 +164,55 @@
       </div>`;
   }
 
-  function renderSubmissionsHistory() {
+  let currentSubmissionFilter = 'all';
+
+  function renderSubmissionsHistory(forceLiveFetch = false) {
+    const subContainer = document.getElementById('dsa-submissions-content');
+    if (!subContainer) return;
+
+    const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                        (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                        (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+    const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+
+    // Live sync from MongoDB Atlas if available
+    if (forceLiveFetch && window.TechPrepAPI && window.TechPrepAPI.getUserDsaSubmissions && activeProblem) {
+      window.TechPrepAPI.getUserDsaSubmissions(userEmail, {
+        problemId: activeProblem.slug || activeProblem.id,
+        source: 'ide'
+      }).then(res => {
+        if (res && res.submissions && Array.isArray(res.submissions)) {
+          res.submissions.forEach(sub => {
+            saveDSASubmission({
+              _id: sub._id,
+              problemId: activeProblem.id,
+              problemTitle: sub.problemTitle || activeProblem.title,
+              difficulty: activeProblem.difficulty,
+              language: sub.language,
+              code: sub.code,
+              status: sub.status,
+              actionType: sub.actionType || 'submit',
+              source: sub.source || 'ide',
+              runtimeMs: sub.runtimeMs || (parseInt(sub.runtime) || 0),
+              memoryMb: sub.memoryMb || (parseFloat(sub.memory) || 40),
+              passedCases: sub.passedCases !== undefined ? sub.passedCases : 0,
+              totalCases: sub.totalCases !== undefined ? sub.totalCases : 0,
+              testResults: sub.testResults || [],
+              timestamp: sub.createdAt || sub.timestamp || new Date().toISOString(),
+              _backendSynced: true
+            });
+          });
+          drawSubmissionsTable();
+        }
+      }).catch(err => {
+        console.warn('Could not sync DSA submissions from MongoDB:', err.message);
+      });
+    }
+
+    drawSubmissionsTable();
+  }
+
+  function drawSubmissionsTable() {
     const subContainer = document.getElementById('dsa-submissions-content');
     if (!subContainer) return;
 
@@ -174,47 +222,263 @@
     const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
 
     const allSubs = getDSASubmissions();
-    const problemSubs = allSubs.filter(s => s.problemId === activeProblem.id && (s.userEmail === userEmail || !s.userEmail));
+    const problemSubs = allSubs.filter(s => {
+      const matchProblem = s.problemId === activeProblem.id || s.problemId === (activeProblem.slug || activeProblem.id);
+      const matchUser = s.userEmail === userEmail || !s.userEmail;
+      const matchFilter = currentSubmissionFilter === 'all' || s.actionType === currentSubmissionFilter;
+      return matchProblem && matchUser && matchFilter;
+    });
 
     if (!problemSubs.length) {
       subContainer.innerHTML = `
-        <div class="text-center py-12 text-neutral-500 font-mono text-xs border border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl bg-surface-secondary">
-          No submission attempts logged for this problem yet. Write your code and click "Submit Code" to test your solution!
+        <div class="space-y-4">
+          <div class="flex items-center justify-between pb-2 border-b border-neutral-200 dark:border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider">Filter:</span>
+              <button onclick="setDsaHistoryFilter('all')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'all' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">All</button>
+              <button onclick="setDsaHistoryFilter('run')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'run' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">Runs</button>
+              <button onclick="setDsaHistoryFilter('submit')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'submit' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">Submissions</button>
+            </div>
+            <button onclick="renderSubmissionsHistory(true)" class="text-xs font-mono text-blue-500 hover:text-blue-400 flex items-center gap-1" title="Sync with MongoDB Atlas">
+              <svg class="w-3.5 h-3.5 inline animate-spin-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Sync Atlas
+            </button>
+          </div>
+          <div class="text-center py-12 text-neutral-500 font-mono text-xs border border-dashed border-neutral-300 dark:border-neutral-800 rounded-xl bg-surface-secondary">
+            No ${currentSubmissionFilter === 'all' ? 'attempts' : currentSubmissionFilter + 's'} recorded yet for this problem. Click "Run Code" or "Submit Code" to test!
+          </div>
         </div>`;
       return;
     }
 
     subContainer.innerHTML = `
-      <div class="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated text-left">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 font-mono bg-surface-secondary">
-              <th class="py-2.5 px-3 font-semibold">VERDICT</th>
-              <th class="py-2.5 px-3 font-semibold">LANGUAGE</th>
-              <th class="py-2.5 px-3 font-semibold">RUNTIME</th>
-              <th class="py-2.5 px-3 font-semibold">MEMORY</th>
-              <th class="py-2.5 px-3 font-semibold">TIME</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/60 font-sans">
-            ${problemSubs.map(s => `
-              <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
-                <td class="py-2.5 px-3">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                    s.status === 'Accepted' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
-                    'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                  }">${escapeHTML(s.status)}</span>
-                </td>
-                <td class="py-2.5 px-3 font-mono text-[11px] text-neutral-500 uppercase">${escapeHTML(s.language || 'javascript')}</td>
-                <td class="py-2.5 px-3 font-mono text-neutral-700 dark:text-neutral-300">${s.runtimeMs} ms</td>
-                <td class="py-2.5 px-3 font-mono text-neutral-700 dark:text-neutral-300">${s.memoryMb} MB</td>
-                <td class="py-2.5 px-3 font-mono text-[10px] text-neutral-500">${new Date(s.timestamp).toLocaleTimeString()}</td>
+      <div class="space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-neutral-200 dark:border-neutral-800">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider">Filter:</span>
+            <button onclick="setDsaHistoryFilter('all')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'all' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">All (${allSubs.filter(s => (s.problemId === activeProblem.id || s.problemId === activeProblem.slug) && (s.userEmail === userEmail || !s.userEmail)).length})</button>
+            <button onclick="setDsaHistoryFilter('run')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'run' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">Runs</button>
+            <button onclick="setDsaHistoryFilter('submit')" class="px-2.5 py-1 rounded text-xs font-mono ${currentSubmissionFilter === 'submit' ? 'bg-blue-600 text-white font-bold' : 'bg-neutral-800 text-neutral-400 hover:text-white'}">Submissions</button>
+          </div>
+          <button onclick="renderSubmissionsHistory(true)" class="text-xs font-mono text-blue-500 hover:text-blue-400 flex items-center gap-1" title="Sync with MongoDB Atlas">
+            <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Sync Atlas
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated text-left">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 font-mono bg-surface-secondary">
+                <th class="py-2.5 px-3 font-semibold">TYPE</th>
+                <th class="py-2.5 px-3 font-semibold">VERDICT</th>
+                <th class="py-2.5 px-3 font-semibold">TESTCASES</th>
+                <th class="py-2.5 px-3 font-semibold">LANG</th>
+                <th class="py-2.5 px-3 font-semibold">RUNTIME</th>
+                <th class="py-2.5 px-3 font-semibold">MEMORY</th>
+                <th class="py-2.5 px-3 font-semibold">TIME</th>
+                <th class="py-2.5 px-3 font-semibold text-right">ACTION</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/60 font-sans">
+              ${problemSubs.map((s, idx) => {
+                const subId = s._id || `sub_${idx}`;
+                const isRun = s.actionType === 'run';
+                const isAccepted = s.status === 'Accepted';
+                const isCompileErr = s.status === 'Compile Error';
+                const passed = s.passedCases !== undefined ? s.passedCases : (isAccepted ? (s.totalCases || 1) : 0);
+                const total = s.totalCases !== undefined ? s.totalCases : (s.testResults ? s.testResults.length : 1);
+
+                return `
+                  <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
+                    <td class="py-2.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                        isRun ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                      }">${isRun ? 'RUN' : 'SUBMIT'}</span>
+                    </td>
+                    <td class="py-2.5 px-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                        isAccepted ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                        isCompileErr ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                        'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                      }">${escapeHTML(s.status || 'Evaluated')}</span>
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-[11px] text-neutral-600 dark:text-neutral-300">
+                      ${passed} / ${total}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-[11px] text-neutral-500 uppercase">${escapeHTML(s.language || 'javascript')}</td>
+                    <td class="py-2.5 px-3 font-mono text-neutral-700 dark:text-neutral-300">${s.runtimeMs || 0} ms</td>
+                    <td class="py-2.5 px-3 font-mono text-neutral-700 dark:text-neutral-300">${s.memoryMb || 40} MB</td>
+                    <td class="py-2.5 px-3 font-mono text-[10px] text-neutral-500">${new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+                    <td class="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
+                      <button onclick="viewDsaSubmissionModal('${subId}')" class="px-2 py-1 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 font-mono text-[11px] font-bold transition-colors">
+                        Inspect
+                      </button>
+                      <button onclick="loadDsaHistoryCode('${subId}')" class="px-2 py-1 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-white font-mono text-[11px] transition-colors" title="Load code into editor">
+                        Restore
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>`;
   }
+
+  window.setDsaHistoryFilter = function(filter) {
+    currentSubmissionFilter = filter;
+    drawSubmissionsTable();
+  };
+
+  window.viewDsaSubmissionModal = function(subId) {
+    const allSubs = getDSASubmissions();
+    const sub = allSubs.find(s => (s._id && s._id === subId) || `sub_${allSubs.indexOf(s)}` === subId);
+    if (!sub) return;
+
+    let modal = document.getElementById('dsa-history-detail-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'dsa-history-detail-modal';
+      modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-sm';
+      document.body.appendChild(modal);
+    }
+
+    const isRun = sub.actionType === 'run';
+    const isAccepted = sub.status === 'Accepted';
+    const isCompileErr = sub.status === 'Compile Error';
+    const testcases = sub.testResults || [];
+    const passed = sub.passedCases !== undefined ? sub.passedCases : (isAccepted ? testcases.length : 0);
+    const total = sub.totalCases !== undefined ? sub.totalCases : (testcases.length || 1);
+
+    const testcasesHtml = testcases.length > 0 ? testcases.map(tc => `
+      <div class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs space-y-1.5">
+        <div class="flex items-center justify-between font-mono font-bold">
+          <span>Test Case ${tc.testCaseIndex}:</span>
+          <span class="${tc.status === 'Passed' ? 'text-emerald-500' : 'text-rose-500'}">${tc.status} (${tc.runtimeMs || 0} ms)</span>
+        </div>
+        <div class="font-mono text-[11px] text-neutral-500">Input: <code class="text-neutral-800 dark:text-neutral-200">${escapeHTML(tc.input || '')}</code></div>
+        <div class="font-mono text-[11px] text-neutral-500">Expected: <code class="text-emerald-600 dark:text-emerald-400">${escapeHTML(tc.expectedOutput || '')}</code></div>
+        <div class="font-mono text-[11px] text-neutral-500">Actual Output: <code class="${tc.status === 'Passed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${escapeHTML(tc.actualOutput || '')}</code></div>
+      </div>
+    `).join('') : `
+      <div class="p-3 rounded bg-neutral-900 font-mono text-xs text-neutral-400">
+        ${sub.stdout ? `<div class="text-emerald-400 mb-1">Standard Output:</div><pre class="whitespace-pre-wrap">${escapeHTML(sub.stdout)}</pre>` : 'No custom test cases were evaluated.'}
+        ${sub.stderr ? `<div class="text-rose-400 mt-2 mb-1">Standard Error:</div><pre class="whitespace-pre-wrap">${escapeHTML(sub.stderr)}</pre>` : ''}
+      </div>
+    `;
+
+    modal.innerHTML = `
+      <div class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface-primary shadow-2xl overflow-hidden animate-scale-up">
+        <!-- Header -->
+        <div class="p-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="px-2.5 py-1 rounded text-xs font-mono font-bold ${
+              isRun ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+            }">${isRun ? 'RUN EXECUTION' : 'SUBMISSION'}</span>
+            <span class="px-2.5 py-1 rounded text-xs font-mono font-bold ${
+              isAccepted ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+              isCompileErr ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+              'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+            }">${escapeHTML(sub.status || 'Evaluated')}</span>
+            <span class="font-mono text-xs text-neutral-500">${passed}/${total} test cases passed</span>
+          </div>
+          <button onclick="closeDsaSubmissionModal()" class="text-neutral-400 hover:text-white p-1 rounded">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4 space-y-4 overflow-y-auto flex-1 font-sans">
+          <!-- Metrics Bar -->
+          <div class="grid grid-cols-4 gap-2 text-center font-mono">
+            <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+              <span class="text-[10px] text-neutral-400 block uppercase">Language</span>
+              <span class="text-xs font-bold text-neutral-200 uppercase">${escapeHTML(sub.language || 'javascript')}</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+              <span class="text-[10px] text-neutral-400 block uppercase">Runtime</span>
+              <span class="text-xs font-bold text-neutral-200">${sub.runtimeMs || 0} ms</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+              <span class="text-[10px] text-neutral-400 block uppercase">Memory</span>
+              <span class="text-xs font-bold text-neutral-200">${sub.memoryMb || 40} MB</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+              <span class="text-[10px] text-neutral-400 block uppercase">Date</span>
+              <span class="text-xs font-bold text-neutral-200">${new Date(sub.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          </div>
+
+          <!-- Test Cases Details -->
+          <div>
+            <div class="text-xs font-mono font-bold text-neutral-400 uppercase mb-2">Test Cases Breakdown:</div>
+            <div class="space-y-2 max-h-48 overflow-y-auto">${testcasesHtml}</div>
+          </div>
+
+          <!-- Code Snapshot -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Code Executed:</span>
+              <div class="flex items-center gap-2">
+                <button onclick="copyDsaHistoryCode('${subId}')" class="px-2.5 py-1 text-xs font-mono rounded border border-neutral-700 hover:bg-neutral-800 text-neutral-300">Copy Code</button>
+                <button onclick="loadDsaHistoryCode('${subId}')" class="px-3 py-1 text-xs font-mono font-bold rounded bg-blue-600 hover:bg-blue-500 text-white">Restore into Editor</button>
+              </div>
+            </div>
+            <pre class="p-3 bg-neutral-950 border border-neutral-800 rounded-lg font-mono text-xs text-neutral-200 max-h-48 overflow-y-auto whitespace-pre leading-relaxed">${escapeHTML(sub.code || '// No code stored')}</pre>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-3 border-t border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-end space-x-2">
+          <button onclick="closeDsaSubmissionModal()" class="px-4 py-1.5 rounded-lg border border-neutral-700 text-xs font-mono text-neutral-300 hover:bg-neutral-800">Close</button>
+          <button onclick="loadDsaHistoryCode('${subId}')" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-mono font-bold text-white">Load into Editor</button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  window.closeDsaSubmissionModal = function() {
+    const modal = document.getElementById('dsa-history-detail-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  };
+
+  window.loadDsaHistoryCode = function(subId) {
+    const allSubs = getDSASubmissions();
+    const sub = allSubs.find(s => (s._id && s._id === subId) || `sub_${allSubs.indexOf(s)}` === subId);
+    if (!sub || !sub.code) return;
+
+    const textarea = document.getElementById('dsa-code-textarea');
+    if (textarea) {
+      textarea.value = sub.code;
+      if (sub.language && sub.language !== activeLanguage) {
+        const langSelect = document.getElementById('dsa-lang-select');
+        if (langSelect) langSelect.value = sub.language;
+        activeLanguage = sub.language;
+      }
+      if (window.updateDSALineNumbers) window.updateDSALineNumbers();
+      closeDsaSubmissionModal();
+      if (window.showToast) {
+        window.showToast(`Restored code from ${sub.actionType.toUpperCase()} (${new Date(sub.timestamp).toLocaleTimeString()})!`);
+      }
+    }
+  };
+
+  window.copyDsaHistoryCode = function(subId) {
+    const allSubs = getDSASubmissions();
+    const sub = allSubs.find(s => (s._id && s._id === subId) || `sub_${allSubs.indexOf(s)}` === subId);
+    if (!sub || !sub.code) return;
+    navigator.clipboard.writeText(sub.code).then(() => {
+      if (window.showToast) window.showToast('Code copied to clipboard!');
+    });
+  };
 
   window.switchDSALeftTab = function(tabName) {
     activeLeftTab = tabName;
@@ -230,6 +494,10 @@
         if (btn) btn.className = "px-3 py-2 font-semibold text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors border-b-2 border-transparent";
       }
     });
+
+    if (tabName === 'submissions') {
+      renderSubmissionsHistory(true);
+    }
   };
 
   window.changeDSALanguage = function(lang) {
@@ -352,25 +620,65 @@
       if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
         res = await window.TechPrepAPI.runDsaCode({
           problemId: problemSlug,
+          problemTitle: activeProblem.title,
           language: activeLanguage,
           code,
-          customInput: customInput && customInput.trim() !== '' ? customInput : undefined
+          customInput: customInput && customInput.trim() !== '' ? customInput : undefined,
+          source: 'ide',
+          actionType: 'run'
         });
       }
 
-      if (res && res.success && res.result) {
-        renderTerminalOutput(res.result, false);
-      } else if (res && res.result) {
-        renderTerminalOutput(res.result, false);
+      let evaluation = null;
+      if (res && res.result) {
+        evaluation = res.result;
       } else {
-        // Fallback to client evaluator
-        const evaluation = evaluateCodeSubmission(activeProblem, code, activeLanguage, false);
-        renderTerminalOutput(evaluation, false);
+        evaluation = evaluateCodeSubmission(activeProblem, code, activeLanguage, false);
       }
+
+      // Persist run execution to history (MongoDB Atlas via backend and client store)
+      saveDSASubmission({
+        _id: res && res.submission ? res.submission._id : undefined,
+        _backendSynced: Boolean(res && res.submission),
+        problemId: activeProblem.id,
+        problemTitle: activeProblem.title,
+        difficulty: activeProblem.difficulty,
+        language: activeLanguage,
+        code,
+        actionType: 'run',
+        source: 'ide',
+        status: evaluation.status || 'Accepted',
+        runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
+        memoryMb: evaluation.memoryMb || 40.2,
+        passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+        totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+        testResults: evaluation.testResults || [],
+        timestamp: new Date().toISOString()
+      });
+
+      renderTerminalOutput(evaluation, false);
+      renderSubmissionsHistory();
     } catch (err) {
       console.warn('Host compiler request failed, falling back:', err.message);
       const evaluation = evaluateCodeSubmission(activeProblem, code, activeLanguage, false);
+      saveDSASubmission({
+        problemId: activeProblem.id,
+        problemTitle: activeProblem.title,
+        difficulty: activeProblem.difficulty,
+        language: activeLanguage,
+        code,
+        actionType: 'run',
+        source: 'ide',
+        status: evaluation.status || 'Accepted',
+        runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
+        memoryMb: evaluation.memoryMb || 40.2,
+        passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+        totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+        testResults: evaluation.testResults || [],
+        timestamp: new Date().toISOString()
+      });
       renderTerminalOutput(evaluation, false);
+      renderSubmissionsHistory();
     } finally {
       if (runBtn) {
         runBtn.disabled = false;
@@ -428,8 +736,11 @@
         res = await window.TechPrepAPI.submitDsaSolution({
           studentEmail: currentUser ? currentUser.email : 'guest@techprepai.com',
           problemId: problemSlug,
+          problemTitle: activeProblem.title,
           language: activeLanguage,
-          code
+          code,
+          source: 'ide',
+          actionType: 'submit'
         });
       }
 
@@ -437,24 +748,48 @@
 
       // Save submission record
       saveDSASubmission({
+        _id: res && res.submission ? res.submission._id : undefined,
+        _backendSynced: Boolean(res && res.submission),
         problemId: activeProblem.id,
         problemTitle: activeProblem.title,
         difficulty: activeProblem.difficulty,
         language: activeLanguage,
+        code,
+        actionType: 'submit',
+        source: 'ide',
         status: evaluation.status || 'Accepted',
         runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
         memoryMb: evaluation.memoryMb || 40.2,
+        passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+        totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+        testResults: evaluation.testResults || [],
         timestamp: new Date().toISOString()
       });
 
       renderTerminalOutput(evaluation, true);
-      renderSubmissionsHistory();
+      renderSubmissionsHistory(true);
       updateSolvedCounters();
 
       switchDSALeftTab('submissions');
     } catch (err) {
       console.warn('Submission request failed, falling back:', err.message);
       const evaluation = evaluateCodeSubmission(activeProblem, code, activeLanguage, true);
+      saveDSASubmission({
+        problemId: activeProblem.id,
+        problemTitle: activeProblem.title,
+        difficulty: activeProblem.difficulty,
+        language: activeLanguage,
+        code,
+        actionType: 'submit',
+        source: 'ide',
+        status: evaluation.status || 'Accepted',
+        runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
+        memoryMb: evaluation.memoryMb || 40.2,
+        passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+        totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+        testResults: evaluation.testResults || [],
+        timestamp: new Date().toISOString()
+      });
       renderTerminalOutput(evaluation, true);
       renderSubmissionsHistory();
       updateSolvedCounters();

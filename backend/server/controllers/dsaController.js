@@ -70,7 +70,7 @@ function normalizeSlug(id) {
 
 exports.runCode = async (req, res, next) => {
   try {
-    const { problemId, language, code, customInput, testCases: reqTestCases } = req.body;
+    const { problemId, language, code, customInput, testCases: reqTestCases, studentEmail, source, quizContext, problemTitle } = req.body;
 
     if (code === undefined || code === null) {
       return res.status(400).json({ success: false, message: 'Code is required' });
@@ -78,7 +78,7 @@ exports.runCode = async (req, res, next) => {
 
     const slug = normalizeSlug(problemId);
 
-    // Otherwise, evaluate sample or dynamic test cases
+    // Evaluate sample or dynamic test cases
     const testCases = (Array.isArray(reqTestCases) && reqTestCases.length > 0)
       ? reqTestCases
       : (DEFAULT_TEST_CASES[slug] || [
@@ -86,48 +86,72 @@ exports.runCode = async (req, res, next) => {
           { input: '[3,2,4]\n6', expectedOutput: '[1,2]' }
         ]);
 
+    let result;
+
     // Handle empty code submission as evaluated zero-pass
     if (typeof code === 'string' && code.trim() === '') {
-      return res.status(200).json({
-        success: true,
-        result: {
-          status: 'Wrong Answer',
-          runtime: '0 ms',
-          memory: '0 MB',
-          passedCases: 0,
-          totalCases: testCases.length,
-          error: 'No code submitted. Function body is empty.',
-          testResults: testCases.map((tc, idx) => ({
-            testCaseIndex: idx + 1,
-            status: 'Failed',
-            runtimeMs: 0,
-            input: tc.input || '',
-            expectedOutput: tc.expectedOutput || '',
-            actualOutput: '(Empty code submission)'
-          }))
-        }
-      });
-    }
-
-    // If user specified custom input, run single execution
-    if (customInput !== undefined && customInput !== null && customInput.trim() !== '') {
-      const result = await compilerService.runCode({
+      result = {
+        success: false,
+        status: 'Wrong Answer',
+        runtime: '0 ms',
+        runtimeMs: 0,
+        memory: '0 MB',
+        memoryMb: 0,
+        passedCases: 0,
+        totalCases: testCases.length,
+        error: 'No code submitted. Function body is empty.',
+        testResults: testCases.map((tc, idx) => ({
+          testCaseIndex: idx + 1,
+          status: 'Failed',
+          runtimeMs: 0,
+          input: tc.input || '',
+          expectedOutput: tc.expectedOutput || '',
+          actualOutput: '(Empty code submission)'
+        }))
+      };
+    } else if (customInput !== undefined && customInput !== null && customInput.trim() !== '') {
+      result = await compilerService.runCode({
         language: language || 'javascript',
         code,
         customInput,
         problemSlug: slug
       });
-      return res.status(200).json({ success: true, result });
+    } else {
+      result = await compilerService.evaluateTestCases({
+        language: language || 'javascript',
+        code,
+        problemSlug: slug,
+        testCases
+      });
     }
 
-    const result = await compilerService.evaluateTestCases({
-      language: language || 'javascript',
-      code,
-      problemSlug: slug,
-      testCases
-    });
+    // Persist run execution and testcases to MongoDB Atlas history (like LeetCode)
+    const userEmail = (studentEmail || req.user?.email || 'guest@techprepai.com').toLowerCase();
+    let submission = null;
+    try {
+      submission = await DsaSubmission.create({
+        studentEmail: userEmail,
+        problemId: slug,
+        problemTitle: problemTitle || (problemId ? problemId.replace(/^p_/, '').replace(/_/g, ' ') : 'Coding Challenge'),
+        language: language || 'javascript',
+        code,
+        status: result.status || (result.passedCases === result.totalCases ? 'Accepted' : 'Wrong Answer'),
+        actionType: 'run',
+        source: source || 'ide',
+        runtime: result.runtime || `${result.runtimeMs || 0} ms`,
+        runtimeMs: result.runtimeMs || 0,
+        memory: `${result.memoryMb || '40.0'} MB`,
+        memoryMb: parseFloat(result.memoryMb) || 40.0,
+        passedCases: result.passedCases !== undefined ? result.passedCases : (result.success ? testCases.length : 0),
+        totalCases: result.totalCases !== undefined ? result.totalCases : testCases.length,
+        testResults: result.testResults || [],
+        quizContext: quizContext || undefined
+      });
+    } catch (saveErr) {
+      console.warn('Could not persist run to DsaSubmission:', saveErr.message);
+    }
 
-    res.status(200).json({ success: true, result });
+    res.status(200).json({ success: true, result, submission });
   } catch (error) {
     next(error);
   }
@@ -138,7 +162,7 @@ exports.runCode = async (req, res, next) => {
 // @access  Public
 exports.submitSolution = async (req, res, next) => {
   try {
-    const { studentEmail, problemId, language, code, testCases: reqTestCases } = req.body;
+    const { studentEmail, problemId, language, code, testCases: reqTestCases, source, quizContext, problemTitle } = req.body;
 
     if (!problemId || code === undefined || code === null) {
       return res.status(400).json({ success: false, message: 'Missing problem or code' });
@@ -159,7 +183,9 @@ exports.submitSolution = async (req, res, next) => {
         success: false,
         status: 'Wrong Answer',
         runtime: '0 ms',
+        runtimeMs: 0,
         memory: '0 MB',
+        memoryMb: 0,
         passedCases: 0,
         totalCases: testCases.length,
         error: 'Empty code submission',
@@ -181,16 +207,24 @@ exports.submitSolution = async (req, res, next) => {
       });
     }
 
+    const userEmail = (studentEmail || req.user?.email || 'guest@techprepai.com').toLowerCase();
     const submission = await DsaSubmission.create({
-      studentEmail: (studentEmail || 'guest@techprepai.com').toLowerCase(),
+      studentEmail: userEmail,
       problemId: slug,
+      problemTitle: problemTitle || (problemId ? problemId.replace(/^p_/, '').replace(/_/g, ' ') : 'Coding Challenge'),
       language: language || 'javascript',
       code,
       status: evaluation.status || 'Accepted',
+      actionType: 'submit',
+      source: source || 'ide',
       runtime: evaluation.runtime || '0 ms',
+      runtimeMs: evaluation.runtimeMs || 0,
       memory: `${evaluation.memoryMb || '40.0'} MB`,
+      memoryMb: parseFloat(evaluation.memoryMb) || 40.0,
       passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : testCases.length,
-      totalCases: testCases.length
+      totalCases: testCases.length,
+      testResults: evaluation.testResults || [],
+      quizContext: quizContext || undefined
     });
 
     res.status(201).json({
@@ -210,9 +244,21 @@ exports.submitSolution = async (req, res, next) => {
 exports.getUserSubmissions = async (req, res, next) => {
   try {
     const { email } = req.params;
-    const submissions = await DsaSubmission.find({ studentEmail: email.toLowerCase() }).sort({ createdAt: -1 });
+    const { problemId, source, actionType, quizId, questionIdx } = req.query;
 
-    const solvedProblemIds = [...new Set(submissions.filter(s => s.status === 'Accepted').map(s => s.problemId))];
+    const query = { studentEmail: email.toLowerCase() };
+    if (problemId) {
+      const normalized = normalizeSlug(problemId);
+      query.$or = [{ problemId: normalized }, { problemId: String(problemId).trim() }];
+    }
+    if (source) query.source = source;
+    if (actionType) query.actionType = actionType;
+    if (quizId) query['quizContext.quizId'] = quizId;
+    if (questionIdx !== undefined && questionIdx !== '') query['quizContext.questionIdx'] = Number(questionIdx);
+
+    const submissions = await DsaSubmission.find(query).sort({ createdAt: -1 });
+
+    const solvedProblemIds = [...new Set(submissions.filter(s => s.status === 'Accepted' && s.actionType === 'submit').map(s => s.problemId))];
 
     res.status(200).json({
       success: true,

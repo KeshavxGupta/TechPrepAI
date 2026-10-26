@@ -264,21 +264,39 @@
     },
 
     async runDsaCode(codePayload) {
+      const email = getCurrentUserEmail() || 'guest@techprepai.com';
+      const payload = {
+        studentEmail: email,
+        ...codePayload
+      };
       return await request('/dsa/run', {
         method: 'POST',
-        body: JSON.stringify(codePayload)
+        body: JSON.stringify(payload)
       });
     },
 
     async submitDsaSolution(submissionPayload) {
+      const email = getCurrentUserEmail() || 'guest@techprepai.com';
+      const payload = {
+        studentEmail: email,
+        ...submissionPayload
+      };
       return await request('/dsa/submit', {
         method: 'POST',
-        body: JSON.stringify(submissionPayload)
+        body: JSON.stringify(payload)
       });
     },
 
-    async getUserDsaSubmissions(email) {
-      return await request(`/dsa/submissions/user/${encodeURIComponent(email || getCurrentUserEmail())}`);
+    async getUserDsaSubmissions(email, options = {}) {
+      const activeEmail = email || getCurrentUserEmail() || 'guest@techprepai.com';
+      const params = new URLSearchParams();
+      if (options.problemId) params.append('problemId', options.problemId);
+      if (options.source) params.append('source', options.source);
+      if (options.actionType) params.append('actionType', options.actionType);
+      if (options.quizId) params.append('quizId', options.quizId);
+      if (options.questionIdx !== undefined && options.questionIdx !== '') params.append('questionIdx', options.questionIdx);
+      const q = params.toString() ? `?${params.toString()}` : '';
+      return await request(`/dsa/submissions/user/${encodeURIComponent(activeEmail)}${q}`);
     },
 
     // --- Planner Endpoints ---

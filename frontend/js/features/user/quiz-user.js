@@ -1735,22 +1735,37 @@ window.runExamCodingCode = async function() {
     `;
   }
 
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+
   const q = currentQuiz.questions[currentQuestionIdx];
   const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
 
   let evaluation = null;
+  let runRes = null;
 
   try {
     if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
-      const res = await window.TechPrepAPI.runDsaCode({
+      runRes = await window.TechPrepAPI.runDsaCode({
         problemId: problemSlug,
+        problemTitle: q.title || `Question ${currentQuestionIdx + 1}`,
+        studentEmail: userEmail,
         language: activeExamLanguage,
         code,
         customInput: (customInput && customInput.trim() !== '') ? customInput : undefined,
-        testCases: q.testCases
+        testCases: q.testCases,
+        source: 'quiz',
+        actionType: 'run',
+        quizContext: {
+          quizId: currentQuiz.id || currentQuiz._id,
+          quizTitle: currentQuiz.title,
+          questionIdx: currentQuestionIdx
+        }
       });
-      if (res && res.result && res.result.status !== 'Error') {
-        evaluation = res.result;
+      if (runRes && runRes.result && runRes.result.status !== 'Error') {
+        evaluation = runRes.result;
       }
     }
   } catch (backendErr) {
@@ -1762,7 +1777,34 @@ window.runExamCodingCode = async function() {
     evaluation.compiler = `${activeExamLanguage.toUpperCase()} (Client Engine)`;
   }
 
-  renderExamTerminalOutput(evaluation, false);
+  // Persist run execution to history (MongoDB Atlas via backend and client store)
+  if (typeof saveDSASubmission === 'function') {
+    saveDSASubmission({
+      _id: runRes && runRes.submission ? runRes.submission._id : undefined,
+      _backendSynced: Boolean(runRes && runRes.submission),
+      problemId: problemSlug,
+      problemTitle: q.title || `Quiz Q${currentQuestionIdx + 1}`,
+      difficulty: 'Medium',
+      language: activeExamLanguage,
+      code,
+      actionType: 'run',
+      source: 'quiz',
+      status: evaluation.status || 'Accepted',
+      runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
+      memoryMb: evaluation.memoryMb || 40.2,
+      passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+      totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+      testResults: evaluation.testResults || [],
+      quizContext: {
+        quizId: currentQuiz.id || currentQuiz._id,
+        quizTitle: currentQuiz.title,
+        questionIdx: currentQuestionIdx
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  renderExamTerminalOutput(evaluation, false, 'results');
 
   if (runBtn) {
     runBtn.disabled = false;
@@ -1808,21 +1850,36 @@ window.submitExamCodingCode = async function() {
     `;
   }
 
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+
   const q = currentQuiz.questions[currentQuestionIdx];
   const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
 
   let evaluation = null;
+  let subRes = null;
 
   try {
-    if (window.TechPrepAPI && window.TechPrepAPI.runDsaCode) {
-      const res = await window.TechPrepAPI.runDsaCode({
+    if (window.TechPrepAPI && window.TechPrepAPI.submitDsaSolution) {
+      subRes = await window.TechPrepAPI.submitDsaSolution({
         problemId: problemSlug,
+        problemTitle: q.title || `Question ${currentQuestionIdx + 1}`,
+        studentEmail: userEmail,
         language: activeExamLanguage,
         code,
-        testCases: q.testCases
+        testCases: q.testCases,
+        source: 'quiz',
+        actionType: 'submit',
+        quizContext: {
+          quizId: currentQuiz.id || currentQuiz._id,
+          quizTitle: currentQuiz.title,
+          questionIdx: currentQuestionIdx
+        }
       });
-      if (res && res.result && res.result.status !== 'Error') {
-        evaluation = res.result;
+      if (subRes && (subRes.evaluation || subRes.submission)) {
+        evaluation = subRes.evaluation || subRes.submission;
       }
     }
   } catch (backendErr) {
@@ -1840,6 +1897,33 @@ window.submitExamCodingCode = async function() {
   }
   evaluation._evaluatedCode = code;
 
+  // Persist submission to MongoDB Atlas & store
+  if (typeof saveDSASubmission === 'function') {
+    saveDSASubmission({
+      _id: subRes && subRes.submission ? subRes.submission._id : undefined,
+      _backendSynced: Boolean(subRes && subRes.submission),
+      problemId: problemSlug,
+      problemTitle: q.title || `Quiz Q${currentQuestionIdx + 1}`,
+      difficulty: 'Medium',
+      language: activeExamLanguage,
+      code,
+      actionType: 'submit',
+      source: 'quiz',
+      status: evaluation.status || 'Accepted',
+      runtimeMs: evaluation.runtimeMs || (parseInt(evaluation.runtime) || 45),
+      memoryMb: evaluation.memoryMb || 40.2,
+      passedCases: evaluation.passedCases !== undefined ? evaluation.passedCases : (evaluation.testResults ? evaluation.testResults.filter(r => r.status === 'Passed').length : 0),
+      totalCases: evaluation.totalCases !== undefined ? evaluation.totalCases : (evaluation.testResults ? evaluation.testResults.length : 0),
+      testResults: evaluation.testResults || [],
+      quizContext: {
+        quizId: currentQuiz.id || currentQuiz._id,
+        quizTitle: currentQuiz.title,
+        questionIdx: currentQuestionIdx
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+
   // Persist student's typed code and evaluation into exam state
   studentAnswers[currentQuestionIdx] = code;
   if (!studentLanguageCode[currentQuestionIdx]) studentLanguageCode[currentQuestionIdx] = {};
@@ -1847,7 +1931,7 @@ window.submitExamCodingCode = async function() {
   studentCodingEvaluations[currentQuestionIdx] = evaluation;
   delete questionFlags[currentQuestionIdx];
 
-  renderExamTerminalOutput(evaluation, true);
+  renderExamTerminalOutput(evaluation, true, 'results');
   renderQuestionGrid();
 
   const isAccepted = Boolean(
@@ -1878,15 +1962,363 @@ window.submitExamCodingCode = async function() {
   if (statusEl) statusEl.classList.add('hidden');
 };
 
-function renderExamTerminalOutput(evaluation, isSubmit) {
+let activeExamTerminalTab = 'results';
+let activeExamTerminalEval = null;
+
+window.switchExamTerminalTab = function(tabName) {
+  activeExamTerminalTab = tabName;
+  if (tabName === 'results' && activeExamTerminalEval) {
+    renderExamTerminalOutput(activeExamTerminalEval, false, 'results');
+  } else {
+    renderExamSubmissionsHistory();
+  }
+};
+
+window.renderExamSubmissionsHistory = function() {
   const terminalDrawer = document.getElementById('exam-terminal-output');
   if (!terminalDrawer) return;
 
+  activeExamTerminalTab = 'history';
   terminalDrawer.classList.remove('hidden');
+
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+
+  const q = currentQuiz.questions[currentQuestionIdx];
+  const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
+
+  // Fetch latest submissions from MongoDB Atlas
+  if (window.TechPrepAPI && window.TechPrepAPI.getUserDsaSubmissions) {
+    window.TechPrepAPI.getUserDsaSubmissions(userEmail, {
+      source: 'quiz',
+      quizId: currentQuiz.id || currentQuiz._id,
+      questionIdx: currentQuestionIdx
+    }).then(res => {
+      if (res && res.submissions && Array.isArray(res.submissions)) {
+        res.submissions.forEach(sub => {
+          if (typeof saveDSASubmission === 'function') {
+            saveDSASubmission({
+              _id: sub._id,
+              problemId: problemSlug,
+              problemTitle: sub.problemTitle || q.title || `Question ${currentQuestionIdx + 1}`,
+              difficulty: 'Medium',
+              language: sub.language,
+              code: sub.code,
+              status: sub.status,
+              actionType: sub.actionType || 'run',
+              source: 'quiz',
+              runtimeMs: sub.runtimeMs || (parseInt(sub.runtime) || 0),
+              memoryMb: sub.memoryMb || (parseFloat(sub.memory) || 40),
+              passedCases: sub.passedCases !== undefined ? sub.passedCases : 0,
+              totalCases: sub.totalCases !== undefined ? sub.totalCases : 0,
+              testResults: sub.testResults || [],
+              quizContext: sub.quizContext || { quizId: currentQuiz.id, questionIdx: currentQuestionIdx },
+              timestamp: sub.createdAt || sub.timestamp || new Date().toISOString(),
+              _backendSynced: true
+            });
+          }
+        });
+        drawExamHistoryTable();
+      }
+    }).catch(err => {
+      console.warn('Could not sync quiz history from MongoDB:', err.message);
+    });
+  }
+
+  drawExamHistoryTable();
+};
+
+function drawExamHistoryTable() {
+  const terminalDrawer = document.getElementById('exam-terminal-output');
+  if (!terminalDrawer) return;
+
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+
+  const q = currentQuiz.questions[currentQuestionIdx];
+  const problemSlug = q.slug || q.id || `quiz-q-${currentQuestionIdx}`;
+
+  const allSubs = typeof getDSASubmissions === 'function' ? getDSASubmissions() : [];
+  const questionSubs = allSubs.filter(s => {
+    const matchQuiz = s.source === 'quiz' && (
+      (s.quizContext && String(s.quizContext.quizId) === String(currentQuiz.id || currentQuiz._id) && Number(s.quizContext.questionIdx) === currentQuestionIdx) ||
+      s.problemId === problemSlug
+    );
+    const matchUser = s.userEmail === userEmail || !s.userEmail;
+    return matchQuiz && matchUser;
+  });
+
+  const headerHtml = `
+    <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-2.5 sm:p-3 bg-surface-secondary">
+      <div class="flex items-center space-x-2">
+        <button onclick="switchExamTerminalTab('results')" class="px-2.5 py-1 rounded text-xs font-mono font-medium text-neutral-400 hover:text-white transition-colors">
+          Console & Test Results
+        </button>
+        <button onclick="switchExamTerminalTab('history')" class="px-2.5 py-1 rounded text-xs font-mono font-bold bg-blue-600 text-white transition-colors">
+          Submissions & History (LeetCode)
+        </button>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button onclick="renderExamSubmissionsHistory()" class="text-xs font-mono text-blue-500 hover:text-blue-400 flex items-center gap-1" title="Sync with Atlas">
+          <svg class="w-3.5 h-3.5 inline animate-spin-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Sync Atlas
+        </button>
+        <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-white text-xs font-mono">
+          Close
+        </button>
+      </div>
+    </div>
+  `;
+
+  if (!questionSubs.length) {
+    terminalDrawer.innerHTML = `
+      ${headerHtml}
+      <div class="p-6 text-center text-neutral-500 font-mono text-xs">
+        No run or submission history recorded yet for this question. Write code and click "Run Code" or "Submit Code"!
+      </div>
+    `;
+    return;
+  }
+
+  terminalDrawer.innerHTML = `
+    ${headerHtml}
+    <div class="p-3 overflow-x-auto">
+      <table class="w-full text-left text-xs border-collapse">
+        <thead>
+          <tr class="border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 font-mono bg-surface-secondary">
+            <th class="py-2 px-2.5 font-semibold">TYPE</th>
+            <th class="py-2 px-2.5 font-semibold">VERDICT</th>
+            <th class="py-2 px-2.5 font-semibold">TESTCASES</th>
+            <th class="py-2 px-2.5 font-semibold">LANG</th>
+            <th class="py-2 px-2.5 font-semibold">RUNTIME</th>
+            <th class="py-2 px-2.5 font-semibold">MEMORY</th>
+            <th class="py-2 px-2.5 font-semibold">TIME</th>
+            <th class="py-2 px-2.5 font-semibold text-right">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800/60 font-sans">
+          ${questionSubs.map((s, idx) => {
+            const subId = s._id || `quiz_sub_${idx}`;
+            const isRun = s.actionType === 'run';
+            const isAccepted = s.status === 'Accepted';
+            const isCompileErr = s.status === 'Compile Error';
+            const passed = s.passedCases !== undefined ? s.passedCases : (isAccepted ? (s.totalCases || 1) : 0);
+            const total = s.totalCases !== undefined ? s.totalCases : (s.testResults ? s.testResults.length : 1);
+
+            return `
+              <tr class="hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
+                <td class="py-2 px-2.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                    isRun ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                  }">${isRun ? 'RUN' : 'SUBMIT'}</span>
+                </td>
+                <td class="py-2 px-2.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                    isAccepted ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                    isCompileErr ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+                    'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                  }">${escapeHTML(s.status || 'Evaluated')}</span>
+                </td>
+                <td class="py-2 px-2.5 font-mono text-[11px] text-neutral-600 dark:text-neutral-300">
+                  ${passed} / ${total}
+                </td>
+                <td class="py-2 px-2.5 font-mono text-[11px] text-neutral-500 uppercase">${escapeHTML(s.language || 'javascript')}</td>
+                <td class="py-2 px-2.5 font-mono text-neutral-700 dark:text-neutral-300">${s.runtimeMs || 0} ms</td>
+                <td class="py-2 px-2.5 font-mono text-neutral-700 dark:text-neutral-300">${s.memoryMb || 40} MB</td>
+                <td class="py-2 px-2.5 font-mono text-[10px] text-neutral-500">${new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</td>
+                <td class="py-2 px-2.5 text-right space-x-1 whitespace-nowrap">
+                  <button onclick="viewExamSubmissionModal('${subId}')" class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 font-mono text-[11px] font-bold transition-colors">
+                    Inspect
+                  </button>
+                  <button onclick="loadExamHistoryCode('${subId}')" class="px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-white font-mono text-[11px] transition-colors" title="Load code into editor">
+                    Restore
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+window.viewExamSubmissionModal = function(subId) {
+  const allSubs = typeof getDSASubmissions === 'function' ? getDSASubmissions() : [];
+  const sub = allSubs.find(s => (s._id && s._id === subId) || `quiz_sub_${allSubs.indexOf(s)}` === subId);
+  if (!sub) return;
+
+  let modal = document.getElementById('exam-history-detail-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'exam-history-detail-modal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/80 backdrop-blur-sm';
+    document.body.appendChild(modal);
+  }
+
+  const isRun = sub.actionType === 'run';
+  const isAccepted = sub.status === 'Accepted';
+  const isCompileErr = sub.status === 'Compile Error';
+  const testcases = sub.testResults || [];
+  const passed = sub.passedCases !== undefined ? sub.passedCases : (isAccepted ? testcases.length : 0);
+  const total = sub.totalCases !== undefined ? sub.totalCases : (testcases.length || 1);
+
+  const testcasesHtml = testcases.length > 0 ? testcases.map(tc => `
+    <div class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-surface-secondary text-xs space-y-1.5">
+      <div class="flex items-center justify-between font-mono font-bold">
+        <span>Test Case ${tc.testCaseIndex}:</span>
+        <span class="${tc.status === 'Passed' ? 'text-emerald-500' : 'text-rose-500'}">${tc.status} (${tc.runtimeMs || 0} ms)</span>
+      </div>
+      <div class="font-mono text-[11px] text-neutral-500">Input: <code class="text-neutral-800 dark:text-neutral-200">${escapeHTML(tc.input || '')}</code></div>
+      <div class="font-mono text-[11px] text-neutral-500">Expected: <code class="text-emerald-600 dark:text-emerald-400">${escapeHTML(tc.expectedOutput || '')}</code></div>
+      <div class="font-mono text-[11px] text-neutral-500">Actual Output: <code class="${tc.status === 'Passed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}">${escapeHTML(tc.actualOutput || '')}</code></div>
+    </div>
+  `).join('') : `
+    <div class="p-3 rounded bg-neutral-900 font-mono text-xs text-neutral-400">
+      ${sub.stdout ? `<div class="text-emerald-400 mb-1">Standard Output:</div><pre class="whitespace-pre-wrap">${escapeHTML(sub.stdout)}</pre>` : 'No custom test cases were evaluated.'}
+      ${sub.stderr ? `<div class="text-rose-400 mt-2 mb-1">Standard Error:</div><pre class="whitespace-pre-wrap">${escapeHTML(sub.stderr)}</pre>` : ''}
+    </div>
+  `;
+
+  modal.innerHTML = `
+    <div class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-surface-primary shadow-2xl overflow-hidden animate-scale-up text-left">
+      <!-- Header -->
+      <div class="p-4 border-b border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <span class="px-2.5 py-1 rounded text-xs font-mono font-bold ${
+            isRun ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+          }">${isRun ? 'QUIZ RUN' : 'QUIZ SUBMISSION'}</span>
+          <span class="px-2.5 py-1 rounded text-xs font-mono font-bold ${
+            isAccepted ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+            isCompileErr ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
+            'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+          }">${escapeHTML(sub.status || 'Evaluated')}</span>
+          <span class="font-mono text-xs text-neutral-500">${passed}/${total} test cases passed</span>
+        </div>
+        <button onclick="closeExamSubmissionModal()" class="text-neutral-400 hover:text-white p-1 rounded">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-4 space-y-4 overflow-y-auto flex-1 font-sans">
+        <!-- Metrics Bar -->
+        <div class="grid grid-cols-4 gap-2 text-center font-mono">
+          <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+            <span class="text-[10px] text-neutral-400 block uppercase">Language</span>
+            <span class="text-xs font-bold text-neutral-200 uppercase">${escapeHTML(sub.language || 'javascript')}</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+            <span class="text-[10px] text-neutral-400 block uppercase">Runtime</span>
+            <span class="text-xs font-bold text-neutral-200">${sub.runtimeMs || 0} ms</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+            <span class="text-[10px] text-neutral-400 block uppercase">Memory</span>
+            <span class="text-xs font-bold text-neutral-200">${sub.memoryMb || 40} MB</span>
+          </div>
+          <div class="p-2.5 rounded-lg bg-surface-elevated border border-neutral-200 dark:border-neutral-800">
+            <span class="text-[10px] text-neutral-400 block uppercase">Time</span>
+            <span class="text-xs font-bold text-neutral-200">${new Date(sub.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        </div>
+
+        <!-- Test Cases Details -->
+        <div>
+          <div class="text-xs font-mono font-bold text-neutral-400 uppercase mb-2">Test Cases Breakdown:</div>
+          <div class="space-y-2 max-h-48 overflow-y-auto">${testcasesHtml}</div>
+        </div>
+
+        <!-- Code Snapshot -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-xs font-mono font-bold text-neutral-400 uppercase">Code Executed:</span>
+            <div class="flex items-center gap-2">
+              <button onclick="loadExamHistoryCode('${subId}')" class="px-3 py-1 text-xs font-mono font-bold rounded bg-blue-600 hover:bg-blue-500 text-white">Restore into Editor</button>
+            </div>
+          </div>
+          <pre class="p-3 bg-neutral-950 border border-neutral-800 rounded-lg font-mono text-xs text-neutral-200 max-h-48 overflow-y-auto whitespace-pre leading-relaxed">${escapeHTML(sub.code || '// No code stored')}</pre>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-3 border-t border-neutral-200 dark:border-neutral-800 bg-surface-secondary flex items-center justify-end space-x-2">
+        <button onclick="closeExamSubmissionModal()" class="px-4 py-1.5 rounded-lg border border-neutral-700 text-xs font-mono text-neutral-300 hover:bg-neutral-800">Close</button>
+        <button onclick="loadExamHistoryCode('${subId}')" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-mono font-bold text-white">Load into Editor</button>
+      </div>
+    </div>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+};
+
+window.closeExamSubmissionModal = function() {
+  const modal = document.getElementById('exam-history-detail-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+};
+
+window.loadExamHistoryCode = function(subId) {
+  const allSubs = typeof getDSASubmissions === 'function' ? getDSASubmissions() : [];
+  const sub = allSubs.find(s => (s._id && s._id === subId) || `quiz_sub_${allSubs.indexOf(s)}` === subId);
+  if (!sub || !sub.code) return;
+
+  const textarea = document.getElementById('exam-code-textarea');
+  if (textarea) {
+    textarea.value = sub.code;
+    if (sub.language && sub.language !== activeExamLanguage) {
+      const langSelect = document.getElementById('exam-lang-select');
+      if (langSelect) langSelect.value = sub.language;
+      activeExamLanguage = sub.language;
+    }
+    if (typeof updateExamLineNumbers === 'function') updateExamLineNumbers();
+    closeExamSubmissionModal();
+    if (window.showToast) {
+      window.showToast(`Restored code from ${sub.actionType.toUpperCase()} (${new Date(sub.timestamp).toLocaleTimeString()})!`);
+    }
+  }
+};
+
+function renderExamTerminalOutput(evaluation, isSubmit, activeTab = 'results') {
+  const terminalDrawer = document.getElementById('exam-terminal-output');
+  if (!terminalDrawer) return;
+
+  activeExamTerminalEval = evaluation;
+  activeExamTerminalTab = activeTab;
+
+  terminalDrawer.classList.remove('hidden');
+
+  if (activeTab === 'history') {
+    renderExamSubmissionsHistory();
+    return;
+  }
+
+  const navHeaderHtml = `
+    <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-2.5 sm:p-3 bg-surface-secondary">
+      <div class="flex items-center space-x-2">
+        <button onclick="switchExamTerminalTab('results')" class="px-2.5 py-1 rounded text-xs font-mono font-bold bg-blue-600 text-white transition-colors">
+          Console & Test Results
+        </button>
+        <button onclick="switchExamTerminalTab('history')" class="px-2.5 py-1 rounded text-xs font-mono font-medium text-neutral-400 hover:text-white transition-colors">
+          Submissions & History (LeetCode)
+        </button>
+      </div>
+      <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-white text-xs font-mono">
+        Close
+      </button>
+    </div>
+  `;
 
   // Compile Error
   if (evaluation.status === 'Compile Error') {
     terminalDrawer.innerHTML = `
+      ${navHeaderHtml}
       <div class="p-4 space-y-3 text-left">
         <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
           <div class="flex items-center space-x-3">
@@ -1895,9 +2327,6 @@ function renderExamTerminalOutput(evaluation, isSubmit) {
             </span>
             <span class="font-mono text-xs text-neutral-500">Compiler: <strong>${escapeHTML(evaluation.compiler || activeExamLanguage)}</strong></span>
           </div>
-          <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-200 font-mono text-xs">
-            Close
-          </button>
         </div>
         <div class="p-3.5 rounded-lg bg-neutral-900 border border-amber-500/30 text-amber-300 font-mono text-xs whitespace-pre-wrap leading-relaxed overflow-x-auto">
           ${escapeHTML(evaluation.error || evaluation.stderr || 'Compilation failed with syntax error.')}
@@ -1911,6 +2340,7 @@ function renderExamTerminalOutput(evaluation, isSubmit) {
   if (evaluation.stdout !== undefined && (!evaluation.testResults || evaluation.testResults.length === 0)) {
     const isSuccess = evaluation.status === 'Success';
     terminalDrawer.innerHTML = `
+      ${navHeaderHtml}
       <div class="p-4 space-y-3 text-left">
         <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
           <div class="flex items-center space-x-3">
@@ -1920,9 +2350,6 @@ function renderExamTerminalOutput(evaluation, isSubmit) {
             <span class="font-mono text-xs text-neutral-500">Runtime: <strong class="text-white">${evaluation.runtime || '0 ms'}</strong></span>
             <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-white">${evaluation.memory || '40 MB'}</strong></span>
           </div>
-          <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-200 font-mono text-xs">
-            Close
-          </button>
         </div>
         <div class="space-y-2">
           <div class="text-[11px] font-mono text-neutral-400">Standard Output (stdout):</div>
@@ -1960,6 +2387,7 @@ function renderExamTerminalOutput(evaluation, isSubmit) {
   `).join('');
 
   terminalDrawer.innerHTML = `
+    ${navHeaderHtml}
     <div class="p-4 space-y-3 text-left">
       <div class="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
         <div class="flex items-center space-x-3">
@@ -1968,10 +2396,6 @@ function renderExamTerminalOutput(evaluation, isSubmit) {
           <span class="font-mono text-xs text-neutral-500">Memory: <strong class="text-neutral-900 dark:text-white">${evaluation.memory || (evaluation.memoryMb + ' MB')}</strong></span>
           ${evaluation.compiler ? `<span class="hidden sm:inline-block font-mono text-[11px] text-neutral-400">(${escapeHTML(evaluation.compiler)})</span>` : ''}
         </div>
-        <button onclick="document.getElementById('exam-terminal-output').classList.add('hidden')" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-mono text-xs flex items-center gap-1">
-          <svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-          Close
-        </button>
       </div>
       <div class="space-y-2 max-h-48 overflow-y-auto">${testResultsHtml}</div>
     </div>

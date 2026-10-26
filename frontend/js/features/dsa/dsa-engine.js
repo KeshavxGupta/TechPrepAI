@@ -438,36 +438,55 @@ function saveDSASubmission(submission) {
   const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
                       (window.getCurrentUser ? window.getCurrentUser() : null) ||
                       (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
-  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+  const userEmail = currentUser ? currentUser.email : (submission.userEmail || 'guest@techprepai.com');
   submission.userEmail = userEmail;
-  submission.userName = currentUser ? currentUser.name : 'Guest Student';
+  submission.userName = currentUser ? currentUser.name : (submission.userName || 'Guest Student');
+  submission.actionType = submission.actionType || 'submit';
+  submission.timestamp = submission.timestamp || new Date().toISOString();
 
-  _memDsaSubmissions.unshift(submission);
+  // Deduplicate or insert at front
+  const existingIdx = _memDsaSubmissions.findIndex(s => s._id && submission._id && s._id === submission._id);
+  if (existingIdx !== -1) {
+    _memDsaSubmissions[existingIdx] = { ..._memDsaSubmissions[existingIdx], ...submission };
+  } else {
+    _memDsaSubmissions.unshift(submission);
+  }
   if (_memDsaSubmissions.length > 500) _memDsaSubmissions.pop();
 
-  if (submission.status === 'Accepted') {
+  if (submission.status === 'Accepted' && submission.actionType === 'submit') {
     if (!_memDsaProgress[userEmail]) _memDsaProgress[userEmail] = { solved: [] };
-    if (!_memDsaProgress[userEmail].solved.includes(submission.problemId)) {
-      _memDsaProgress[userEmail].solved.push(submission.problemId);
+    const probKey = submission.problemId;
+    if (!_memDsaProgress[userEmail].solved.includes(probKey)) {
+      _memDsaProgress[userEmail].solved.push(probKey);
     }
   }
 
-  // Persist directly to MongoDB Atlas backend
-  if (window.TechPrepAPI && window.TechPrepAPI.submitDsaSolution && userEmail) {
-    window.TechPrepAPI.submitDsaSolution({
-      problemId: submission.problemId,
-      studentEmail: userEmail,
-      language: submission.language || 'javascript',
-      code: submission.code || '',
-      status: submission.status || 'Accepted',
-      runtime: submission.runtime || 0,
-      memory: submission.memory || 0,
-      testCasesPassed: submission.testCasesPassed || 0,
-      totalTestCases: submission.totalTestCases || 0
-    }).catch(err => {
-      console.warn('DSA submission MongoDB sync error:', err);
-    });
+  // Persist directly to MongoDB Atlas backend if not already synced by caller
+  if (window.TechPrepAPI && !submission._backendSynced && userEmail) {
+    const isRun = submission.actionType === 'run';
+    const apiCall = isRun ? window.TechPrepAPI.runDsaCode : window.TechPrepAPI.submitDsaSolution;
+    if (apiCall) {
+      apiCall.call(window.TechPrepAPI, {
+        problemId: submission.problemId,
+        problemTitle: submission.problemTitle || '',
+        studentEmail: userEmail,
+        language: submission.language || 'javascript',
+        code: submission.code || '',
+        source: submission.source || 'ide',
+        testCases: submission.testCases || [],
+        quizContext: submission.quizContext
+      }).then(res => {
+        if (res && res.submission && res.submission._id) {
+          submission._id = res.submission._id;
+          submission._backendSynced = true;
+        }
+      }).catch(err => {
+        console.warn('DSA submission MongoDB sync error:', err);
+      });
+    }
   }
+
+  return submission;
 }
 
 // Multi-Language Code Evaluator Engine
