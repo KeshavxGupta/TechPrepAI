@@ -32,6 +32,13 @@ async function pingDatabase() {
     // 1. Ensure active database connection
     await connectDB();
 
+    // If still in connecting state (2), wait up to 2000ms
+    let waitAttempts = 0;
+    while (mongoose.connection && mongoose.connection.readyState === 2 && waitAttempts < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      waitAttempts++;
+    }
+
     if (!mongoose.connection || mongoose.connection.readyState !== 1) {
       throw new Error(`MongoDB connection readyState is ${mongoose.connection ? mongoose.connection.readyState : 'null'}`);
     }

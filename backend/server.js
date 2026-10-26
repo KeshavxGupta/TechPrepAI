@@ -29,10 +29,25 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     app: 'TechPrep AI',
-    version: '1.1.0',
+    version: '1.1.1',
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting_or_disconnected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Ensure database is connected before handling API routes (critical for Vercel serverless cold-starts)
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('[API Serverless DB Connection Error]:', err.message);
+    res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please ensure MongoDB Atlas network access allows 0.0.0.0/0.',
+      error: err.message
+    });
+  }
 });
 
 // Keep-Alive & Heartbeat API - Ensures MongoDB Atlas never sleeps or idles
@@ -50,21 +65,6 @@ app.all('/api/keepalive', async (req, res) => {
       message: 'Keep-alive ping failed',
       error: err.message,
       timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Ensure database is connected before handling API routes (critical for Vercel serverless cold-starts)
-app.use('/api', async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    console.error('[API Serverless DB Connection Error]:', err.message);
-    res.status(503).json({
-      success: false,
-      message: 'Database connection failed. Please ensure MongoDB Atlas network access allows 0.0.0.0/0.',
-      error: err.message
     });
   }
 });

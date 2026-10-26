@@ -15,6 +15,12 @@ const connectDB = async () => {
     return cached.conn;
   }
 
+  // If disconnected (0) or disconnecting (3), reset cached handles so fresh connection occurs
+  if (mongoose.connection.readyState !== 1 && mongoose.connection.readyState !== 2) {
+    cached.conn = null;
+    cached.promise = null;
+  }
+
   if (!cached.promise) {
     console.log(`[MongoDB] Initializing connection to ${isAtlas ? 'MongoDB Atlas (Cloud)' : 'Local MongoDB'}...`);
     cached.promise = mongoose.connect(connUri, {

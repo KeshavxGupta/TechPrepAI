@@ -23,14 +23,15 @@ exports.getUserTasks = async (req, res, next) => {
 // @access  Public
 exports.createTask = async (req, res, next) => {
   try {
-    const { studentEmail, title, category, type, priority, dueDate, deadline, resourceLink } = req.body;
+    const rawEmail = req.body.studentEmail || req.body.userEmail || req.body.email || req.headers['x-user-email'];
+    const { title, category, type, priority, dueDate, deadline, resourceLink } = req.body;
 
-    if (!studentEmail || !title) {
+    if (!rawEmail || !title) {
       return res.status(400).json({ success: false, message: 'Student email and task title are required' });
     }
 
     const task = await PlannerTask.create({
-      studentEmail: studentEmail.toLowerCase(),
+      studentEmail: rawEmail.toLowerCase(),
       title,
       category: category || type || 'General',
       type: type || category || 'daily',
@@ -109,14 +110,15 @@ exports.getUserNotes = async (req, res, next) => {
 // @access  Public
 exports.createNote = async (req, res, next) => {
   try {
-    const { studentEmail, title, content, category, color, activeRecall, srInterval, isPinned } = req.body;
+    const rawEmail = req.body.studentEmail || req.body.userEmail || req.body.email || req.headers['x-user-email'];
+    const { title, content, category, color, activeRecall, srInterval, isPinned } = req.body;
 
-    if (!studentEmail || !title) {
+    if (!rawEmail || !title) {
       return res.status(400).json({ success: false, message: 'Student email and note title are required' });
     }
 
     const note = await Note.create({
-      studentEmail: studentEmail.toLowerCase(),
+      studentEmail: rawEmail.toLowerCase(),
       title,
       content: content || '',
       category: category || 'General',
