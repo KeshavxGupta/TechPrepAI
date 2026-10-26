@@ -357,8 +357,24 @@
     // --- Admin Endpoints ---
     async getAdminTelemetry() {
       return await request('/admin/telemetry');
+    },
+
+    // --- Keep-Alive / Heartbeat Endpoints ---
+    async pingKeepAlive() {
+      return await request('/keepalive');
+    },
+
+    async checkHealth() {
+      return await request('/health');
     }
   };
+
+  // Background pulse: ping Atlas every 4 minutes while browser tab is active so DB never sleeps
+  if (typeof window !== 'undefined') {
+    setInterval(() => {
+      TechPrepAPI.pingKeepAlive().catch(() => {});
+    }, 240000);
+  }
 
   window.TechPrepAPI = TechPrepAPI;
 })();

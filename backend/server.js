@@ -5,6 +5,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const connectDB = require('./server/config/db');
 const errorHandler = require('./server/middleware/errorHandler');
+const { pingDatabase, startKeepAliveWorker, getKeepAliveStats } = require('./server/workers/keepAliveWorker');
 
 // Initialize Express App
 const app = express();
@@ -32,6 +33,25 @@ app.get('/api/health', (req, res) => {
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting_or_disconnected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Keep-Alive & Heartbeat API - Ensures MongoDB Atlas never sleeps or idles
+app.all('/api/keepalive', async (req, res) => {
+  try {
+    const result = await pingDatabase();
+    const statusCode = result.success ? 200 : 503;
+    res.status(statusCode).json({
+      ...result,
+      workerStats: getKeepAliveStats()
+    });
+  } catch (err) {
+    res.status(503).json({
+      success: false,
+      message: 'Keep-alive ping failed',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Ensure database is connected before handling API routes (critical for Vercel serverless cold-starts)
@@ -83,9 +103,13 @@ if (!process.env.VERCEL) {
     console.log(` TechPrep AI MERN Server running on port ${PORT}`);
     console.log(` Web Frontend: http://localhost:${PORT}`);
     console.log(` REST API:     http://localhost:${PORT}/api/health`);
+    console.log(` Keep-Alive:   http://localhost:${PORT}/api/keepalive`);
     console.log(` Mode:         ${process.env.NODE_ENV || 'development'}`);
     console.log(`====================================================`);
   });
+
+  // Start background MongoDB Atlas keep-alive worker
+  startKeepAliveWorker(parseInt(process.env.KEEP_ALIVE_INTERVAL_MS, 10) || 240000);
 
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (err, promise) => {
