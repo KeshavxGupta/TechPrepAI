@@ -29,7 +29,7 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     app: 'TechPrep AI',
-    version: '1.0.0',
+    version: '1.1.0',
     dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting_or_disconnected',
     timestamp: new Date().toISOString()
   });
