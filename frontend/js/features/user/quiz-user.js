@@ -132,19 +132,38 @@ function emergencyFailOnUnload() {
       submissionReason: 'Session Aborted: Browser Window Closed or Reloaded',
       timestamp: new Date().toISOString()
     };
+    
     try {
       const email = activeUser.email;
       const key = `techprep_user_quiz_results_${email}`;
+      
+      // 1. Purana LocalStorage Backup (UI break na ho uske liye)
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
       existing.push(failedResult);
       localStorage.setItem(key, JSON.stringify(existing));
       localStorage.setItem('techprep_user_quiz_results', JSON.stringify(existing));
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/quizzes/results', JSON.stringify(failedResult));
-      }
-    } catch (e) {}
+      
+      // 2. NAYA MONGODB ATLAS BACKEND CONNECTION (Fetch API)
+      fetch('https://techprep-backend-df6o.onrender.com/api/save-result', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(failedResult)
+      })
+      .then(response => response.json())
+      .then(data => {
+          console.log("✅ Success! Data MongoDB Atlas mein save ho gaya:", data);
+      })
+      .catch(error => {
+          console.error("❌ Error saving to Atlas:", error);
+      });
+
+    } catch (e) {
+      console.error("Storage error:", e);
+    }
   }
-}
+} // FIXED MISSING BRACKET HERE!
 
 document.addEventListener('DOMContentLoaded', () => {
   // Auth & Role check
@@ -1067,6 +1086,14 @@ function terminateAndFailExam(reason = 'Session Terminated: Student Exited Early
     window.QuizStorage.saveUserResult(failedResult);
   }
 
+  // --- NAYA MONGODB ATLAS CONNECTION (Fail Data) ---
+  fetch('https://techprep-backend-df6o.onrender.com/api/save-result', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(failedResult)
+  }).catch(e => console.log('Atlas fail sync err', e));
+  // ------------------------------------------------
+
   showView('view-result');
 
   // Display Failed Summary Banner
@@ -1192,6 +1219,23 @@ function submitExam(reason = 'Normal Submission') {
   };
   
   window.QuizStorage.saveUserResult(quizResult);
+
+  // --- NAYA MONGODB ATLAS CONNECTION (For Normal Submit) ---
+  fetch('https://techprep-backend-df6o.onrender.com/api/save-result', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(quizResult)
+  })
+  .then(response => response.json())
+  .then(data => {
+      console.log("✅ Success! Quiz submitted to Atlas:", data);
+  })
+  .catch(error => {
+      console.error("❌ Error saving to Atlas:", error);
+  });
+  // ---------------------------------------------------------
 
   showView('view-result');
   
@@ -1979,4 +2023,3 @@ window.submitDSACode = window.submitExamCodingCode;
 window.updateLineNumbers = window.updateExamLineNumbers;
 window.changeDSALanguage = window.changeExamLanguage;
 window.confirmResetDSACode = window.confirmResetExamCode;
-
