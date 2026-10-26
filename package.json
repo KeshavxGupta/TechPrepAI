@@ -6,7 +6,7 @@
     "start": "npm --prefix backend start",
     "dev": "npm --prefix backend run dev",
     "seed": "npm --prefix backend run seed",
-    "test": "node backend/tests/proctoringSession.test.js",
+    "test": "npm --prefix backend run test",
     "install:backend": "npm --prefix backend install",
     "build": "echo Static build ready"
   },
