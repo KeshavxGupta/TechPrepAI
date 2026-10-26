@@ -6,13 +6,17 @@
 (function () {
   function getApiBase() {
     if (typeof window !== 'undefined' && window.location) {
-      // If hosted directly on express server (e.g. port 5000), use relative /api
-      if (window.location.port === '5000' || window.location.pathname.startsWith('/pages/')) {
-        return window.location.origin.includes('5000') ? '/api' : 'http://localhost:5000/api';
+      const hostname = window.location.hostname;
+      // If developing locally on a non-5000 dev server (e.g. VS Code Live Server on 5500, Vite on 5173),
+      // forward requests to the local Express backend server running on port 5000:
+      if ((hostname === 'localhost' || hostname === '127.0.0.1') && window.location.port !== '5000' && window.location.port !== '') {
+        return 'http://localhost:5000/api';
       }
-      return window.location.origin.startsWith('http') && window.location.port !== '5000' ? 'http://localhost:5000/api' : '/api';
+      // On deployed domains (Vercel, custom domain, production) or when served directly from Express:
+      // Always use the relative /api path so requests stay on HTTPS and same-origin.
+      return '/api';
     }
-    return 'http://localhost:5000/api';
+    return '/api';
   }
 
   const API_BASE = getApiBase();
@@ -53,7 +57,7 @@
     }
 
     const controller = new AbortController();
-    const timeoutMs = options.timeout || 3500;
+    const timeoutMs = options.timeout || 12000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {

@@ -9,8 +9,8 @@ const errorHandler = require('./server/middleware/errorHandler');
 // Initialize Express App
 const app = express();
 
-// Connect to MongoDB
-connectDB();
+// Initial DB connection attempt
+connectDB().catch(err => console.warn('[MongoDB Initial Setup Warning]:', err.message));
 
 // Middleware
 app.use(cors());
@@ -22,6 +22,33 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
+// Health Check API (immediate response, includes DB connection state)
+app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
+  res.status(200).json({
+    status: 'OK',
+    app: 'TechPrep AI',
+    version: '1.0.0',
+    dbState: mongoose.connection.readyState === 1 ? 'connected' : 'connecting_or_disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Ensure database is connected before handling API routes (critical for Vercel serverless cold-starts)
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('[API Serverless DB Connection Error]:', err.message);
+    res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please ensure MongoDB Atlas network access allows 0.0.0.0/0.',
+      error: err.message
+    });
+  }
+});
+
 // REST API Routes
 app.use('/api/auth', require('./server/routes/authRoutes'));
 app.use('/api/quizzes', require('./server/routes/quizRoutes'));
@@ -30,16 +57,6 @@ app.use('/api/resumes', require('./server/routes/resumeRoutes'));
 app.use('/api/dsa', require('./server/routes/dsaRoutes'));
 app.use('/api/planner', require('./server/routes/plannerRoutes'));
 app.use('/api/admin', require('./server/routes/adminRoutes'));
-
-// Health Check API
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    app: 'TechPrep AI',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Static Frontend Hosting (Serving HTML, CSS, JS, Pages directly from frontend directory)
 const frontendPath = path.join(__dirname, '../frontend');

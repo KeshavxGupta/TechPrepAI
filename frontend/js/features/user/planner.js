@@ -64,6 +64,31 @@ const initApp = () => {
     renderTasks();
     updateProgress();
     renderHeatmap();
+
+    // Background sync with MongoDB Atlas
+    if (window.TechPrepAPI && window.TechPrepAPI.getUserPlannerTasks) {
+        const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+        const email = currentUser ? currentUser.email : 'guest@techprepai.com';
+        window.TechPrepAPI.getUserPlannerTasks(email).then(res => {
+            if (res && res.success && Array.isArray(res.tasks) && res.tasks.length > 0) {
+                const atlasTasks = res.tasks.map(t => ({
+                    id: t._id || t.id,
+                    backendId: t._id,
+                    title: t.title,
+                    type: (t.category || 'daily').toLowerCase(),
+                    deadline: t.dueDate || '',
+                    priority: (t.priority || 'medium').toLowerCase(),
+                    completed: Boolean(t.completed),
+                    createdAt: t.createdAt || new Date().toISOString()
+                }));
+                tasks = atlasTasks;
+                localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
+                renderTasks();
+                updateProgress();
+                renderHeatmap();
+            }
+        }).catch(err => console.warn('Planner async fetch error:', err));
+    }
 };
 
 // --- Theme Toggle (guarded) ---
@@ -855,6 +880,24 @@ const saveTask = () => {
     tasks.push(newTask);
     localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
     
+    // Sync to MongoDB Atlas backend
+    if (window.TechPrepAPI && window.TechPrepAPI.createPlannerTask) {
+        const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+        const email = currentUser ? currentUser.email : 'guest@techprepai.com';
+        window.TechPrepAPI.createPlannerTask({
+            studentEmail: email,
+            title: newTask.title,
+            category: newTask.type || 'General',
+            priority: newTask.priority || 'Medium',
+            dueDate: newTask.deadline || ''
+        }).then(res => {
+            if (res && res.success && res.task && res.task._id) {
+                newTask.backendId = res.task._id;
+                localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
+            }
+        }).catch(err => console.warn('Planner task sync error:', err));
+    }
+
     // Reset form
     document.getElementById('task-title').value = '';
     document.getElementById('task-deadline').value = '';
@@ -874,15 +917,24 @@ const toggleTaskStatus = (id) => {
         renderTasks();
         updateProgress();
         renderHeatmap();
+
+        if (window.TechPrepAPI && window.TechPrepAPI.togglePlannerTask && task.backendId) {
+            window.TechPrepAPI.togglePlannerTask(task.backendId).catch(() => {});
+        }
     }
 };
 
 const deleteTask = (id) => {
+    const target = tasks.find(t => t.id === id);
     tasks = tasks.filter(t => t.id !== id);
     localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
     renderTasks();
     updateProgress();
     renderHeatmap();
+
+    if (window.TechPrepAPI && window.TechPrepAPI.deletePlannerTask && target && target.backendId) {
+        window.TechPrepAPI.deletePlannerTask(target.backendId).catch(() => {});
+    }
 };
 
 const renderHeatmap = () => {

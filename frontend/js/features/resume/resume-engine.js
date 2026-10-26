@@ -470,6 +470,24 @@ function saveResumeTemplates(templates) {
 
 function getUserResumes(userEmail) {
   const allResumes = JSON.parse(localStorage.getItem(USER_RESUMES_KEY) || '[]');
+
+  // Background sync with MongoDB Atlas
+  if (window.TechPrepAPI && window.TechPrepAPI.getUserResumes && userEmail) {
+    window.TechPrepAPI.getUserResumes(userEmail).then(res => {
+      if (res && res.success && Array.isArray(res.resumes) && res.resumes.length > 0) {
+        const backendResumes = res.resumes.map(r => ({
+          ...r,
+          id: r._id || r.id,
+          backendId: r._id,
+          templateId: r.template || 'tmpl_silicon_valley'
+        }));
+        localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(backendResumes));
+      }
+    }).catch(err => {
+      console.warn('Resume async backend fetch error:', err);
+    });
+  }
+
   if (!userEmail) return allResumes;
   return allResumes.filter(r => r.userEmail === userEmail);
 }
@@ -496,13 +514,48 @@ function saveUserResume(resume) {
     all.unshift(resume);
   }
   localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
+
+  // Sync to MongoDB Atlas backend
+  if (window.TechPrepAPI && window.TechPrepAPI.saveResume && userEmail) {
+    window.TechPrepAPI.saveResume({
+      id: resume.backendId || (resume.id && resume.id.match(/^[0-9a-fA-F]{24}$/) ? resume.id : undefined),
+      studentEmail: userEmail,
+      title: resume.personalInfo && resume.personalInfo.fullName ? `${resume.personalInfo.fullName}'s Resume` : (resume.title || 'My Resume'),
+      template: resume.templateId || 'modern',
+      personalInfo: resume.personalInfo || {},
+      summary: resume.summary || '',
+      education: resume.education || [],
+      experience: resume.experience || [],
+      projects: resume.projects || [],
+      skills: resume.skills || {},
+      certifications: resume.certifications || [],
+      atsScore: resume.atsScore || 0,
+      atsFeedback: resume.atsFeedback || {}
+    }).then(res => {
+      if (res && res.success && res.resume && res.resume._id) {
+        resume.backendId = res.resume._id;
+        localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
+      }
+    }).catch(err => {
+      console.warn('Resume async backend save error:', err);
+    });
+  }
+
   return resume;
 }
 
 function deleteUserResume(resumeId) {
   let all = getAllUserResumes();
+  const target = all.find(r => r.id === resumeId);
   all = all.filter(r => r.id !== resumeId);
   localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
+
+  if (window.TechPrepAPI && window.TechPrepAPI.deleteResume && target) {
+    const idToDelete = target.backendId || target._id || (target.id && target.id.match(/^[0-9a-fA-F]{24}$/) ? target.id : null);
+    if (idToDelete) {
+      window.TechPrepAPI.deleteResume(idToDelete).catch(() => {});
+    }
+  }
 }
 
 // Create Fresh Default Resume
