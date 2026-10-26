@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 
 function findBinary(candidates, defaultCmd) {
@@ -84,7 +85,7 @@ const compilerConfig = {
   },
   timeoutMs: 6000,
   maxOutputLength: 20000,
-  tempDir: path.join(__dirname, '..', 'temp', 'executions')
+  tempDir: path.join(os.tmpdir(), 'techprepai_executions')
 };
 
 // Ensure temp executions directory exists
