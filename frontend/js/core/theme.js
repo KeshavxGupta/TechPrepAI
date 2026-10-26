@@ -4,13 +4,7 @@
  */
 (function () {
   try {
-    let storedTheme = localStorage.getItem('techprep_theme');
-    if (!storedTheme) {
-      const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-      if (user && user.email) {
-        storedTheme = localStorage.getItem(`techprep_theme_${user.email}`);
-      }
-    }
+    let storedTheme = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('techprep_theme') : null;
     if (!storedTheme) {
       storedTheme = 'system';
     }
@@ -32,6 +26,6 @@
       document.documentElement.classList.add('light');
     }
   } catch (e) {
-    console.warn('Unable to access localStorage for theme:', e);
+    console.warn('Unable to access theme:', e);
   }
 })();

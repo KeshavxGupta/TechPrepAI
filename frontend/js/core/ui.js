@@ -1,30 +1,46 @@
-/* Safe LocalStorage Helper Utility */
+/* Session & Memory Storage Helper Utility (Zero LocalStorage for App Data) */
+var _memoryStorage = {};
 var storage = window.storage || {
   get(key, defaultValue = null) {
     try {
-      const item = localStorage.getItem(key);
-      if (item === null || item === undefined) return defaultValue;
-      return JSON.parse(item);
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const item = sessionStorage.getItem(key);
+        if (item !== null && item !== undefined) return JSON.parse(item);
+      }
+      if (key === 'techprep_current_user') {
+        const match = document.cookie.match(/(?:^|; )techprep_current_user=([^;]*)/);
+        if (match && match[1]) return JSON.parse(decodeURIComponent(match[1]));
+      }
+      return _memoryStorage[key] !== undefined ? _memoryStorage[key] : defaultValue;
     } catch (e) {
-      console.warn('Storage read error for key:', key, e);
       return defaultValue;
     }
   },
   set(key, value) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.setItem(key, JSON.stringify(value));
+      }
+      if (key === 'techprep_current_user') {
+        document.cookie = `techprep_current_user=${encodeURIComponent(JSON.stringify(value))}; path=/; max-age=2592000; SameSite=Lax`;
+      }
+      _memoryStorage[key] = value;
       return true;
     } catch (e) {
-      console.warn('Storage write error for key:', key, e);
+      _memoryStorage[key] = value;
       return false;
     }
   },
   remove(key) {
     try {
-      localStorage.removeItem(key);
-    } catch (e) {
-      console.warn('Storage remove error for key:', key, e);
-    }
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.removeItem(key);
+      }
+      if (key === 'techprep_current_user') {
+        document.cookie = `techprep_current_user=; path=/; max-age=0; SameSite=Lax`;
+      }
+      delete _memoryStorage[key];
+    } catch (e) {}
   }
 };
 
@@ -210,7 +226,7 @@ window.customConfirm = function(title, message) {
 function initThemeEngine() {
   const themeSelects = document.querySelectorAll('.theme-select');
   const themeToggleBtns = document.querySelectorAll('.theme-toggle-btn');
-  const storedTheme = localStorage.getItem(getThemeStorageKey()) || 'system';
+  const storedTheme = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(getThemeStorageKey()) : null) || 'system';
 
   function applyTheme(theme) {
     let isDark = false;
@@ -248,7 +264,7 @@ function initThemeEngine() {
   themeSelects.forEach(select => {
     select.addEventListener('change', (e) => {
       const selectedTheme = e.target.value;
-      localStorage.setItem(getThemeStorageKey(), selectedTheme);
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(getThemeStorageKey(), selectedTheme);
       applyTheme(selectedTheme);
     });
   });
@@ -257,14 +273,14 @@ function initThemeEngine() {
     btn.addEventListener('click', () => {
       const currentlyDark = document.documentElement.classList.contains('dark');
       const nextTheme = currentlyDark ? 'light' : 'dark';
-      localStorage.setItem(getThemeStorageKey(), nextTheme);
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(getThemeStorageKey(), nextTheme);
       applyTheme(nextTheme);
     });
   });
 
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      const currentTheme = localStorage.getItem(getThemeStorageKey()) || 'system';
+      const currentTheme = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(getThemeStorageKey()) : null) || 'system';
       if (currentTheme === 'system') {
         applyTheme('system');
       }
@@ -273,7 +289,7 @@ function initThemeEngine() {
 }
 
 window.applyGlobalTheme = function(theme) {
-  localStorage.setItem(getThemeStorageKey(), theme);
+  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(getThemeStorageKey(), theme);
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   if (isDark) {
     document.documentElement.classList.add('dark');

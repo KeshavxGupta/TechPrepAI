@@ -36,7 +36,7 @@
   <!-- Early Theme Init -->
   <script>
     (function () {
-      const storedTheme = localStorage.getItem('techprep_theme') || 'system';
+      const storedTheme = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('techprep_theme')) || 'system';
       let isDark = false;
       if (storedTheme === 'dark') isDark = true;
       else if (storedTheme === 'light') isDark = false;

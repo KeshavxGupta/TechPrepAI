@@ -87,85 +87,63 @@ const DEFAULT_DRIVES_SEED = [
   }
 ];
 
-// --- User Data Isolation & Storage Keys ---
-function getUserPlacementsKey() {
-  const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  const email = user ? user.email : 'guest@techprepai.com';
-  return `techprep_user_placements_${email}`;
+// --- User Data Isolation & MongoDB Atlas Sync (Zero LocalStorage) ---
+function getUserEmail() {
+  const user = (window.getCurrentUser && window.getCurrentUser());
+  return user ? user.email : 'student@techprepai.com';
 }
 
-function getUserWeeklyTargetKey() {
-  const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  const email = user ? user.email : 'guest@techprepai.com';
-  return `techprep_weekly_target_${email}`;
-}
+let placements = [];
+let _weeklyTarget = '10';
 
 function loadUserPlacementsData() {
-  const key = getUserPlacementsKey();
-  const storedStr = localStorage.getItem(key);
-  let localData = null;
-  if (storedStr !== null) {
-    try {
-      const parsed = JSON.parse(storedStr);
-      if (Array.isArray(parsed)) localData = parsed;
-    } catch {}
-  }
+  const email = getUserEmail();
 
-  // Trigger background MongoDB sync
+  // Load directly from MongoDB Atlas
   if (window.TechPrepAPI && window.TechPrepAPI.getUserPlacements) {
-    const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-    const email = user ? user.email : 'guest@techprepai.com';
     window.TechPrepAPI.getUserPlacements(email).then(res => {
-      if (res.success && Array.isArray(res.placements) && res.placements.length > 0) {
-        const formatted = res.placements.map(p => ({
+      if (res && res.success && Array.isArray(res.placements) && res.placements.length > 0) {
+        placements = res.placements.map(p => ({
           ...p,
           id: p.customId || p._id || p.id
         }));
-        localStorage.setItem(key, JSON.stringify(formatted));
-        placements = formatted;
         if (typeof renderStats === 'function') renderStats();
         if (typeof renderPlacements === 'function') renderPlacements();
+      } else if (res && res.success && res.placements.length === 0) {
+        // Seed default drives directly into MongoDB Atlas for this student
+        window.TechPrepAPI.syncUserPlacements(email, DEFAULT_DRIVES_SEED).then(seedRes => {
+          if (seedRes && seedRes.success && Array.isArray(seedRes.placements)) {
+            placements = seedRes.placements.map(p => ({
+              ...p,
+              id: p.customId || p._id || p.id
+            }));
+            if (typeof renderStats === 'function') renderStats();
+            if (typeof renderPlacements === 'function') renderPlacements();
+          }
+        }).catch(() => {});
       }
-    }).catch(() => {});
+    }).catch(err => {
+      console.warn('MongoDB placements fetch error:', err);
+    });
   }
 
-  if (localData) return localData;
-
-  // Seed from master techprep_placements or DEFAULT_DRIVES_SEED if user has no record yet
-  let master = [];
-  try {
-    master = JSON.parse(localStorage.getItem('techprep_placements') || '[]');
-  } catch {}
-  if (!Array.isArray(master) || master.length === 0) {
-    master = DEFAULT_DRIVES_SEED;
-    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_DRIVES_SEED));
-  }
-
-  const userSeed = master.map(d => ({
-    ...d,
-    status: d.status || 'wishlist',
-    appliedDate: d.appliedDate || null
-  }));
-
-  localStorage.setItem(key, JSON.stringify(userSeed));
-  return userSeed;
+  placements = [...DEFAULT_DRIVES_SEED];
+  return placements;
 }
 
 function saveUserPlacementsData(data) {
-  const key = getUserPlacementsKey();
-  localStorage.setItem(key, JSON.stringify(data));
+  placements = data;
 
-  // Sync to MongoDB backend
+  // Sync directly to MongoDB Atlas backend (Zero LocalStorage)
   if (window.TechPrepAPI && window.TechPrepAPI.syncUserPlacements) {
-    const user = (window.getCurrentUser && window.getCurrentUser()) || JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-    const email = user ? user.email : 'guest@techprepai.com';
+    const email = getUserEmail();
     window.TechPrepAPI.syncUserPlacements(email, data).catch(err => {
-      console.warn('Placements async backend sync error:', err);
+      console.warn('Placements async MongoDB sync error:', err);
     });
   }
 }
 
-let placements = loadUserPlacementsData();
+placements = loadUserPlacementsData();
 
 // --- DOM Elements ---
 const summaryStats = document.getElementById('summary-stats');
@@ -188,8 +166,8 @@ const closeBtns = document.querySelectorAll('.close-btn');
 
 // --- Initialize App ---
 const initApp = () => {
-    // Set theme based on local storage
-    if (localStorage.getItem('techprep_theme') === 'dark') {
+    // Set theme based on session storage
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('techprep_theme') === 'dark') {
         document.body.classList.add('dark-theme');
         document.body.classList.add('dark');
         if (themeToggle) themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
@@ -210,7 +188,7 @@ if (themeToggle) {
         document.body.classList.toggle('dark-theme');
         document.body.classList.toggle('dark');
         const isDark = document.body.classList.contains('dark-theme');
-        localStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
         themeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
     });
 }
@@ -271,7 +249,7 @@ window.exportData = function() {
         version: "1.0",
         timestamp: new Date().toISOString(),
         placements: placements,
-        weeklyTarget: localStorage.getItem(getUserWeeklyTargetKey()) || '10'
+        weeklyTarget: _weeklyTarget || '10'
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -297,7 +275,7 @@ window.importData = function(event) {
             placements = data.placements;
             saveUserPlacementsData(placements);
             if (data.weeklyTarget) {
-                localStorage.setItem(getUserWeeklyTargetKey(), data.weeklyTarget);
+                _weeklyTarget = data.weeklyTarget;
             }
             renderStats();
             renderPlacements();
@@ -1335,8 +1313,7 @@ window.renderArchivedJobs = () => {
 };
 
 function updateWeeklyTarget() {
-    // Read user-set target from localStorage, fallback to 10
-    const WEEKLY_TARGET = parseInt(localStorage.getItem(getUserWeeklyTargetKey()) || '10', 10);
+    const WEEKLY_TARGET = parseInt(_weeklyTarget || '10', 10);
 
     // Calculate start of current week (Monday at 00:00:00)
     const now = new Date();
@@ -1427,8 +1404,7 @@ window.closeWeeklyInfoModal = () => {
 window.openTargetEditor = () => {
     const editor = document.getElementById('weekly-target-editor');
     const input = document.getElementById('weekly-target-input');
-    const savedTarget = localStorage.getItem(getUserWeeklyTargetKey()) || '10';
-    input.value = savedTarget;
+    input.value = _weeklyTarget || '10';
     editor.classList.remove('hidden');
     input.focus();
 };
@@ -1444,7 +1420,7 @@ window.saveWeeklyTarget = () => {
         if(window.showToast) window.showToast('Please enter a target between 1 and 100.', 'error');
         return;
     }
-    localStorage.setItem(getUserWeeklyTargetKey(), val.toString());
+    _weeklyTarget = val.toString();
     closeTargetEditor();
     updateWeeklyTarget();
     if(window.showToast) window.showToast(`Weekly target set to ${val} apps!`, 'success');

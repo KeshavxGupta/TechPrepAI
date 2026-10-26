@@ -108,11 +108,13 @@ function stopProctoringWebcam() {
   }
 }
 
-// Emergency save on forced tab close or page reload
+// Emergency save on forced tab close or page reload (100% MongoDB Atlas - Zero LocalStorage)
 function emergencyFailOnUnload() {
   if (examStarted && !examSubmitted && currentQuiz) {
     const total = (currentQuiz.questions && currentQuiz.questions.length) ? currentQuiz.questions.length : 1;
-    const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Student","email":"student@techprepai.com"}');
+    const activeUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                       (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                       (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || '{"name":"Student","email":"student@techprepai.com"}'));
     const failedResult = {
       quizId: currentQuiz.id,
       customId: currentQuiz.customId || currentQuiz.id,
@@ -133,12 +135,9 @@ function emergencyFailOnUnload() {
       timestamp: new Date().toISOString()
     };
     try {
-      const email = activeUser.email;
-      const key = `techprep_user_quiz_results_${email}`;
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.push(failedResult);
-      localStorage.setItem(key, JSON.stringify(existing));
-      localStorage.setItem('techprep_user_quiz_results', JSON.stringify(existing));
+      if (window.QuizStorage && window.QuizStorage.saveUserResult) {
+        window.QuizStorage.saveUserResult(failedResult);
+      }
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/quizzes/results', JSON.stringify(failedResult));
       }
@@ -148,7 +147,9 @@ function emergencyFailOnUnload() {
 
 document.addEventListener('DOMContentLoaded', () => {
   // Auth & Role check
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   if (!currentUser) {
     window.location.href = '../public/login.html';
     return;
@@ -166,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Read admin security config if available
   try {
-    const secConfig = JSON.parse(localStorage.getItem('techprep_security_config') || '{}');
+    const secConfig = (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_security_config') || '{}')) || {};
     if (secConfig.maxWarnings) maxExamWarnings = parseInt(secConfig.maxWarnings, 10);
   } catch (e) {}
 
@@ -1040,7 +1041,9 @@ function terminateAndFailExam(reason = 'Session Terminated: Student Exited Early
   const timeTakenSeconds = timeStart ? Math.round((new Date() - timeStart) / 1000) : 0;
   const timeTakenDisplay = `${Math.floor(timeTakenSeconds / 60)}m ${timeTakenSeconds % 60}s`;
 
-  const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}');
+  const activeUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                     (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                     (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}'));
   
   // Quiz marked as FAILED with void score
   const failedResult = {
@@ -1170,7 +1173,9 @@ function submitExam(reason = 'Normal Submission') {
   const timeTakenSeconds = timeStart ? Math.round((new Date() - timeStart) / 1000) : 0;
   const timeTakenDisplay = `${Math.floor(timeTakenSeconds / 60)}m ${timeTakenSeconds % 60}s`;
 
-  const activeUser = JSON.parse(localStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}');
+  const activeUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                     (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                     (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || '{"name":"Aarav Sharma","email":"student@college.edu"}'));
   const quizResult = {
     quizId: currentQuiz.id,
     customId: currentQuiz.customId || currentQuiz.id,

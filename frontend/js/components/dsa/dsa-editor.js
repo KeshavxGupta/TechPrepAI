@@ -168,7 +168,9 @@
     const subContainer = document.getElementById('dsa-submissions-content');
     if (!subContainer) return;
 
-    const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                        (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                        (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
     const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
 
     const allSubs = getDSASubmissions();
@@ -417,7 +419,9 @@
 
     try {
       const problemSlug = activeProblem.slug || activeProblem.id;
-      const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                          (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                          (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
       let res;
 
       if (window.TechPrepAPI && window.TechPrepAPI.submitDsaSolution) {

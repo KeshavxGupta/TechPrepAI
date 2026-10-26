@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Student Registration TechPrep AI</title>
   <script>
     (function() {
-      const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      const currentUser = (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
       if (currentUser) {
         if (currentUser.email === 'khushboo2006june@admin.com') {
           window.location.href = '../admin/admin-hub.html';

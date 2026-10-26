@@ -454,66 +454,69 @@ const ACTION_VERBS_LIBRARY = {
   Automation: ['Automated', 'Containerized', 'Deployed', 'Integrated', 'Standardized', 'Configured', 'Scaled', 'Provisioned', 'Instituted']
 };
 
-// Data Accessors
+// Data Accessors (100% MongoDB Atlas - Zero LocalStorage)
+let _memTemplates = null;
+let _memResumes = [];
+let _resumesFetched = false;
+
 function getResumeTemplates() {
-  const data = localStorage.getItem(RESUME_TEMPLATES_KEY);
-  if (!data) {
-    localStorage.setItem(RESUME_TEMPLATES_KEY, JSON.stringify(SEED_RESUME_TEMPLATES));
-    return SEED_RESUME_TEMPLATES;
+  if (!_memTemplates) {
+    _memTemplates = SEED_RESUME_TEMPLATES;
   }
-  return JSON.parse(data);
+  return _memTemplates;
 }
 
 function saveResumeTemplates(templates) {
-  localStorage.setItem(RESUME_TEMPLATES_KEY, JSON.stringify(templates));
+  _memTemplates = templates;
 }
 
 function getUserResumes(userEmail) {
-  const allResumes = JSON.parse(localStorage.getItem(USER_RESUMES_KEY) || '[]');
-
-  // Background sync with MongoDB Atlas
-  if (window.TechPrepAPI && window.TechPrepAPI.getUserResumes && userEmail) {
+  // Direct sync with MongoDB Atlas backend
+  if (window.TechPrepAPI && window.TechPrepAPI.getUserResumes && userEmail && !_resumesFetched) {
+    _resumesFetched = true;
     window.TechPrepAPI.getUserResumes(userEmail).then(res => {
-      if (res && res.success && Array.isArray(res.resumes) && res.resumes.length > 0) {
-        const backendResumes = res.resumes.map(r => ({
+      if (res && res.success && Array.isArray(res.resumes)) {
+        _memResumes = res.resumes.map(r => ({
           ...r,
           id: r._id || r.id,
           backendId: r._id,
           templateId: r.template || 'tmpl_silicon_valley'
         }));
-        localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(backendResumes));
+        if (typeof window.renderSavedDraftsList === 'function') {
+          window.renderSavedDraftsList();
+        }
       }
     }).catch(err => {
       console.warn('Resume async backend fetch error:', err);
     });
   }
 
-  if (!userEmail) return allResumes;
-  return allResumes.filter(r => r.userEmail === userEmail);
+  if (!userEmail) return _memResumes;
+  return _memResumes.filter(r => r.userEmail === userEmail || r.studentEmail === userEmail);
 }
 
 function getAllUserResumes() {
-  return JSON.parse(localStorage.getItem(USER_RESUMES_KEY) || '[]');
+  return _memResumes;
 }
 
 function saveUserResume(resume) {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
-  const userName = currentUser ? currentUser.name : 'Guest Student';
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : (resume.userEmail || 'guest@techprepai.com');
+  const userName = currentUser ? currentUser.name : (resume.userName || 'Guest Student');
 
   resume.userEmail = userEmail;
   resume.userName = userName;
   resume.lastUpdated = new Date().toISOString();
 
-  const all = getAllUserResumes();
-  const idx = all.findIndex(r => r.id === resume.id);
+  const idx = _memResumes.findIndex(r => r.id === resume.id || (r.backendId && r.backendId === resume.backendId));
   if (idx !== -1) {
-    all[idx] = resume;
+    _memResumes[idx] = resume;
   } else {
     if (!resume.id) resume.id = 'res_' + Date.now();
-    all.unshift(resume);
+    _memResumes.unshift(resume);
   }
-  localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
 
   // Sync to MongoDB Atlas backend
   if (window.TechPrepAPI && window.TechPrepAPI.saveResume && userEmail) {
@@ -534,7 +537,6 @@ function saveUserResume(resume) {
     }).then(res => {
       if (res && res.success && res.resume && res.resume._id) {
         resume.backendId = res.resume._id;
-        localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
       }
     }).catch(err => {
       console.warn('Resume async backend save error:', err);
@@ -545,10 +547,8 @@ function saveUserResume(resume) {
 }
 
 function deleteUserResume(resumeId) {
-  let all = getAllUserResumes();
-  const target = all.find(r => r.id === resumeId);
-  all = all.filter(r => r.id !== resumeId);
-  localStorage.setItem(USER_RESUMES_KEY, JSON.stringify(all));
+  const target = _memResumes.find(r => r.id === resumeId || r.backendId === resumeId);
+  _memResumes = _memResumes.filter(r => r.id !== resumeId && r.backendId !== resumeId);
 
   if (window.TechPrepAPI && window.TechPrepAPI.deleteResume && target) {
     const idToDelete = target.backendId || target._id || (target.id && target.id.match(/^[0-9a-fA-F]{24}$/) ? target.id : null);

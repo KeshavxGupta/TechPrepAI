@@ -174,7 +174,9 @@ const SEED_QUIZZES = [
 
 function getCurrentUserEmail() {
   try {
-    const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const user = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                 (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                 (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
     return user ? user.email : null;
   } catch (e) {
     return null;
@@ -182,47 +184,18 @@ function getCurrentUserEmail() {
 }
 
 const QuizStorage = {
-  // Sync memory cache
+  // Sync memory cache (100% MongoDB Atlas - Zero LocalStorage)
   _cachedQuizzes: null,
   _isSyncingQuizzes: false,
+  _cachedResults: {},
 
   getQuizzes() {
     if (this._cachedQuizzes && Array.isArray(this._cachedQuizzes) && this._cachedQuizzes.length > 0) {
       return this._cachedQuizzes;
     }
 
-    try {
-      const data = localStorage.getItem(QUIZZES_KEY);
-      if (data) {
-        let parsed = JSON.parse(data);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // If cached coding quiz still contains the legacy pre-filled solutions, refresh them
-          const hasLegacyPreFilledCode = parsed.some(q => 
-            q.questions && q.questions.some(qn => 
-              qn.questionType === 'coding' && 
-              qn.boilerplateCode && 
-              qn.boilerplateCode.includes('complement')
-            )
-          );
-
-          if (hasLegacyPreFilledCode) {
-            const seedCoding = SEED_QUIZZES.find(s => s.id === 'quiz_fullstack_coding');
-            parsed = parsed.map(q => q.id === 'quiz_fullstack_coding' ? seedCoding : q);
-            localStorage.setItem(QUIZZES_KEY, JSON.stringify(parsed));
-          }
-
-          this._cachedQuizzes = parsed;
-          return this._cachedQuizzes;
-        }
-      }
-    } catch (e) {
-      console.warn('Error reading quizzes cache:', e);
-    }
-
-    this._cachedQuizzes = SEED_QUIZZES;
-    try {
-      localStorage.setItem(QUIZZES_KEY, JSON.stringify(SEED_QUIZZES));
-    } catch (e) {}
+    this._cachedQuizzes = JSON.parse(JSON.stringify(SEED_QUIZZES));
+    this.syncQuizzesInBackground();
     return this._cachedQuizzes;
   },
 
@@ -236,7 +209,6 @@ const QuizStorage = {
           ...q,
           id: q.customId || q._id || q.id
         }));
-        localStorage.setItem(QUIZZES_KEY, JSON.stringify(formatted));
         this._cachedQuizzes = formatted;
         if (typeof onUpdated === 'function') {
           onUpdated(formatted);
@@ -257,7 +229,6 @@ const QuizStorage = {
             ...q,
             id: q.customId || q._id || q.id
           }));
-          localStorage.setItem(QUIZZES_KEY, JSON.stringify(formatted));
           this._cachedQuizzes = formatted;
           return formatted;
         }
@@ -267,14 +238,8 @@ const QuizStorage = {
   },
 
   saveQuizzes(quizzes) {
-    try {
-      localStorage.setItem(QUIZZES_KEY, JSON.stringify(quizzes));
-      this._cachedQuizzes = quizzes;
-      return true;
-    } catch (e) {
-      console.error('Error saving quizzes:', e);
-      return false;
-    }
+    this._cachedQuizzes = quizzes;
+    return true;
   },
 
   getQuizById(id) {
@@ -293,7 +258,7 @@ const QuizStorage = {
     }
     this.saveQuizzes(quizzes);
 
-    // Sync to MongoDB backend
+    // Sync to MongoDB Atlas backend
     if (window.TechPrepAPI && window.TechPrepAPI.saveQuiz) {
       window.TechPrepAPI.saveQuiz({
         ...quiz,
@@ -309,7 +274,7 @@ const QuizStorage = {
     const filtered = quizzes.filter(q => (q.id !== id && q.customId !== id && q._id !== id));
     this.saveQuizzes(filtered);
 
-    // Sync deletion to MongoDB backend
+    // Sync deletion to MongoDB Atlas backend
     if (window.TechPrepAPI && window.TechPrepAPI.deleteQuiz) {
       window.TechPrepAPI.deleteQuiz(id).catch(err => console.warn('Quiz async delete error:', err));
     }
@@ -318,32 +283,32 @@ const QuizStorage = {
   },
 
   getUserResults(email = null) {
-    const activeEmail = email || getCurrentUserEmail();
-    const key = activeEmail ? `${RESULTS_KEY}_${activeEmail}` : `${RESULTS_KEY}_guest`;
+    const activeEmail = email || getCurrentUserEmail() || 'guest@techprepai.com';
+    if (!this._cachedResults[activeEmail]) {
+      this._cachedResults[activeEmail] = [];
+    }
 
-    // Trigger backend fetch async
+    // Trigger backend fetch async from MongoDB Atlas
     if (window.TechPrepAPI && window.TechPrepAPI.getStudentQuizResults && activeEmail) {
       window.TechPrepAPI.getStudentQuizResults(activeEmail).then(res => {
-        if (res.success && Array.isArray(res.results)) {
-          localStorage.setItem(key, JSON.stringify(res.results));
+        if (res && res.success && Array.isArray(res.results)) {
+          this._cachedResults[activeEmail] = res.results;
+          if (typeof window.renderQuizHistory === 'function') {
+            window.renderQuizHistory();
+          }
         }
       }).catch(() => {});
     }
 
-    try {
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error('Error fetching results:', e);
-      return [];
-    }
+    return this._cachedResults[activeEmail];
   },
 
   saveUserResult(result) {
     try {
-      const activeEmail = result.studentEmail || getCurrentUserEmail();
-      const key = activeEmail ? `${RESULTS_KEY}_${activeEmail}` : `${RESULTS_KEY}_guest`;
-      const results = this.getUserResults(activeEmail);
+      const activeEmail = result.studentEmail || getCurrentUserEmail() || 'guest@techprepai.com';
+      if (!this._cachedResults[activeEmail]) {
+        this._cachedResults[activeEmail] = [];
+      }
       const record = {
         ...result,
         studentEmail: activeEmail,
@@ -357,11 +322,9 @@ const QuizStorage = {
         submissionReason: result.submissionReason || 'Normal Submission',
         timestamp: new Date().toISOString()
       };
-      results.push(record);
-      localStorage.setItem(key, JSON.stringify(results));
-      localStorage.setItem('techprep_user_quiz_results', JSON.stringify(results));
+      this._cachedResults[activeEmail].push(record);
 
-      // Sync to MongoDB backend
+      // Sync to MongoDB Atlas backend
       if (window.TechPrepAPI && window.TechPrepAPI.submitQuizResult) {
         window.TechPrepAPI.submitQuizResult(record).catch(err => console.warn('Quiz result backend sync error:', err));
       }
@@ -374,13 +337,8 @@ const QuizStorage = {
   },
 
   resetAllQuizzes() {
-    try {
-      localStorage.setItem(QUIZZES_KEY, JSON.stringify(SEED_QUIZZES));
-      this._cachedQuizzes = SEED_QUIZZES;
-      return true;
-    } catch (e) {
-      return false;
-    }
+    this._cachedQuizzes = JSON.parse(JSON.stringify(SEED_QUIZZES));
+    return true;
   }
 };
 

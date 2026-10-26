@@ -13,7 +13,9 @@
   window.initResumeBuilder = function() {
     activeTemplates = getResumeTemplates();
     
-    const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                        (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                        (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
     const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
     const userResumes = getUserResumes(userEmail);
 
@@ -1555,7 +1557,9 @@
     const container = document.getElementById('res-drafts-list-container');
     if (!container) return;
 
-    const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                        (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                        (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
     const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
     const drafts = getUserResumes(userEmail);
 
@@ -1582,7 +1586,9 @@
   }
 
   window.loadUserResumeDraft = function(draftId) {
-    const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+    const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                        (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                        (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
     const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
     const drafts = getUserResumes(userEmail);
     const target = drafts.find(d => d.id === draftId);
@@ -1602,7 +1608,9 @@
     const proceed = () => {
       deleteUserResume(draftId);
       renderDraftsHistoryList();
-      const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                          (window.getCurrentUser ? window.getCurrentUser() : null) || 
+                          (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
       const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
       const remaining = getUserResumes(userEmail);
       if (currentResume && currentResume.id === draftId) {

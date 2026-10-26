@@ -431,15 +431,7 @@
       }
     ];
 
-    let faqs = null;
-    try {
-      faqs = JSON.parse(localStorage.getItem('techprep_faqs'));
-    } catch (e) {}
-
-    if (!Array.isArray(faqs) || faqs.length === 0) {
-      faqs = defaultFaqs;
-      localStorage.setItem('techprep_faqs', JSON.stringify(defaultFaqs));
-    }
+    const faqs = defaultFaqs;
 
     faqContainer.innerHTML = faqs.map((f, i) => `
       <div class="accordion-item rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated overflow-hidden">

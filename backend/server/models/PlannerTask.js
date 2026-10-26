@@ -19,12 +19,25 @@ const plannerTaskSchema = new mongoose.Schema(
       default: 'General',
       trim: true
     },
+    type: {
+      type: String,
+      default: 'daily',
+      trim: true
+    },
     priority: {
       type: String,
       default: 'Medium',
       trim: true
     },
     dueDate: {
+      type: String,
+      default: ''
+    },
+    deadline: {
+      type: String,
+      default: ''
+    },
+    resourceLink: {
       type: String,
       default: ''
     },

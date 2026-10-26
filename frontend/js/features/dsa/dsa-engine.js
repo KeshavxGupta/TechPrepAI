@@ -361,65 +361,112 @@ public:
   }
 ];
 
-// Core System Data Accessors
+// Core System Data Accessors (100% MongoDB Atlas & Memory - Zero LocalStorage)
+let _memDsaProblems = null;
+let _memDsaSubmissions = [];
+let _memDsaProgress = {};
+let _dsaSubmissionsFetched = false;
+
 function getDSAProblems() {
-  const data = localStorage.getItem(DSA_PROBLEMS_KEY);
-  let problems = [];
-  if (!data) {
-    problems = SEED_DSA_PROBLEMS;
-  } else {
-    try {
-      problems = JSON.parse(data);
-    } catch (e) {
-      problems = SEED_DSA_PROBLEMS;
+  if (!_memDsaProblems) {
+    _memDsaProblems = JSON.parse(JSON.stringify(SEED_DSA_PROBLEMS));
+    _memDsaProblems.forEach(p => {
+      const seedMatch = SEED_DSA_PROBLEMS.find(s => s.id === p.id || s.slug === p.slug);
+      if (seedMatch && seedMatch.templates) {
+        p.templates = { ...seedMatch.templates, ...(p.templates || {}) };
+      }
+    });
+
+    if (window.TechPrepAPI && window.TechPrepAPI.getDsaProblems) {
+      window.TechPrepAPI.getDsaProblems().then(res => {
+        if (res && res.success && Array.isArray(res.problems) && res.problems.length > 0) {
+          _memDsaProblems = res.problems;
+          if (typeof window.renderProblemCatalog === 'function') {
+            window.renderProblemCatalog();
+          }
+        }
+      }).catch(err => console.warn('DSA problems backend fetch warning:', err));
     }
   }
 
-  // Ensure all seed problems have complete templates for JavaScript, Python, C++, and Java
-  problems.forEach(p => {
-    const seedMatch = SEED_DSA_PROBLEMS.find(s => s.id === p.id || s.slug === p.slug);
-    if (seedMatch && seedMatch.templates) {
-      p.templates = { ...seedMatch.templates, ...(p.templates || {}) };
-    }
-  });
-
-  localStorage.setItem(DSA_PROBLEMS_KEY, JSON.stringify(problems));
-  return problems;
+  return _memDsaProblems;
 }
 
 function saveDSAProblems(problems) {
-  localStorage.setItem(DSA_PROBLEMS_KEY, JSON.stringify(problems));
+  _memDsaProblems = problems;
 }
 
 function getDSASubmissions() {
-  return JSON.parse(localStorage.getItem(DSA_SUBMISSIONS_KEY) || '[]');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : null;
+
+  if (window.TechPrepAPI && window.TechPrepAPI.getUserDsaSubmissions && userEmail && !_dsaSubmissionsFetched) {
+    _dsaSubmissionsFetched = true;
+    window.TechPrepAPI.getUserDsaSubmissions(userEmail).then(res => {
+      if (res && res.success && Array.isArray(res.submissions)) {
+        _memDsaSubmissions = res.submissions;
+        if (!_memDsaProgress[userEmail]) _memDsaProgress[userEmail] = { solved: [] };
+        res.submissions.forEach(s => {
+          if (s.status === 'Accepted' && !_memDsaProgress[userEmail].solved.includes(s.problemId)) {
+            _memDsaProgress[userEmail].solved.push(s.problemId);
+          }
+        });
+        if (typeof window.renderSubmissionsList === 'function') {
+          window.renderSubmissionsList();
+        }
+      }
+    }).catch(err => console.warn('DSA submissions backend fetch error:', err));
+  }
+
+  return _memDsaSubmissions;
 }
 
 function getDSAProgress() {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
-  const progressKey = `techprep_dsa_progress_${userEmail}`;
-  return JSON.parse(localStorage.getItem(progressKey) || '{"solved":[]}');
+  if (!_memDsaProgress[userEmail]) {
+    _memDsaProgress[userEmail] = { solved: [] };
+  }
+  return _memDsaProgress[userEmail];
 }
 
 function saveDSASubmission(submission) {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-  submission.userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
+  const userEmail = currentUser ? currentUser.email : 'guest@techprepai.com';
+  submission.userEmail = userEmail;
   submission.userName = currentUser ? currentUser.name : 'Guest Student';
 
-  const subs = getDSASubmissions();
-  subs.unshift(submission); // newest first
-  if (subs.length > 500) subs.pop();
-  localStorage.setItem(DSA_SUBMISSIONS_KEY, JSON.stringify(subs));
+  _memDsaSubmissions.unshift(submission);
+  if (_memDsaSubmissions.length > 500) _memDsaSubmissions.pop();
 
   if (submission.status === 'Accepted') {
-    const userEmail = submission.userEmail;
-    const progressKey = `techprep_dsa_progress_${userEmail}`;
-    const progress = JSON.parse(localStorage.getItem(progressKey) || '{"solved":[]}');
-    if (!progress.solved.includes(submission.problemId)) {
-      progress.solved.push(submission.problemId);
-      localStorage.setItem(progressKey, JSON.stringify(progress));
+    if (!_memDsaProgress[userEmail]) _memDsaProgress[userEmail] = { solved: [] };
+    if (!_memDsaProgress[userEmail].solved.includes(submission.problemId)) {
+      _memDsaProgress[userEmail].solved.push(submission.problemId);
     }
+  }
+
+  // Persist directly to MongoDB Atlas backend
+  if (window.TechPrepAPI && window.TechPrepAPI.submitDsaSolution && userEmail) {
+    window.TechPrepAPI.submitDsaSolution({
+      problemId: submission.problemId,
+      studentEmail: userEmail,
+      language: submission.language || 'javascript',
+      code: submission.code || '',
+      status: submission.status || 'Accepted',
+      runtime: submission.runtime || 0,
+      memory: submission.memory || 0,
+      testCasesPassed: submission.testCasesPassed || 0,
+      totalTestCases: submission.totalTestCases || 0
+    }).catch(err => {
+      console.warn('DSA submission MongoDB sync error:', err);
+    });
   }
 }
 

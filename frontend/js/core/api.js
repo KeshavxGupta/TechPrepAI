@@ -21,24 +21,35 @@
 
   const API_BASE = getApiBase();
 
-  // Helper to get stored auth token
-  function getAuthToken() {
+  // Helper to read active session user from sessionStorage or cookie (no localStorage)
+  function getSessionUser() {
     try {
-      const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-      return user && user.token ? user.token : null;
+      if (typeof window !== 'undefined') {
+        const sessionRaw = sessionStorage.getItem('techprep_current_user');
+        if (sessionRaw) return JSON.parse(sessionRaw);
+
+        // Fallback to cookie for cross-tab persistence
+        const match = document.cookie.match(/(?:^|; )techprep_current_user=([^;]*)/);
+        if (match && match[1]) {
+          return JSON.parse(decodeURIComponent(match[1]));
+        }
+      }
+      return null;
     } catch {
       return null;
     }
   }
 
+  // Helper to get stored auth token
+  function getAuthToken() {
+    const user = getSessionUser();
+    return user && user.token ? user.token : null;
+  }
+
   // Helper to get current user email for header propagation
   function getCurrentUserEmail() {
-    try {
-      const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-      return user && user.email ? user.email : '';
-    } catch {
-      return '';
-    }
+    const user = getSessionUser();
+    return user && user.email ? user.email : '';
   }
 
   // Base HTTP Request Wrapper with JSON handling and timeout
@@ -290,6 +301,37 @@
 
     async deletePlannerTask(taskId) {
       return await request(`/planner/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+    },
+
+    // --- Study Notes Endpoints (100% MongoDB Atlas) ---
+    async getUserNotes(email) {
+      return await request(`/planner/notes/user/${encodeURIComponent(email || getCurrentUserEmail())}`);
+    },
+
+    async createNote(noteData) {
+      return await request('/planner/notes', {
+        method: 'POST',
+        body: JSON.stringify(noteData)
+      });
+    },
+
+    async updateNote(id, noteData) {
+      return await request(`/planner/notes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(noteData)
+      });
+    },
+
+    async togglePinNote(id) {
+      return await request(`/planner/notes/${id}/pin`, {
+        method: 'PATCH'
+      });
+    },
+
+    async deleteNote(id) {
+      return await request(`/planner/notes/${id}`, {
         method: 'DELETE'
       });
     },

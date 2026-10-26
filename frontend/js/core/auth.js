@@ -68,23 +68,49 @@ window.syncUserAvatar = function (user) {
   }
 };
 
+// Session Storage & Cookie-backed Auth Session (Zero LocalStorage for App Data)
+var CURRENT_USER_KEY = 'techprep_current_user';
+
+function setSessionUser(user) {
+  if (!user) {
+    try {
+      sessionStorage.removeItem(CURRENT_USER_KEY);
+      document.cookie = `${CURRENT_USER_KEY}=; path=/; max-age=0; SameSite=Lax`;
+    } catch {}
+    return;
+  }
+  try {
+    const str = JSON.stringify(user);
+    sessionStorage.setItem(CURRENT_USER_KEY, str);
+    document.cookie = `${CURRENT_USER_KEY}=${encodeURIComponent(str)}; path=/; max-age=2592000; SameSite=Lax`;
+  } catch {}
+}
+
+function getSessionUser() {
+  try {
+    const raw = sessionStorage.getItem(CURRENT_USER_KEY);
+    if (raw) return JSON.parse(raw);
+    const match = document.cookie.match(new RegExp('(?:^|; )' + CURRENT_USER_KEY + '=([^;]*)'));
+    if (match && match[1]) {
+      const parsed = JSON.parse(decodeURIComponent(match[1]));
+      sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(parsed));
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
 // Define global logout
 window.logoutUser = function () {
-  if (window.storage) {
-    window.storage.remove(CURRENT_USER_KEY);
-  } else {
-    localStorage.removeItem(CURRENT_USER_KEY);
-  }
+  setSessionUser(null);
+  try {
+    sessionStorage.clear();
+  } catch {}
   window.location.href = window.location.pathname.includes('/pages/') ? '../../index.html' : 'index.html';
 };
 
 window.getCurrentUser = function () {
-  try {
-    const raw = localStorage.getItem(CURRENT_USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return getSessionUser();
 };
 
 window.loginUser = async function (email, password) {
@@ -92,56 +118,22 @@ window.loginUser = async function (email, password) {
   password = (password || '');
   if (!email || !password) return { success: false, message: 'Email and password required' };
 
-  const isAdminCreds = (email === 'khushboo2006june@admin.com' && password === 'khushboo');
-
-  // Try backend API first
+  // 100% MongoDB Atlas Authentication
   if (window.TechPrepAPI && window.TechPrepAPI.login) {
     try {
       const apiRes = await window.TechPrepAPI.login(email, password);
       if (apiRes && apiRes.success && apiRes.user) {
         const userObj = { ...apiRes.user, token: apiRes.token };
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(userObj));
+        setSessionUser(userObj);
         return { success: true, user: userObj };
       }
-      if (!isAdminCreds && !apiRes.isNetworkError) {
-        return { success: false, message: apiRes.message || 'Invalid email or password' };
-      }
+      return { success: false, message: apiRes.message || 'Invalid email or password' };
     } catch (err) {
-      console.warn('API login request error:', err);
+      console.error('API login request error:', err);
+      return { success: false, message: 'Unable to reach backend database. Please check connection.' };
     }
   }
-
-  // Fallback for admin credentials
-  if (isAdminCreds) {
-    let savedAdmin = null;
-    try {
-      savedAdmin = JSON.parse(localStorage.getItem(ADMIN_PROFILE_KEY) || 'null');
-    } catch {}
-    const adminUser = savedAdmin || {
-      name: 'Khushboo (Admin)',
-      email: 'khushboo2006june@admin.com',
-      role: 'admin',
-      profilePic: '',
-      college: 'Admin Suite',
-      branch: 'Operations',
-      cgpa: '10.0'
-    };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminUser));
-    return { success: true, user: adminUser };
-  }
-
-  let users = [];
-  try {
-    users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-  } catch {}
-
-  const found = users.find(u => u.email === email && u.password === password);
-  if (found) {
-    if (found.suspended) return { success: false, message: 'Account suspended' };
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(found));
-    return { success: true, user: found };
-  }
-  return { success: false, message: 'Invalid email or password' };
+  return { success: false, message: 'Authentication service unavailable' };
 };
 
 window.registerUser = async function (userData) {
@@ -150,39 +142,22 @@ window.registerUser = async function (userData) {
   }
   const email = userData.email.trim().toLowerCase();
 
-  // Try backend API first
+  // 100% MongoDB Atlas User Registration
   if (window.TechPrepAPI && window.TechPrepAPI.register) {
-    const apiRes = await window.TechPrepAPI.register(userData);
-    if (apiRes.success && apiRes.user) {
-      const userObj = { ...apiRes.user, token: apiRes.token };
-      return { success: true, user: userObj };
-    }
-    if (!apiRes.isNetworkError) {
+    try {
+      const apiRes = await window.TechPrepAPI.register(userData);
+      if (apiRes && apiRes.success && apiRes.user) {
+        const userObj = { ...apiRes.user, token: apiRes.token };
+        setSessionUser(userObj);
+        return { success: true, user: userObj };
+      }
       return { success: false, message: apiRes.message || 'Registration failed' };
+    } catch (err) {
+      console.error('API registration error:', err);
+      return { success: false, message: 'Unable to register user in database. Please check connection.' };
     }
   }
-
-  // Local storage fallback
-  let users = [];
-  try {
-    users = JSON.parse(localStorage.getItem(USERS_STORAGE_KEY) || '[]');
-  } catch {}
-
-  if (users.some(u => u.email === email) || email === 'khushboo2006june@admin.com') {
-    return { success: false, message: 'Email already registered' };
-  }
-
-  const newUser = {
-    name: userData.name || 'Student',
-    email,
-    password: userData.password,
-    role: userData.role || 'student',
-    profilePic: userData.profilePic || '',
-    createdAt: new Date().toISOString()
-  };
-  users.push(newUser);
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  return { success: true, user: newUser };
+  return { success: false, message: 'Registration service unavailable' };
 };
 
 function initPasswordVisibilityTogglers() {

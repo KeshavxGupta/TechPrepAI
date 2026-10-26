@@ -1,7 +1,12 @@
-// --- State Management ---
-let notes = JSON.parse(localStorage.getItem('techprep_notes')) || [];
-let tasks = JSON.parse(localStorage.getItem('techprep_tasks')) || [];
-let plannerTasks = JSON.parse(localStorage.getItem('techprep_planner_tasks')) || [];
+// --- State Management (100% MongoDB Atlas - Zero LocalStorage) ---
+let notes = [];
+let tasks = [];
+let plannerTasks = [];
+
+function getPlannerUserEmail() {
+    const user = (window.getCurrentUser && window.getCurrentUser());
+    return user ? user.email : 'student@techprepai.com';
+}
 
 // --- DOM Elements ---
 // Notes Elements
@@ -51,8 +56,8 @@ let currentEditingNoteId = null;
 
 // --- Initialize App ---
 const initApp = () => {
-    // Set theme based on local storage
-    if (localStorage.getItem('techprep_theme') === 'dark') {
+    // Set theme based on session storage
+    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('techprep_theme') === 'dark') {
         document.body.classList.add('dark-theme');
         document.body.classList.add('dark');
         if (themeToggle) themeToggle.innerHTML = '<i class="fa-solid fa-sun"></i>';
@@ -65,29 +70,49 @@ const initApp = () => {
     updateProgress();
     renderHeatmap();
 
-    // Background sync with MongoDB Atlas
+    const email = getPlannerUserEmail();
+
+    // Load Study Notes directly from MongoDB Atlas
+    if (window.TechPrepAPI && window.TechPrepAPI.getUserNotes) {
+        window.TechPrepAPI.getUserNotes(email).then(res => {
+            if (res && res.success && Array.isArray(res.notes)) {
+                notes = res.notes.map(n => ({
+                    id: n._id || n.id,
+                    backendId: n._id,
+                    title: n.title,
+                    content: n.content,
+                    category: n.category,
+                    color: n.color,
+                    activeRecall: Boolean(n.activeRecall),
+                    srInterval: n.srInterval,
+                    isPinned: Boolean(n.isPinned),
+                    createdAt: n.createdAt,
+                    updatedAt: n.updatedAt
+                }));
+                renderNotes();
+            }
+        }).catch(err => console.warn('Notes async MongoDB fetch error:', err));
+    }
+
+    // Load Tasks directly from MongoDB Atlas
     if (window.TechPrepAPI && window.TechPrepAPI.getUserPlannerTasks) {
-        const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-        const email = currentUser ? currentUser.email : 'guest@techprepai.com';
         window.TechPrepAPI.getUserPlannerTasks(email).then(res => {
-            if (res && res.success && Array.isArray(res.tasks) && res.tasks.length > 0) {
-                const atlasTasks = res.tasks.map(t => ({
+            if (res && res.success && Array.isArray(res.tasks)) {
+                tasks = res.tasks.map(t => ({
                     id: t._id || t.id,
                     backendId: t._id,
                     title: t.title,
-                    type: (t.category || 'daily').toLowerCase(),
-                    deadline: t.dueDate || '',
+                    type: (t.type || t.category || 'daily').toLowerCase(),
+                    deadline: t.deadline || t.dueDate || '',
                     priority: (t.priority || 'medium').toLowerCase(),
                     completed: Boolean(t.completed),
                     createdAt: t.createdAt || new Date().toISOString()
                 }));
-                tasks = atlasTasks;
-                localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
                 renderTasks();
                 updateProgress();
                 renderHeatmap();
             }
-        }).catch(err => console.warn('Planner async fetch error:', err));
+        }).catch(err => console.warn('Planner tasks async MongoDB fetch error:', err));
     }
 };
 
@@ -97,7 +122,7 @@ if (themeToggle) {
         document.body.classList.toggle('dark-theme');
         document.body.classList.toggle('dark');
         const isDark = document.body.classList.contains('dark-theme');
-        localStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('techprep_theme', isDark ? 'dark' : 'light');
         themeToggle.innerHTML = isDark ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
     });
 }
@@ -534,15 +559,11 @@ const saveNote = () => {
     const selectedInterval = intervalSelect ? intervalSelect.value : 'daily';
 
     if (shouldGenerateTasks) {
-        // Parse user selected interval as frequency: daily, weekly, monthly
-        // We fallback to standard if not one of these, but daily/weekly/monthly are standard.
-        // Actually the dropdown might have value: standard, weekly, fifteen, monthly
-        // We will map 'standard' to 'daily'
         let frequency = selectedInterval;
         if (frequency === 'standard') frequency = 'daily';
         if (frequency === 'fifteen') frequency = 'monthly';
 
-        let intervals = [1, 3, 7]; // daily
+        let intervals = [1, 3, 7];
         if (frequency === 'weekly') intervals = [7, 14, 21];
         else if (frequency === 'monthly') intervals = [30, 60, 90];
 
@@ -550,7 +571,6 @@ const saveNote = () => {
         generateSRTask(intervals[1], '2nd Review', 'Medium', frequency);
         generateSRTask(intervals[2], 'Final Review', 'Low', frequency);
         
-        localStorage.setItem('techprep_planner_tasks', JSON.stringify(plannerTasks));
         if (typeof renderPlannerTasks === 'function') renderPlannerTasks(frequency);
     }
 
@@ -559,11 +579,18 @@ const saveNote = () => {
         const noteIndex = notes.findIndex(n => n.id === currentEditingNoteId);
         if (noteIndex > -1) {
             notes[noteIndex] = { ...notes[noteIndex], title, content, category, color, activeRecall, srInterval: selectedInterval, updatedAt: new Date().toISOString() };
+            if (window.TechPrepAPI && window.TechPrepAPI.updateNote) {
+                const bId = notes[noteIndex].backendId || notes[noteIndex]._id || (currentEditingNoteId.match(/^[0-9a-fA-F]{24}$/) ? currentEditingNoteId : null);
+                if (bId) {
+                    window.TechPrepAPI.updateNote(bId, notes[noteIndex]).catch(e => console.warn('Note update error:', e));
+                }
+            }
         }
     } else {
         // Create new
+        const email = getPlannerUserEmail();
         const newNote = {
-            id: Date.now().toString(),
+            id: 'note_' + Date.now(),
             title,
             content,
             category,
@@ -574,20 +601,44 @@ const saveNote = () => {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-        notes.unshift(newNote); // Add to top
+        notes.unshift(newNote);
+
+        if (window.TechPrepAPI && window.TechPrepAPI.createNote) {
+            window.TechPrepAPI.createNote({
+                studentEmail: email,
+                title,
+                content,
+                category,
+                color,
+                activeRecall,
+                srInterval: selectedInterval,
+                isPinned: false
+            }).then(res => {
+                if (res && res.success && res.note && res.note._id) {
+                    newNote.backendId = res.note._id;
+                    newNote.id = res.note._id;
+                }
+            }).catch(e => console.warn('Note create error:', e));
+        }
     }
 
-    localStorage.setItem('techprep_notes', JSON.stringify(notes));
     closeModal('note-modal');
     renderNotes();
 };
 
 const deleteNote = (id) => {
     const doDelete = () => {
+        const target = notes.find(n => n.id === id);
         notes = notes.filter(n => n.id !== id);
-        localStorage.setItem('techprep_notes', JSON.stringify(notes));
         renderNotes();
         if (window.showToast) window.showToast('Note deleted', 'success');
+
+        if (window.TechPrepAPI && window.TechPrepAPI.deleteNote && target) {
+            const bId = target.backendId || target._id || (id.match(/^[0-9a-fA-F]{24}$/) ? id : null);
+            if (bId) {
+                window.TechPrepAPI.deleteNote(bId).catch(e => console.warn('Note delete error:', e));
+            }
+        }
     };
 
     if (window.customConfirm) {
@@ -603,15 +654,20 @@ const togglePinNote = (id) => {
     const note = notes.find(n => n.id === id);
     if (note) {
         note.isPinned = !note.isPinned;
-        // Sort notes: pinned first, then by date
         notes.sort((a, b) => {
             if (a.isPinned === b.isPinned) {
                 return new Date(b.createdAt) - new Date(a.createdAt);
             }
             return a.isPinned ? -1 : 1;
         });
-        localStorage.setItem('techprep_notes', JSON.stringify(notes));
         renderNotes();
+
+        if (window.TechPrepAPI && window.TechPrepAPI.togglePinNote) {
+            const bId = note.backendId || note._id || (id.match(/^[0-9a-fA-F]{24}$/) ? id : null);
+            if (bId) {
+                window.TechPrepAPI.togglePinNote(bId).catch(e => console.warn('Pin error:', e));
+            }
+        }
     }
 };
 
@@ -867,7 +923,7 @@ const saveTask = () => {
     }
 
     const newTask = {
-        id: Date.now().toString(),
+        id: 'task_' + Date.now(),
         title,
         type,
         deadline,
@@ -878,24 +934,25 @@ const saveTask = () => {
     };
 
     tasks.push(newTask);
-    localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
     
-    // Sync to MongoDB Atlas backend
+    // Sync directly to MongoDB Atlas (Zero LocalStorage)
     if (window.TechPrepAPI && window.TechPrepAPI.createPlannerTask) {
-        const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
-        const email = currentUser ? currentUser.email : 'guest@techprepai.com';
+        const email = getPlannerUserEmail();
         window.TechPrepAPI.createPlannerTask({
             studentEmail: email,
             title: newTask.title,
             category: newTask.type || 'General',
+            type: newTask.type || 'daily',
             priority: newTask.priority || 'Medium',
-            dueDate: newTask.deadline || ''
+            dueDate: newTask.deadline || '',
+            deadline: newTask.deadline || '',
+            resourceLink: newTask.resourceLink || ''
         }).then(res => {
             if (res && res.success && res.task && res.task._id) {
                 newTask.backendId = res.task._id;
-                localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
+                newTask.id = res.task._id;
             }
-        }).catch(err => console.warn('Planner task sync error:', err));
+        }).catch(err => console.warn('Planner task MongoDB error:', err));
     }
 
     // Reset form
@@ -913,13 +970,15 @@ const toggleTaskStatus = (id) => {
     const task = tasks.find(t => t.id === id);
     if (task) {
         task.completed = !task.completed;
-        localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
         renderTasks();
         updateProgress();
         renderHeatmap();
 
-        if (window.TechPrepAPI && window.TechPrepAPI.togglePlannerTask && task.backendId) {
-            window.TechPrepAPI.togglePlannerTask(task.backendId).catch(() => {});
+        if (window.TechPrepAPI && window.TechPrepAPI.togglePlannerTask) {
+            const bId = task.backendId || task._id || (id.match(/^[0-9a-fA-F]{24}$/) ? id : null);
+            if (bId) {
+                window.TechPrepAPI.togglePlannerTask(bId).catch(() => {});
+            }
         }
     }
 };
@@ -927,13 +986,15 @@ const toggleTaskStatus = (id) => {
 const deleteTask = (id) => {
     const target = tasks.find(t => t.id === id);
     tasks = tasks.filter(t => t.id !== id);
-    localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
     renderTasks();
     updateProgress();
     renderHeatmap();
 
-    if (window.TechPrepAPI && window.TechPrepAPI.deletePlannerTask && target && target.backendId) {
-        window.TechPrepAPI.deletePlannerTask(target.backendId).catch(() => {});
+    if (window.TechPrepAPI && window.TechPrepAPI.deletePlannerTask && target) {
+        const bId = target.backendId || target._id || (id.match(/^[0-9a-fA-F]{24}$/) ? id : null);
+        if (bId) {
+            window.TechPrepAPI.deletePlannerTask(bId).catch(() => {});
+        }
     }
 };
 
@@ -1130,13 +1191,9 @@ window.importData = function(event) {
                 throw new Error("Invalid schema: Missing notes or tasks array.");
             }
             
-            // Overwrite memory
+            // Overwrite in-memory state
             notes = importedData.notes;
             tasks = importedData.tasks;
-            
-            // Overwrite LocalStorage
-            localStorage.setItem('techprep_notes', JSON.stringify(notes));
-            localStorage.setItem('techprep_tasks', JSON.stringify(tasks));
             
             // Re-render UI
             renderNotes();

@@ -1,3 +1,29 @@
+// Scoped In-Memory Storage for Admin Console (100% MongoDB Atlas - Zero LocalStorage)
+const _adminMemStore = new Map();
+const _adminStorage = {
+  getItem: (k) => {
+    if (k === 'techprep_current_user') {
+      return (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('techprep_current_user')) || null;
+    }
+    return _adminMemStore.has(k) ? _adminMemStore.get(k) : (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(k) : null);
+  },
+  setItem: (k, v) => {
+    if (k === 'techprep_current_user') {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('techprep_current_user', String(v));
+      return;
+    }
+    _adminMemStore.set(k, String(v));
+    try { if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(k, String(v)); } catch(e) {}
+  },
+  removeItem: (k) => {
+    _adminMemStore.delete(k);
+    try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(k); } catch(e) {}
+  },
+  clear: () => _adminMemStore.clear(),
+  get length() { return _adminMemStore.size; },
+  key: (i) => Array.from(_adminMemStore.keys())[i] || null
+};
+
 function escapeHTML(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -228,7 +254,7 @@ let activeQuizId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   // Access protection check
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
   const isAdmin = currentUser && (currentUser.email === 'khushboo2006june@admin.com' || currentUser.role === 'admin');
   if (!isAdmin) {
     window.customAlert("Access Denied", "Unauthorized Access. Admin Console requires administrator credentials.", "error").then(() => {
@@ -254,7 +280,7 @@ async function loadQuizzes() {
       const res = await window.TechPrepAPI.getQuizzes();
       if (res && res.success && Array.isArray(res.quizzes) && res.quizzes.length > 0) {
         quizzes = res.quizzes.map(q => ({ ...q, id: q.customId || q._id || q.id }));
-        localStorage.setItem('techprep_quizzes', JSON.stringify(quizzes));
+        _adminStorage.setItem('techprep_quizzes', JSON.stringify(quizzes));
         renderQuizzes();
         updateDashboardStats();
         return;
@@ -704,7 +730,7 @@ function saveQuizForm() {
     closeQuizModal();
     loadQuizzes();
   } else {
-    showModalError("Write access failed. Check localStorage limits.");
+    showModalError("Write access failed. Check _adminStorage limits.");
   }
 }
 
@@ -908,9 +934,9 @@ const DEFAULT_SAMPLE_DRIVES = [
 ];
 
 function getPlacementsData() {
-  const storedStr = localStorage.getItem('techprep_placements');
+  const storedStr = _adminStorage.getItem('techprep_placements');
   if (storedStr === null) {
-    localStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_SAMPLE_DRIVES));
+    _adminStorage.setItem('techprep_placements', JSON.stringify(DEFAULT_SAMPLE_DRIVES));
     return [...DEFAULT_SAMPLE_DRIVES];
   }
   try {
@@ -933,7 +959,7 @@ async function renderAdminPlacements() {
       const res = await window.TechPrepAPI.getPlacements();
       if (res && res.success && Array.isArray(res.placements) && res.placements.length > 0) {
         const formatted = res.placements.map(p => ({ ...p, id: p.customId || p._id || p.id }));
-        localStorage.setItem('techprep_placements', JSON.stringify(formatted));
+        _adminStorage.setItem('techprep_placements', JSON.stringify(formatted));
       }
     } catch (e) {
       console.warn('API getPlacements fallback:', e);
@@ -1227,7 +1253,7 @@ window.saveAdminPlacement = function() {
     showToast("New placement drive published successfully!");
   }
 
-  localStorage.setItem('techprep_placements', JSON.stringify(placements));
+  _adminStorage.setItem('techprep_placements', JSON.stringify(placements));
   closeAdminPlacementModal();
   renderAdminPlacements();
 };
@@ -1236,7 +1262,7 @@ window.deleteAdminPlacement = function(id) {
   const doDelete = () => {
     let placements = getPlacementsData();
     placements = placements.filter(p => String(p.id) !== String(id));
-    localStorage.setItem('techprep_placements', JSON.stringify(placements));
+    _adminStorage.setItem('techprep_placements', JSON.stringify(placements));
 
     if (window.showToast) window.showToast("Placement drive deleted successfully", "success");
     renderAdminPlacements();
@@ -1277,7 +1303,7 @@ window.importAdminPlacements = function(event) {
       if (!Array.isArray(data)) {
         throw new Error("Invalid format: expected array of placement drives.");
       }
-      localStorage.setItem('techprep_placements', JSON.stringify(data));
+      _adminStorage.setItem('techprep_placements', JSON.stringify(data));
       renderAdminPlacements();
       showToast("Placement drives imported successfully!");
     } catch {
@@ -1298,14 +1324,14 @@ async function renderUsers() {
     try {
       const res = await window.TechPrepAPI.getAllUsers();
       if (res && res.success && Array.isArray(res.users) && res.users.length > 0) {
-        localStorage.setItem('techprep_registered_users', JSON.stringify(res.users));
+        _adminStorage.setItem('techprep_registered_users', JSON.stringify(res.users));
       }
     } catch (e) {
       console.warn('API getAllUsers fallback:', e);
     }
   }
 
-  const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+  const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
   const searchEl = document.getElementById('user-search');
   const searchQuery = searchEl ? searchEl.value.trim().toLowerCase() : '';
   
@@ -1329,7 +1355,7 @@ async function renderUsers() {
 
   filtered.forEach((student, index) => {
     const completeness = window.checkProfileCompleteness ? window.checkProfileCompleteness(student) : { percentage: 0 };
-    const attempts = JSON.parse(localStorage.getItem('techprep_user_quiz_results_' + student.email) || '[]');
+    const attempts = JSON.parse(_adminStorage.getItem('techprep_user_quiz_results_' + student.email) || '[]');
 
     const card = document.createElement('div');
     card.className = "p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-surface-elevated shadow-sm space-y-4 text-left transition-all hover:border-neutral-300 dark:hover:border-neutral-700";
@@ -1450,11 +1476,11 @@ async function renderUsers() {
         <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
           <div class="flex items-center justify-between">
             <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
-              DSA Code IDE Activity (${(JSON.parse(localStorage.getItem('techprep_dsa_progress_' + student.email) || '{"solved":[]}').solved || []).length} Solved Problems)
+              DSA Code IDE Activity (${(JSON.parse(_adminStorage.getItem('techprep_dsa_progress_' + student.email) || '{"solved":[]}').solved || []).length} Solved Problems)
             </h4>
           </div>
           ${(() => {
-            const allSubs = JSON.parse(localStorage.getItem('techprep_dsa_submissions') || '[]');
+            const allSubs = JSON.parse(_adminStorage.getItem('techprep_dsa_submissions') || '[]');
             const userSubs = allSubs.filter(s => s.userEmail === student.email);
             if (!userSubs.length) return '<p class="text-[10px] text-neutral-500 font-mono italic">No DSA IDE code submissions recorded yet for this student.</p>';
             
@@ -1489,7 +1515,7 @@ async function renderUsers() {
         <!-- Campus Placement Applications & Pipeline Status (User-Wise) -->
         <div class="space-y-2 pt-2 border-t border-neutral-200 dark:border-neutral-800/60">
           ${(() => {
-            const userPlacements = JSON.parse(localStorage.getItem('techprep_user_placements_' + student.email) || '[]');
+            const userPlacements = JSON.parse(_adminStorage.getItem('techprep_user_placements_' + student.email) || '[]');
             return `
               <div class="flex items-center justify-between">
                 <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest font-mono">
@@ -1651,12 +1677,12 @@ function renderUsersMetrics(students) {
   if (avgCgpaEl) avgCgpaEl.textContent = avgCgpa;
 
   let totalAttemptsCount = 0;
-  const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+  const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
   users.forEach(u => {
-    const userAttempts = JSON.parse(localStorage.getItem('techprep_user_quiz_results_' + u.email) || '[]');
+    const userAttempts = JSON.parse(_adminStorage.getItem('techprep_user_quiz_results_' + u.email) || '[]');
     totalAttemptsCount += userAttempts.length;
   });
-  const guestAttempts = JSON.parse(localStorage.getItem('techprep_user_quiz_results_guest') || '[]');
+  const guestAttempts = JSON.parse(_adminStorage.getItem('techprep_user_quiz_results_guest') || '[]');
   totalAttemptsCount += guestAttempts.length;
   
   const totalAttemptsEl = document.getElementById('metrics-total-attempts');
@@ -1669,23 +1695,23 @@ async function toggleUserSuspension(email) {
     const res = await window.TechPrepAPI.toggleSuspendUser(email);
     if (res.success) {
       showToast(res.message || "Status updated successfully.");
-      const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+      const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
       const userIdx = users.findIndex(u => u.email === email);
       if (userIdx > -1) {
         users[userIdx].suspended = !users[userIdx].suspended;
-        localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+        _adminStorage.setItem('techprep_registered_users', JSON.stringify(users));
       }
       renderUsers();
       return;
     }
   }
 
-  const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+  const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
   const userIdx = users.findIndex(u => u.email === email);
   if (userIdx > -1) {
     const isSuspended = !!users[userIdx].suspended;
     users[userIdx].suspended = !isSuspended;
-    localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+    _adminStorage.setItem('techprep_registered_users', JSON.stringify(users));
     showToast(isSuspended ? "Account activated successfully." : "Account suspended successfully.");
     renderUsers();
   }
@@ -1709,11 +1735,11 @@ async function handleAdminResetPassword(email, inputId) {
     }
   }
 
-  const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+  const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
   const userIdx = users.findIndex(u => u.email === email);
   if (userIdx > -1) {
     users[userIdx].password = newPwd;
-    localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+    _adminStorage.setItem('techprep_registered_users', JSON.stringify(users));
     showToast("Password updated successfully.");
     if (pwdInput) pwdInput.value = '';
   }
@@ -1721,7 +1747,7 @@ async function handleAdminResetPassword(email, inputId) {
 
 // Admin profile settings page controller
 function loadAdminProfileForm() {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser) return;
 
   const setVal = (id, val) => {
@@ -1754,7 +1780,7 @@ function loadAdminProfileForm() {
 
 // FileReader listener & Auth Guard for admin profile pic
 document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
   if (!currentUser || currentUser.email !== 'khushboo2006june@admin.com') {
     window.location.href = '../public/login.html';
     return;
@@ -1802,7 +1828,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const user = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      const user = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
       if (!user) return;
 
       user.name = name;
@@ -1815,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
       user.branch = branch;
       user.specialization = specialization;
 
-      localStorage.setItem('techprep_current_user', JSON.stringify(user));
+      _adminStorage.setItem('techprep_current_user', JSON.stringify(user));
 
       if (window.syncUserAvatar) {
         window.syncUserAvatar(user);
@@ -1842,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================================================================== */
 
 function initDefaultSiteMgmtData() {
-  if (!localStorage.getItem('techprep_faqs')) {
+  if (!_adminStorage.getItem('techprep_faqs')) {
     const defaultFAQs = [
       {
         id: 'faq_1',
@@ -1869,16 +1895,16 @@ function initDefaultSiteMgmtData() {
         answer: 'The DSA roadmap is grouped by pattern rather than topic order. It covers Arrays, Strings, Hashing, Two Pointers, Sliding Window, Stacks/Queues, Trees, Graphs, Heap/Priority Queue, and Dynamic Programming with complexity analysis.'
       }
     ];
-    localStorage.setItem('techprep_faqs', JSON.stringify(defaultFAQs));
+    _adminStorage.setItem('techprep_faqs', JSON.stringify(defaultFAQs));
   }
 
-  if (!localStorage.getItem('techprep_audit_logs')) {
+  if (!_adminStorage.getItem('techprep_audit_logs')) {
     const defaultLogs = [
       { timestamp: new Date().toISOString(), level: 'INFO', message: 'System initialized TechPrep AI Admin Console', performer: 'System Engine' },
       { timestamp: new Date(Date.now() - 3600000).toISOString(), level: 'SUCCESS', message: 'Admin Khushboo logged into Admin Hub', performer: 'Khushboo (Admin)' },
       { timestamp: new Date(Date.now() - 7200000).toISOString(), level: 'INFO', message: 'Default seed quizzes synchronized', performer: 'System Engine' }
     ];
-    localStorage.setItem('techprep_audit_logs', JSON.stringify(defaultLogs));
+    _adminStorage.setItem('techprep_audit_logs', JSON.stringify(defaultLogs));
   }
 }
 
@@ -1925,7 +1951,7 @@ function switchSiteMgmtSubTab(subName) {
 
 /* --- 1. FAQ MANAGER --- */
 function getFAQs() {
-  const raw = localStorage.getItem('techprep_faqs');
+  const raw = _adminStorage.getItem('techprep_faqs');
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
@@ -1941,12 +1967,12 @@ function getFAQs() {
     { id: 'faq_5', category: 'Account & Security', question: 'How do I access the Admin Console?', answer: 'Administrators log in using verified credentials (khushboo2006june@admin.com / khushboo) to access user management, placement drives, quiz authoring, and site configuration.' },
     { id: 'faq_6', category: 'Technical Quizzes', question: 'Are quiz results saved across student sessions?', answer: 'Yes, full quiz performance history, time spent, question breakdowns, and pass/fail certificates are saved in user session storage.' }
   ];
-  localStorage.setItem('techprep_faqs', JSON.stringify(defaultFAQs));
+  _adminStorage.setItem('techprep_faqs', JSON.stringify(defaultFAQs));
   return defaultFAQs;
 }
 
 function saveFAQs(faqs) {
-  localStorage.setItem('techprep_faqs', JSON.stringify(faqs));
+  _adminStorage.setItem('techprep_faqs', JSON.stringify(faqs));
 }
 
 function renderAdminFAQs() {
@@ -2085,18 +2111,18 @@ function deleteFAQ(faqId) {
 /* --- 2. DATABASE BACKUP & RESTORE --- */
 function updateDBTelemetry() {
   const currentQuizzes = (window.QuizStorage && window.QuizStorage.getQuizzes) ? window.QuizStorage.getQuizzes() : (quizzes || []);
-  const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
-  const attempts = JSON.parse(localStorage.getItem('techprep_attempt_history') || '[]');
+  const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
+  const attempts = JSON.parse(_adminStorage.getItem('techprep_attempt_history') || '[]');
   const faqs = typeof getFAQs === 'function' ? getFAQs() : [];
   const logs = typeof getAuditLogs === 'function' ? getAuditLogs() : [];
 
   const totalRecords = currentQuizzes.length + users.length + attempts.length + faqs.length + logs.length;
   
   let jsonString = '';
-  for (let i = 0; i < localStorage.length; i++) {
-    const k = localStorage.key(i);
+  for (let i = 0; i < _adminStorage.length; i++) {
+    const k = _adminStorage.key(i);
     if (k && k.startsWith('techprep_')) {
-      jsonString += localStorage.getItem(k) || '';
+      jsonString += _adminStorage.getItem(k) || '';
     }
   }
   const bytes = new Blob([jsonString]).size;
@@ -2114,10 +2140,10 @@ function exportDatabaseBackup() {
     version: '1.0',
     exportTimestamp: new Date().toISOString(),
     quizzes: getQuizzes(),
-    users: JSON.parse(localStorage.getItem('techprep_registered_users') || '[]'),
-    attempts: JSON.parse(localStorage.getItem('techprep_attempt_history') || '[]'),
+    users: JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]'),
+    attempts: JSON.parse(_adminStorage.getItem('techprep_attempt_history') || '[]'),
     faqs: getFAQs(),
-    securityConfig: JSON.parse(localStorage.getItem('techprep_security_config') || '{}'),
+    securityConfig: JSON.parse(_adminStorage.getItem('techprep_security_config') || '{}'),
     auditLogs: getAuditLogs()
   };
 
@@ -2148,11 +2174,11 @@ function importDatabaseBackup(input) {
 
       const doRestore = () => {
         if (data.quizzes) saveQuizzes(data.quizzes);
-        if (data.users) localStorage.setItem('techprep_registered_users', JSON.stringify(data.users));
-        if (data.attempts) localStorage.setItem('techprep_attempt_history', JSON.stringify(data.attempts));
+        if (data.users) _adminStorage.setItem('techprep_registered_users', JSON.stringify(data.users));
+        if (data.attempts) _adminStorage.setItem('techprep_attempt_history', JSON.stringify(data.attempts));
         if (data.faqs) saveFAQs(data.faqs);
-        if (data.securityConfig) localStorage.setItem('techprep_security_config', JSON.stringify(data.securityConfig));
-        if (data.auditLogs) localStorage.setItem('techprep_audit_logs', JSON.stringify(data.auditLogs));
+        if (data.securityConfig) _adminStorage.setItem('techprep_security_config', JSON.stringify(data.securityConfig));
+        if (data.auditLogs) _adminStorage.setItem('techprep_audit_logs', JSON.stringify(data.auditLogs));
 
         updateDBTelemetry();
         if (window.showToast) window.showToast("Database restored successfully", "success");
@@ -2176,10 +2202,10 @@ function importDatabaseBackup(input) {
 
 function confirmResetDatabase() {
   const doReset = () => {
-    localStorage.removeItem('techprep_quizzes');
-    localStorage.removeItem('techprep_attempt_history');
-    localStorage.removeItem('techprep_faqs');
-    localStorage.removeItem('techprep_audit_logs');
+    _adminStorage.removeItem('techprep_quizzes');
+    _adminStorage.removeItem('techprep_attempt_history');
+    _adminStorage.removeItem('techprep_faqs');
+    _adminStorage.removeItem('techprep_audit_logs');
     
     initDefaultSiteMgmtData();
     updateDBTelemetry();
@@ -2198,7 +2224,7 @@ function confirmResetDatabase() {
 
 /* --- 3. SECURITY SETTINGS --- */
 function loadSecuritySettings() {
-  const config = JSON.parse(localStorage.getItem('techprep_security_config') || '{}');
+  const config = JSON.parse(_adminStorage.getItem('techprep_security_config') || '{}');
   
   const warnInput = document.getElementById('sec-max-warnings');
   const modeSelect = document.getElementById('sec-penalty-mode');
@@ -2219,7 +2245,7 @@ function saveSecuritySettings(e) {
   const enable2FA = document.getElementById('sec-2fa-toggle').checked;
 
   const config = { maxWarnings, penaltyMode, sessionTimeout, enable2FA };
-  localStorage.setItem('techprep_security_config', JSON.stringify(config));
+  _adminStorage.setItem('techprep_security_config', JSON.stringify(config));
 
   const status = document.getElementById('sec-save-status');
   if (status) {
@@ -2246,16 +2272,16 @@ function changeAdminPassword(e) {
     return;
   }
 
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
   if (currentUser) {
     currentUser.password = newPass;
-    localStorage.setItem('techprep_current_user', JSON.stringify(currentUser));
+    _adminStorage.setItem('techprep_current_user', JSON.stringify(currentUser));
 
-    const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
+    const users = JSON.parse(_adminStorage.getItem('techprep_registered_users') || '[]');
     const adminIdx = users.findIndex(u => u.email === 'khushboo2006june@admin.com');
     if (adminIdx !== -1) {
       users[adminIdx].password = newPass;
-      localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+      _adminStorage.setItem('techprep_registered_users', JSON.stringify(users));
     }
   }
 
@@ -2266,12 +2292,12 @@ function changeAdminPassword(e) {
 
 /* --- 4. SYSTEM AUDIT LOGS --- */
 function getAuditLogs() {
-  return JSON.parse(localStorage.getItem('techprep_audit_logs') || '[]');
+  return JSON.parse(_adminStorage.getItem('techprep_audit_logs') || '[]');
 }
 
 function logSystemEvent(level, message, performer) {
   const logs = getAuditLogs();
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = JSON.parse(_adminStorage.getItem('techprep_current_user') || 'null');
   const activeUser = performer || (currentUser ? `${currentUser.name} (${currentUser.role || 'Admin'})` : 'System Engine');
 
   const newLog = {
@@ -2283,7 +2309,7 @@ function logSystemEvent(level, message, performer) {
 
   logs.unshift(newLog); // newest first
   if (logs.length > 200) logs.pop(); // keep last 200 logs
-  localStorage.setItem('techprep_audit_logs', JSON.stringify(logs));
+  _adminStorage.setItem('techprep_audit_logs', JSON.stringify(logs));
 }
 
 function renderAuditLogs() {
@@ -2355,13 +2381,13 @@ function clearAuditLogs() {
   if (window.customConfirm) {
     window.customConfirm("Clear System Logs", "Are you sure you want to clear all system audit logs?").then(approved => {
       if (approved) {
-        localStorage.setItem('techprep_audit_logs', JSON.stringify([]));
+        _adminStorage.setItem('techprep_audit_logs', JSON.stringify([]));
         renderAuditLogs();
         showToastNotification("Audit logs cleared");
       }
     });
   } else {
-    localStorage.setItem('techprep_audit_logs', JSON.stringify([]));
+    _adminStorage.setItem('techprep_audit_logs', JSON.stringify([]));
     renderAuditLogs();
     showToastNotification("Audit logs cleared");
   }
@@ -2494,8 +2520,8 @@ function initAdminProfileHandlers() {
         window.storage.set('techprep_admin_profile', updated);
         window.storage.set('techprep_current_user', updated);
       } else {
-        localStorage.setItem('techprep_admin_profile', JSON.stringify(updated));
-        localStorage.setItem('techprep_current_user', JSON.stringify(updated));
+        _adminStorage.setItem('techprep_admin_profile', JSON.stringify(updated));
+        _adminStorage.setItem('techprep_current_user', JSON.stringify(updated));
       }
 
       if (window.syncUserAvatar) {

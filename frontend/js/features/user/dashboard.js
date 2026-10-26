@@ -53,7 +53,9 @@ function switchDashboardTab(tabName) {
 window.switchDashboardTab = switchDashboardTab;
 
 function loadProfileForm() {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   if (!currentUser) return;
   
   document.getElementById('profile-name').value = currentUser.name || '';
@@ -157,10 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+      const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                          (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                          (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
       if (!currentUser) return;
-      
-      const oldEmail = currentUser.email;
       
       currentUser.name = name;
       currentUser.email = email;
@@ -182,32 +184,17 @@ document.addEventListener('DOMContentLoaded', () => {
       currentUser.linkedin = document.getElementById('profile-linkedin').value.trim();
       currentUser.portfolio = document.getElementById('profile-portfolio').value.trim();
       
-      localStorage.setItem('techprep_current_user', JSON.stringify(currentUser));
+      if (window.TechPrepAuth && window.TechPrepAuth.setSessionUser) {
+        window.TechPrepAuth.setSessionUser(currentUser);
+      } else if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('techprep_current_user', JSON.stringify(currentUser));
+      }
       
-      const users = JSON.parse(localStorage.getItem('techprep_registered_users') || '[]');
-      const userIdx = users.findIndex(u => u.email === oldEmail);
-      if (userIdx > -1) {
-        users[userIdx].name = name;
-        users[userIdx].email = email;
-        users[userIdx].profilePic = currentUser.profilePic;
-        users[userIdx].contact = currentUser.contact;
-        users[userIdx].dob = currentUser.dob;
-        users[userIdx].address = currentUser.address;
-        users[userIdx].college = currentUser.college;
-        users[userIdx].degree = currentUser.degree;
-        users[userIdx].branch = currentUser.branch;
-        users[userIdx].specialization = currentUser.specialization;
-        users[userIdx].gradYear = currentUser.gradYear;
-        users[userIdx].cgpa = currentUser.cgpa;
-        users[userIdx].marks10 = currentUser.marks10;
-        users[userIdx].marks12 = currentUser.marks12;
-        users[userIdx].skills = currentUser.skills;
-        users[userIdx].leetcode = currentUser.leetcode;
-        users[userIdx].github = currentUser.github;
-        users[userIdx].linkedin = currentUser.linkedin;
-        users[userIdx].portfolio = currentUser.portfolio;
-        
-        localStorage.setItem('techprep_registered_users', JSON.stringify(users));
+      // Direct sync with MongoDB Atlas backend
+      if (window.TechPrepAPI && window.TechPrepAPI.updateProfile) {
+        window.TechPrepAPI.updateProfile(currentUser).catch(err => {
+          console.warn('Profile update MongoDB sync error:', err);
+        });
       }
       
       document.getElementById('welcome-user-name').textContent = name;
@@ -228,7 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   if (!currentUser) {
     window.location.href = '../public/login.html';
     return;
@@ -352,12 +341,14 @@ function renderDashboardQuizzes() {
 window.renderDashboardQuizzes = renderDashboardQuizzes;
 window.loadStudentPortal = renderDashboardQuizzes;
 
-// Asynchronous background SWR sync
+// Asynchronous background SWR sync (100% MongoDB Atlas - Zero LocalStorage)
 let isSyncingPortal = false;
 async function syncStudentPortalWithBackend() {
   if (isSyncingPortal) return;
   isSyncingPortal = true;
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   if (window.TechPrepAPI) {
     try {
       const email = currentUser ? currentUser.email : '';
@@ -368,7 +359,6 @@ async function syncStudentPortalWithBackend() {
 
       if (qRes.status === 'fulfilled' && qRes.value && qRes.value.success && Array.isArray(qRes.value.quizzes) && qRes.value.quizzes.length > 0) {
         const formattedQ = qRes.value.quizzes.map(q => ({ ...q, id: q.customId || q._id || q.id }));
-        localStorage.setItem('techprep_quizzes', JSON.stringify(formattedQ));
         if (window.QuizStorage) window.QuizStorage._cachedQuizzes = formattedQ;
       }
 
@@ -388,10 +378,9 @@ async function syncStudentPortalWithBackend() {
           submissionReason: r.submissionReason || 'Normal Submission',
           timestamp: r.submittedAt || r.createdAt || r.timestamp || Date.now()
         }));
-        if (email) {
-          localStorage.setItem(`techprep_user_quiz_results_${email}`, JSON.stringify(formattedR));
+        if (window.QuizStorage && window.QuizStorage._cachedResults) {
+          window.QuizStorage._cachedResults[email || 'guest@techprepai.com'] = formattedR;
         }
-        localStorage.setItem('techprep_user_quiz_results', JSON.stringify(formattedR));
       }
 
       // Re-render with freshly synced data
@@ -461,8 +450,10 @@ async function renderHistoryLogs() {
   const cachedResults = window.QuizStorage ? window.QuizStorage.getUserResults() : [];
   populateHistoryTable(cachedResults);
 
-  // 2. Background sync
-  const currentUser = JSON.parse(localStorage.getItem('techprep_current_user') || 'null');
+  // 2. Background sync from MongoDB Atlas (Zero LocalStorage)
+  const currentUser = (window.TechPrepAuth && window.TechPrepAuth.getCurrentUser ? window.TechPrepAuth.getCurrentUser() : null) || 
+                      (window.getCurrentUser ? window.getCurrentUser() : null) ||
+                      (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
   if (window.TechPrepAPI && currentUser && currentUser.email) {
     try {
       const apiMethod = window.TechPrepAPI.getStudentQuizResults || window.TechPrepAPI.getUserQuizResults;
@@ -484,8 +475,9 @@ async function renderHistoryLogs() {
             submissionReason: r.submissionReason || 'Normal Submission',
             timestamp: r.submittedAt || r.createdAt || r.timestamp || Date.now()
           }));
-          localStorage.setItem(`techprep_user_quiz_results_${currentUser.email}`, JSON.stringify(formattedR));
-          localStorage.setItem('techprep_user_quiz_results', JSON.stringify(formattedR));
+          if (window.QuizStorage && window.QuizStorage._cachedResults) {
+            window.QuizStorage._cachedResults[currentUser.email] = formattedR;
+          }
           populateHistoryTable(formattedR);
         }
       }
