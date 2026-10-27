@@ -7,3 +7,5 @@ backend/server/temp/
 .DS_Store
 Thumbs.db
 *.log
+POSTMAN_TESTING_GUIDE.md
+techprep_ai_postman_collection.json
