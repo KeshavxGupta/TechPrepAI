@@ -137,6 +137,9 @@ async function runTests() {
   const healthRes = await request('GET', '/api/health');
   recordResult('Health Check API', 'GET', '/api/health', 200, healthRes, healthRes.data?.status === 'OK');
 
+  const keepaliveRes = await request('GET', '/api/keepalive');
+  recordResult('Keep-Alive Heartbeat', 'GET', '/api/keepalive', 200, keepaliveRes, keepaliveRes.data?.success === true);
+
   // --------------------------------------------------
   // 2. Authentication & User Management
   // --------------------------------------------------
@@ -427,6 +430,36 @@ async function runTests() {
     recordResult('Delete Planner Task', 'DELETE', `/api/planner/tasks/:id`, 200, deleteTaskRes, deleteTaskRes.data?.success === true);
   }
 
+  // Active Recall Notes
+  let testNoteId = null;
+  const createNoteRes = await request('POST', '/api/planner/notes', {
+    studentEmail: testEmail,
+    title: 'Automated Vercel Verification Note',
+    content: 'Testing MongoDB Atlas persistent notes engine in production.',
+    tags: ['Deployment', 'Vercel', 'LiveCheck'],
+    isPinned: false
+  });
+  recordResult('Create Planner Note', 'POST', '/api/planner/notes', 201, createNoteRes, createNoteRes.data?.success === true);
+  if (createNoteRes.data?.note?._id) {
+    testNoteId = createNoteRes.data.note._id;
+  }
+
+  const getNotesRes = await request('GET', `/api/planner/notes/user/${encodeURIComponent(testEmail)}`);
+  recordResult('Get Student Notes', 'GET', `/api/planner/notes/user/:email`, 200, getNotesRes, Array.isArray(getNotesRes.data?.notes));
+
+  if (testNoteId) {
+    const updateNoteRes = await request('PUT', `/api/planner/notes/${testNoteId}`, {
+      title: 'Updated Vercel Verification Note'
+    });
+    recordResult('Update Planner Note', 'PUT', `/api/planner/notes/:id`, 200, updateNoteRes, updateNoteRes.data?.success === true);
+
+    const pinNoteRes = await request('PATCH', `/api/planner/notes/${testNoteId}/pin`);
+    recordResult('Toggle Pin Note', 'PATCH', `/api/planner/notes/:id/pin`, 200, pinNoteRes, pinNoteRes.data?.success === true);
+
+    const deleteNoteRes = await request('DELETE', `/api/planner/notes/${testNoteId}`);
+    recordResult('Delete Planner Note', 'DELETE', `/api/planner/notes/:id`, 200, deleteNoteRes, deleteNoteRes.data?.success === true);
+  }
+
   // --------------------------------------------------
   // 8. Admin Telemetry
   // --------------------------------------------------
@@ -452,13 +485,16 @@ async function runTests() {
     const QuizResult = require('../server/models/QuizResult');
     const DsaSubmission = require('../server/models/DsaSubmission');
     const PlannerTask = require('../server/models/PlannerTask');
+    const Note = require('../server/models/Note');
 
     await User.deleteMany({ email: testEmail });
     await QuizResult.deleteMany({ studentEmail: testEmail });
     await DsaSubmission.deleteMany({ studentEmail: testEmail });
     await PlannerTask.deleteMany({ studentEmail: testEmail });
+    await Note.deleteMany({ studentEmail: testEmail });
     console.log('  Cleaned up test artifacts for', testEmail);
     await mongoose.connection.close();
+
   } catch (err) {
     console.warn('  Cleanup notice:', err.message);
   } finally {
