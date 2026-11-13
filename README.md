@@ -4,88 +4,66 @@ Full Stack Developer Preparation Platform with separate Frontend and Backend arc
 
 ---
 
-## Project Structure
+## Frontend development
 
-```text
-TechPrepAI/
-├── frontend/                     # Client-side web application
-│   ├── index.html                # Main landing page
-│   ├── 404.html                  # Error fallback page
-│   ├── css/
-│   │   └── styles.css            # Global CSS styles & design tokens
-│   ├── js/
-│   │   ├── core/                 # Shared runtime (api.js, auth.js, theme.js, ui.js)
-│   │   ├── components/           # UI components (landing, admin, user, dsa, resume)
-│   │   └── features/             # Business modules (admin, user, quiz, dsa, resume, career)
-│   ├── pages/
-│   │   ├── admin/                # Admin dashboards & studio pages
-│   │   ├── user/                 # Student portal (dashboard, dsa-ide, quiz, planner, placements)
-│   │   └── public/               # Public pages (docs, login, signup, privacy, terms)
-│   └── data/                     # Sample quiz datasets
-│
-├── backend/                      # Server-side REST API & database service
-│   ├── server.js                 # Express server & static hosting entry point
-│   ├── package.json              # Backend dependencies (express, mongoose, cors, etc.)
-│   ├── .env                      # Environment config (MONGODB_URI, JWT_SECRET, PORT)
-│   ├── .env.example              # Example environment template
-│   └── server/
-│       ├── config/               # DB connection & multi-language compiler configuration
-│       ├── controllers/          # Request handlers (auth, dsa, quiz, placement, planner)
-│       ├── middleware/           # JWT auth & centralized error handling
-│       ├── models/               # Mongoose schemas (User, Quiz, Placement, DsaProblem, etc.)
-│       ├── routes/               # Express API routes (/api/*)
-│       ├── seed/                 # Database seed scripts
-│       └── services/             # Code compilation & test execution engine
-│
-├── package.json                  # Root orchestration scripts
-├── .gitignore                    # Git ignore rules for node_modules, temp, and .env
-└── README.md                     # Project documentation
+The frontend uses Vite, React, and build-time Tailwind CSS. Use Node.js 20.19+ or 22.12+.
+
+```bash
+npm ci
+cp backend/.env.example backend/.env
+# Configure your existing MongoDB URI and JWT secret in backend/.env.
 ```
 
----
+Run the backend and frontend in separate terminals:
 
-## Quick Start
-
-### 1. Configure Environment
-In `backend/.env`:
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/techprep_ai?retryWrites=true&w=majority
-JWT_SECRET=techprep_ai_super_secret_jwt_key_2026_production
-NODE_ENV=development
+```bash
+npm run dev:backend   # Express API on port 5000
+npm run dev           # Vite frontend on port 5173
 ```
 
-### 2. Run Commands (From Root Directory)
-* **Start Development Server** (with live reload):
-  ```bash
-  npm run dev
-  ```
-* **Seed Database** (Populate initial quizzes, problems & drives):
-  ```bash
-  npm run seed
-  ```
-* **Run Tests**:
-  ```bash
-  npm test
-  ```
-* **Test All API Endpoints**:
-  ```bash
-  npm run test:api
-  ```
-* **Production Start**:
-  ```bash
-  npm start
-  ```
+Vite proxies `/api` to Express. `API_PROXY_TARGET` can override the development target.
+Set `VITE_API_BASE_URL` only when deploying the browser and API on different origins.
+Do not put secrets in variables prefixed `VITE_`; they are public browser configuration.
 
----
+```bash
+npm run build        # Creates dist/ with all 19 existing page URLs
+npm start            # Express serves dist/ and /api
+npm run preview      # Preview the built frontend (without an API server)
+npm test             # DOM rendering and controller regression tests; build first
+npm run test:browser # Playwright browser checks; build first
+npm run test:api     # Existing API integration suite; requires backend/database
+```
 
-## Key Links & Portals
-* **Web Frontend**: [http://localhost:5000](http://localhost:5000)
-* **API Health Check**: [http://localhost:5000/api/health](http://localhost:5000/api/health)
-* **DSA IDE**: [http://localhost:5000/pages/user/dsa-ide.html](http://localhost:5000/pages/user/dsa-ide.html)
-* **Quiz Portal**: [http://localhost:5000/pages/user/quiz-user.html](http://localhost:5000/pages/user/quiz-user.html)
+For browser tests, install Chromium once with `npx playwright install chromium`.
+CI installs it automatically. API tests and live persistence require your database configuration.
 
----
+## Project structure
+
+- `frontend/src/pages/`: React page components, loaded per URL.
+- `frontend/src/components/`: reusable React presentation components.
+- `frontend/src/styles/`: compiled utilities, workbench design tokens, and page-specific styles.
+- `frontend/src/runtime/`: page manifest and controller initialization.
+- `frontend/public/js/`: existing feature controllers and domain logic.
+- `frontend/public/data/`: sample quiz import files.
+- `frontend/pages/`: Vite HTML entry shells preserving existing deep links.
+- `backend/`: existing Express routes, MongoDB models, and execution services.
+- `tests/`: DOM regression tests and Playwright browser checks.
+
+The home page uses React hooks for the example editor and mobile navigation. Existing
+quiz, editor, resume, planner, placement, and admin controllers initialize after React's
+initial mount using `techprep:ready`. Their API contracts, saved-session keys, and global
+handler names are retained. Those controllers still use imperative DOM updates; this is
+an incremental React migration, not a claim that every feature is now implemented with
+hooks. Do not rerender a controller-owned subtree while it is active. Page navigation
+intentionally performs a full document load to clean up existing timers and listeners.
+See [migration notes](docs/FRONTEND_MIGRATION.md) for boundaries and validation.
+
+## Key links
+
+- Frontend development: <http://localhost:5173>
+- API health: <http://localhost:5000/api/health>
+- DSA IDE: <http://localhost:5173/pages/user/dsa-ide.html>
+- Quiz portal: <http://localhost:5173/pages/user/quiz-user.html>
 
 ## REST API Reference
 

@@ -1,0 +1,12 @@
+/* Prevent text selection during exam */
+.unselectable {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+/* Strictly enforce container visibility regardless of responsive media queries */
+#exam-mcq-container.hidden,
+#exam-coding-container.hidden {
+  display: none !important;
+}

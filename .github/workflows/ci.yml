@@ -1,34 +1,30 @@
 name: TechPrep AI CI
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
-
+    branches: [main]
 jobs:
-  test:
+  frontend:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-
+        node-version: [20.x, 22.x]
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-
-    - name: Install Dependencies
-      run: npm install
-
-    - name: Run Syntax Checks
-      run: |
-        node -c frontend/js/features/user/quiz-user.js
-        node -c frontend/js/features/user/dashboard.js
-
-    - name: Run Integrity & Proctoring Tests
-      run: npm test
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: DOM and controller regression tests
+        run: npm test
+      - run: npx playwright install --with-deps chromium
+      - name: Browser regression tests
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-results-${{ matrix.node-version }}
+          path: test-results/

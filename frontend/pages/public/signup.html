@@ -1,33 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student Registration TechPrep AI</title>
-  <script>
-    (function() {
-      const currentUser = (typeof sessionStorage !== 'undefined' && JSON.parse(sessionStorage.getItem('techprep_current_user') || 'null'));
-      if (currentUser) {
-        if (currentUser.email === 'khushboo2006june@admin.com') {
-          window.location.href = '../admin/admin-hub.html';
-          return;
-        } else {
-          window.location.href = '../user/dashboard.html';
-          return;
-        }
-      }
-      window.location.href = "../../index.html?modal=signup";
-    })();
-  </script>
-</head>
-<body style="background-color: #f9fafb; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #4b5563; font-size: 14px;">
-  <div style="text-align: center;">
-    <p>Redirecting to student portal signup modal...</p>
-  </div>
-</body>
-</html>
-
-
-
-
-
+<!doctype html>
+<html lang="en" class="dark"><head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Prepare, practice and build your next opportunity with TechPrep AI." />
+<meta name="theme-color" content="#0b1117" />
+<title>Student Registration TechPrep AI</title>
+<script type="module" src="/src/main.jsx"></script>
+</head><body><div id="root"></div><noscript>Enable JavaScript to use TechPrep AI.</noscript></body></html>
