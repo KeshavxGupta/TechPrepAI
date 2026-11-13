@@ -20,16 +20,34 @@ async function loadVendor(url) {
     window.mammoth = (await import('mammoth/mammoth.browser.js')).default;
   else if (url.includes('xlsx')) window.XLSX = await import('xlsx');
   else if (url.includes('mathjax')) {
+    window.MathJax = {
+      tex: {
+        inlineMath: [
+          ['$', '$'],
+          ['\\(', '\\)']
+        ],
+        displayMath: [
+          ['$$', '$$'],
+          ['\\[', '\\]']
+        ]
+      },
+      startup: { typeset: false }
+    };
     // Math typesetting is an enhancement; a CDN outage must not disable the planner.
     loadClassicScript(url).catch((error) => console.warn('Math typesetting unavailable:', error));
   } else throw new Error(`Unconfigured dependency: ${url}`);
 }
-export async function startControllers(scripts) {
+export async function startControllers(scripts, initialize) {
   for (const script of scripts) {
     if (script.vendor) await loadVendor(script.vendor);
     else await loadClassicScript(script.src);
   }
   document.dispatchEvent(new Event('techprep:ready'));
+  if (initialize) {
+    if (typeof window[initialize] !== 'function')
+      throw new Error(`Missing initializer: ${initialize}`);
+    window[initialize]();
+  }
   document.documentElement.dataset.appReady = 'true';
 }
 export function showStartupError(error) {

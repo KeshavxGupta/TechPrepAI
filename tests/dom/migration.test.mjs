@@ -115,6 +115,7 @@ async function mount(path, { signedIn = true } = {}) {
     // Optional third-party visual/parsing libraries are exercised in browser CI.
   }
   w.document.dispatchEvent(new w.Event('techprep:ready'));
+  if (page.initialize) w[page.initialize]();
   await new Promise((resolve) => setTimeout(resolve, 150));
   return { w, dom, errors };
 }
@@ -238,5 +239,53 @@ test('login uses backend response, saves the existing session shape, and rejects
     assert.equal(w.sessionStorage.getItem('techprep_current_user'), null);
   } finally {
     dom.window.close();
+  }
+});
+test('redesigned home retains useful section anchors and existing support destinations', async () => {
+  const { w, dom } = await mount('/', { signedIn: false });
+  try {
+    for (const id of ['home', 'demo', 'features', 'about', 'faq', 'contact'])
+      assert.ok(w.document.getElementById(id));
+    assert.ok(w.document.querySelector('a[href="mailto:support@techprep.ai"]'));
+    assert.ok(w.document.querySelector('a[href="mailto:tpo@techprep.ai"]'));
+  } finally {
+    dom.window.close();
+  }
+});
+test('authentication redirects preserve user roles and login query parameters', async () => {
+  const { authRedirect } = await import('../../frontend/src/runtime/authRedirect.js');
+  assert.equal(
+    authRedirect('login', null, '?email=test%40example.test&registered=1'),
+    '/index.html?modal=login&email=test%40example.test&registered=1'
+  );
+  assert.equal(authRedirect('signup', null), '/index.html?modal=signup');
+  assert.equal(authRedirect('login', '{broken'), '/index.html?modal=login');
+  assert.equal(
+    authRedirect('login', JSON.stringify({ role: 'admin' })),
+    '/pages/admin/admin-hub.html'
+  );
+  assert.equal(
+    authRedirect('signup', JSON.stringify({ role: 'student' })),
+    '/pages/user/dashboard.html'
+  );
+});
+test('every shipped first-party controller is referenced by a page', async () => {
+  async function files(dir) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    return (
+      await Promise.all(
+        entries.map((e) => (e.isDirectory() ? files(`${dir}/${e.name}`) : [`${dir}/${e.name}`]))
+      )
+    ).flat();
+  }
+  const referenced = new Set(
+    Object.values(manifest).flatMap((p) => p.scripts.filter((s) => s.src).map((s) => s.src))
+  );
+  for (const path of await files('frontend/public/controllers')) {
+    if (path.endsWith('.js'))
+      assert.ok(
+        referenced.has('/' + path.replace('frontend/public/', '')),
+        `Unused controller: ${path}`
+      );
   }
 });

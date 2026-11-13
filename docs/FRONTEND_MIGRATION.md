@@ -2,7 +2,7 @@
 
 ## What changed
 
-All 19 HTML routes now boot a lazy-loaded React page. Presentation previously
+All 19 HTML routes are preserved, including two auth redirects sharing one React component. Presentation previously
 injected from component template strings is checked-in JSX. The home page is a
 custom, responsive technical workbench with React language tabs, an explicit example
 walkthrough, mobile navigation, native FAQ disclosures, and the existing auth forms.
@@ -21,7 +21,7 @@ worker at `/sw.js` clears only `techprep-cache-*` caches.
 
 ## Deliberate migration boundary
 
-Feature controllers in `frontend/public/js` still own imperative behavior, including
+Feature controllers in `frontend/public/controllers` still own imperative behavior, including
 runtime-rendered editor/results/forms, timers, and document-level listeners. React renders
 the initial page once, before controller startup, using `flushSync`. Controllers subscribe
 to `techprep:ready`; the bootstrap dispatches it only after loading their dependencies in
@@ -57,3 +57,14 @@ Before merging, review the browser CI results and perform an authenticated check
 a configured test backend: login/signup, profile save, quiz start/submit/history, DSA
 run/submit, resume save/ATS/export, planner note/task mutations, placement mutations,
 and admin imports/CRUD. Do not use production records for that check.
+
+## Frontend cleanup
+
+Removed 20 unreferenced or duplicate JavaScript files, the unused editor-theme stylesheet,
+and the separate `frontend/css` directory. Active styles live in `src/styles`; active classic
+controllers live in `public/controllers`. Page initialization is declared in the manifest,
+rather than eight separate entry scripts. The two authentication alias pages share one
+redirect component with tested URL selection. Example quiz import files live in `docs/examples`
+instead of being copied into every frontend build. The small HTML entry shells remain because
+they preserve existing URLs in Vite's multi-page build. The cache retirement worker remains
+necessary for returning visitors during this migration.

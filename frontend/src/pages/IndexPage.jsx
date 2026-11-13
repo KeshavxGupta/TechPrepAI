@@ -300,7 +300,7 @@ export default function IndexPage() {
       </a>
       <Header />
       <main id="main" className="tp-landing">
-        <section className="tp-hero">
+        <section id="home" className="tp-hero">
           <div className="tp-hero-copy">
             <div className="tp-eyebrow">
               <span className="tp-status-dot" /> THE ENGINEERING PREP WORKSPACE
@@ -329,7 +329,7 @@ export default function IndexPage() {
               <span>One problem. One improvement. Every day.</span>
             </div>
           </div>
-          <div className="tp-hero-editor">
+          <div id="demo" className="tp-hero-editor">
             <div className="tp-coordinate" aria-hidden="true">
               WORKSPACE_01 / THINK IN PATTERNS
             </div>
@@ -350,6 +350,7 @@ export default function IndexPage() {
           <a href="/pages/user/placements.html">Placement tracker</a>
         </div>
         <section id="workspace" className="tp-section">
+          <span id="features" aria-hidden="true" />
           <div className="tp-section-heading">
             <div>
               <p className="tp-eyebrow">01 / YOUR TOOLKIT</p>
@@ -382,7 +383,7 @@ export default function IndexPage() {
             ))}
           </div>
         </section>
-        <section className="tp-plan-section">
+        <section id="about" className="tp-plan-section">
           <div className="tp-plan-copy">
             <p className="tp-eyebrow">02 / BUILD A RHYTHM</p>
             <h2>
@@ -432,7 +433,7 @@ export default function IndexPage() {
             </div>
           </div>
         </section>
-        <section className="tp-section tp-faq">
+        <section id="faq" className="tp-section tp-faq">
           <div>
             <p className="tp-eyebrow">03 / GOOD QUESTIONS</p>
             <h2>
@@ -459,6 +460,20 @@ export default function IndexPage() {
             ))}
           </div>
         </section>
+        <section id="contact" className="tp-support">
+          <div>
+            <p className="tp-eyebrow">04 / KEEP IN TOUCH</p>
+            <h2>A question along the way?</h2>
+          </div>
+          <div>
+            <a href="mailto:support@techprep.ai">
+              Student support <Arrow />
+            </a>
+            <a href="mailto:tpo@techprep.ai">
+              Campus partnerships <Arrow />
+            </a>
+          </div>
+        </section>
         <section className="tp-final-cta">
           <div>
             <p className="tp-eyebrow">READY WHEN YOU ARE</p>
@@ -482,6 +497,7 @@ export default function IndexPage() {
           <p>A focused space for what comes next.</p>
         </div>
         <nav aria-label="Footer navigation">
+          <a href="#contact">Support</a>
           <a href="/pages/public/docs.html">Docs</a>
           <a href="/pages/public/privacy.html">Privacy</a>
           <a href="/pages/public/terms.html">Terms</a>

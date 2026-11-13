@@ -43,8 +43,8 @@ CI installs it automatically. API tests and live persistence require your databa
 - `frontend/src/components/`: reusable React presentation components.
 - `frontend/src/styles/`: compiled utilities, workbench design tokens, and page-specific styles.
 - `frontend/src/runtime/`: page manifest and controller initialization.
-- `frontend/public/js/`: existing feature controllers and domain logic.
-- `frontend/public/data/`: sample quiz import files.
+- `frontend/public/controllers/`: existing feature controllers and domain logic.
+- `docs/examples/`: sample quiz import files (not shipped as frontend assets).
 - `frontend/pages/`: Vite HTML entry shells preserving existing deep links.
 - `backend/`: existing Express routes, MongoDB models, and execution services.
 - `tests/`: DOM regression tests and Playwright browser checks.

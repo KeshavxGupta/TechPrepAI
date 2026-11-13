@@ -60,7 +60,7 @@ test('landing example tabs, trace, FAQ and theme work', async ({ page }) => {
   await expect(page.getByRole('tabpanel')).toContainText('def two_sum');
   await page.getByRole('button', { name: 'Trace example' }).click();
   await expect(page.locator('.tp-terminal')).toContainText('Return [0, 1]');
-  await page.getByText('Where should I start?', { exact: true }).click();
+  await page.locator('summary').filter({ hasText: 'Where should I start?' }).click();
   await expect(page.locator('details').first()).toHaveAttribute('open', '');
   const initial = await page.locator('html').getAttribute('class');
   await page.getByRole('button', { name: 'Toggle light and dark theme' }).click();
@@ -91,4 +91,13 @@ test('student auth alias retains redirect and modal parameters', async ({ page }
   await expect(page).toHaveURL(/index.html\?modal=login/);
   await expect(page.locator('#login-modal')).toBeVisible();
   await expect(page.locator('#login-modal input[type=email]')).toHaveValue('test@example.test');
+});
+
+test('captures the desktop and mobile workbench for visual review', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await page.screenshot({ path: testInfo.outputPath('workbench-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: testInfo.outputPath('workbench-mobile.png'), fullPage: true });
 });

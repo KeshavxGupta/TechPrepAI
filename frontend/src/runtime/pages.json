@@ -2,27 +2,20 @@
   "/404.html": {
     "module": "NotFoundPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col justify-between antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
-    "scripts": [
-      {
-        "src": "/js/entries/404-0.js"
-      }
-    ]
+    "scripts": []
   },
   "/index.html": {
     "module": "IndexPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white",
     "scripts": [
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/auth.js"
-      },
-      {
-        "src": "/js/core/app.js"
+        "src": "/controllers/core/auth.js"
       }
     ]
   },
@@ -31,43 +24,35 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/features/dsa/dsa-engine.js"
       },
       {
-        "src": "/js/features/dsa/dsa-engine.js"
-      },
-      {
-        "src": "/js/components/dsa/admin-dsa-studio.js"
-      },
-      {
-        "src": "/js/entries/admin-dsa-6.js"
+        "src": "/controllers/components/dsa/admin-dsa-studio.js"
       }
-    ]
+    ],
+    "initialize": "initAdminDSAStudio"
   },
   "/pages/admin/admin-hub.html": {
     "module": "AdminHubPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
-      },
-      {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/core/auth.js"
       },
       {
         "vendor": "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"
@@ -76,13 +61,10 @@
         "vendor": "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
       },
       {
-        "src": "/js/features/quiz/quiz.js"
+        "src": "/controllers/features/quiz/quiz.js"
       },
       {
-        "src": "/js/core/app.js"
-      },
-      {
-        "src": "/js/features/admin/hub.js"
+        "src": "/controllers/features/admin/hub.js"
       }
     ]
   },
@@ -91,37 +73,29 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/features/resume/resume-engine.js"
       },
       {
-        "src": "/js/features/resume/resume-engine.js"
-      },
-      {
-        "src": "/js/components/resume/admin-resume-studio-ui.js"
-      },
-      {
-        "src": "/js/entries/admin-resume-studio-6.js"
+        "src": "/controllers/components/resume/admin-resume-studio-ui.js"
       }
-    ]
+    ],
+    "initialize": "initAdminResumeStudio"
   },
   "/pages/public/docs.html": {
     "module": "DocsPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
@@ -130,31 +104,22 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
   "/pages/public/login.html": {
-    "module": "LoginPage",
+    "module": "AuthRedirectPage",
     "bodyClass": "",
-    "scripts": [
-      {
-        "src": "/js/entries/login-0.js"
-      }
-    ]
+    "scripts": [],
+    "redirect": "login"
   },
   "/pages/public/partners.html": {
     "module": "PartnersPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
@@ -163,10 +128,7 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
@@ -175,31 +137,22 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
   "/pages/public/signup.html": {
-    "module": "SignupPage",
+    "module": "AuthRedirectPage",
     "bodyClass": "",
-    "scripts": [
-      {
-        "src": "/js/entries/signup-0.js"
-      }
-    ]
+    "scripts": [],
+    "redirect": "signup"
   },
   "/pages/public/terms.html": {
     "module": "TermsPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       }
     ]
   },
@@ -208,28 +161,22 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/components/user/user-sidebar.js"
       },
       {
-        "src": "/js/components/user/user-sidebar.js"
+        "src": "/controllers/features/quiz/quiz.js"
       },
       {
-        "src": "/js/features/quiz/quiz.js"
-      },
-      {
-        "src": "/js/core/app.js"
-      },
-      {
-        "src": "/js/features/user/dashboard.js"
+        "src": "/controllers/features/user/dashboard.js"
       }
     ]
   },
@@ -238,35 +185,27 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/features/dsa/dsa-engine.js"
       },
       {
-        "src": "/js/features/dsa/dsa-engine.js"
-      },
-      {
-        "src": "/js/components/dsa/dsa-editor.js"
-      },
-      {
-        "src": "/js/entries/dsa-ide-6.js"
+        "src": "/controllers/components/dsa/dsa-editor.js"
       }
-    ]
+    ],
+    "initialize": "initDSAIDE"
   },
   "/pages/user/placements.html": {
     "module": "PlacementsPage",
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
-      {
-        "src": "/js/core/theme.js"
-      },
       {
         "vendor": "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
       },
@@ -274,22 +213,19 @@
         "vendor": "https://cdn.jsdelivr.net/npm/chart.js"
       },
       {
-        "src": "/js/components/user/user-sidebar.js"
+        "src": "/controllers/components/user/user-sidebar.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/app.js"
-      },
-      {
-        "src": "/js/features/career/placements.js"
+        "src": "/controllers/features/career/placements.js"
       }
     ]
   },
@@ -298,34 +234,25 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
-      },
-      {
-        "src": "/js/components/user/user-sidebar.js"
+        "src": "/controllers/components/user/user-sidebar.js"
       },
       {
         "vendor": "https://cdn.jsdelivr.net/npm/marked/marked.min.js"
       },
       {
-        "src": "/js/entries/planner-3.js"
-      },
-      {
         "vendor": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/app.js"
-      },
-      {
-        "src": "/js/features/user/planner.js"
+        "src": "/controllers/features/user/planner.js"
       }
     ]
   },
@@ -334,28 +261,22 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/features/quiz/quiz.js"
       },
       {
-        "src": "/js/features/quiz/quiz.js"
+        "src": "/controllers/features/dsa/dsa-engine.js"
       },
       {
-        "src": "/js/features/dsa/dsa-engine.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
-      },
-      {
-        "src": "/js/core/app.js"
-      },
-      {
-        "src": "/js/features/user/quiz-user.js"
+        "src": "/controllers/features/user/quiz-user.js"
       }
     ]
   },
@@ -364,26 +285,21 @@
     "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 h-screen overflow-hidden flex flex-col antialiased selection:bg-blue-500 selection:text-white",
     "scripts": [
       {
-        "src": "/js/core/theme.js"
+        "src": "/controllers/core/api.js"
       },
       {
-        "src": "/js/core/api.js"
+        "src": "/controllers/core/ui.js"
       },
       {
-        "src": "/js/core/ui.js"
+        "src": "/controllers/core/auth.js"
       },
       {
-        "src": "/js/core/auth.js"
+        "src": "/controllers/features/resume/resume-engine.js"
       },
       {
-        "src": "/js/features/resume/resume-engine.js"
-      },
-      {
-        "src": "/js/components/resume/resume-builder-ui.js"
-      },
-      {
-        "src": "/js/entries/resume-builder-6.js"
+        "src": "/controllers/components/resume/resume-builder-ui.js"
       }
-    ]
+    ],
+    "initialize": "initResumeBuilder"
   }
 }
