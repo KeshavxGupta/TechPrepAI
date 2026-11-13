@@ -1,5 +1,5 @@
 module.exports = {
-  content: ['./frontend/src/**/*.{js,jsx,json}', './frontend/public/controllers/**/*.js'],
+  content: { relative: true, files: ['./src/**/*.{js,jsx,json}', './public/controllers/**/*.js'] },
   darkMode: 'class',
   theme: {
     extend: {

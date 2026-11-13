@@ -14,7 +14,7 @@ Chart.js, marked, confetti, Mammoth, XLSX and icon CSS load from pinned npm depe
 MathJax remains an optional, nonblocking external enhancement. Failed core script loads
 show a reload notice rather than silently leaving the app partially initialized.
 
-The root build produces `dist/`. Express and Vercel serve that output. Existing `.html`
+The frontend build produces `frontend/dist/`; root commands forward to its package. Express and Vercel serve that output. Existing `.html`
 paths, search parameters, form selectors, session storage, `/api` contracts, and classic
 script scope are preserved. Vite proxies `/api` during development. An old-cache retirement
 worker at `/sw.js` clears only `techprep-cache-*` caches.
@@ -68,3 +68,13 @@ redirect component with tested URL selection. Example quiz import files live in 
 instead of being copied into every frontend build. The small HTML entry shells remain because
 they preserve existing URLs in Vite's multi-page build. The cache retirement worker remains
 necessary for returning visitors during this migration.
+
+## Standalone frontend setup
+
+The frontend owns its package.json, lockfile, Vite/PostCSS/Tailwind configuration, and
+production dist directory. Run `npm install` and `npm run dev` inside `frontend` without
+installing the root project. Configuration resolves paths relative to its own location,
+so invocation does not depend on the shell's working directory. Root scripts forward to
+the same package, and root npm ci installs its locked dependencies. Express and Vercel
+both serve frontend/dist. `npm run test:setup` starts the actual Vite server with frontend
+as its working directory and checks page/module responses, Tailwind output and API proxying.

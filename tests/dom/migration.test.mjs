@@ -10,9 +10,9 @@ import manifest from '../../frontend/src/runtime/pages.json' with { type: 'json'
 let bundle;
 before(async () => {
   const pages = [...new Set(Object.values(manifest).map((p) => p.module))];
-  const entry = `import React from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';\n${pages.map((name) => `import ${name} from './frontend/src/pages/${name}.jsx';`).join('\n')}\nconst pages={${pages.join(',')}};window.mountPage=name=>flushSync(()=>createRoot(document.getElementById('root')).render(React.createElement(pages[name])));`;
+  const entry = `import React from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';\n${pages.map((name) => `import ${name} from './src/pages/${name}.jsx';`).join('\n')}\nconst pages={${pages.join(',')}};window.mountPage=name=>flushSync(()=>createRoot(document.getElementById('root')).render(React.createElement(pages[name])));`;
   const result = await build({
-    stdin: { contents: entry, resolveDir: process.cwd(), loader: 'jsx' },
+    stdin: { contents: entry, resolveDir: resolve('frontend'), loader: 'jsx' },
     jsx: 'automatic',
     bundle: true,
     write: false,
@@ -185,11 +185,11 @@ test('dashboard tab controls still call their existing controllers', async () =>
 });
 test('all 19 entry URLs and first-party controller assets exist in the production output', async () => {
   for (const [url, page] of Object.entries(manifest)) {
-    const html = await readFile(resolve('dist', url.slice(1)), 'utf8');
+    const html = await readFile(resolve('frontend/dist', url.slice(1)), 'utf8');
     assert.match(html, /type="module"/);
     assert.doesNotMatch(html, /cdn.tailwindcss.com/);
     for (const script of page.scripts.filter((s) => s.src))
-      await readFile(resolve('dist', script.src.slice(1)));
+      await readFile(resolve('frontend/dist', script.src.slice(1)));
   }
 });
 test('API requests preserve same-origin paths, bearer headers and update payloads', async () => {

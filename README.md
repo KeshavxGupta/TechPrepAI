@@ -6,36 +6,50 @@ Full Stack Developer Preparation Platform with separate Frontend and Backend arc
 
 ## Frontend development
 
-The frontend uses Vite, React, and build-time Tailwind CSS. Use Node.js 20.19+ or 22.12+.
+The `frontend` folder is a standalone Vite + React project. Its own package, lockfile,
+and Vite/PostCSS/Tailwind configuration live inside that folder. Use Node.js 20.19+ or 22.12+.
 
 ```bash
-npm ci
+cd frontend
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>. See [frontend setup](frontend/README.md).
+
+For the complete app, install from the repository root and configure the backend:
+
+```bash
+npm ci                         # Also installs frontend dependencies via postinstall
 cp backend/.env.example backend/.env
-# Configure your existing MongoDB URI and JWT secret in backend/.env.
+# Set your existing MongoDB URI and JWT secret in backend/.env.
 ```
 
-Run the backend and frontend in separate terminals:
+Run these in separate terminals from the repository root:
 
 ```bash
-npm run dev:backend   # Express API on port 5000
-npm run dev           # Vite frontend on port 5173
+npm run dev:backend             # Express API on port 5000
+npm run dev                    # Forwards to frontend's Vite server on port 5173
 ```
 
-Vite proxies `/api` to Express. `API_PROXY_TARGET` can override the development target.
-Set `VITE_API_BASE_URL` only when deploying the browser and API on different origins.
-Do not put secrets in variables prefixed `VITE_`; they are public browser configuration.
+Vite proxies `/api` to Express. Copy `frontend/.env.example` to `frontend/.env` to change
+`API_PROXY_TARGET`. Set `VITE_API_BASE_URL` only for a separately deployed API origin.
+Never put secrets in `VITE_*` variables; they are public browser configuration.
 
 ```bash
-npm run build        # Creates dist/ with all 19 existing page URLs
-npm start            # Express serves dist/ and /api
-npm run preview      # Preview the built frontend (without an API server)
-npm test             # DOM rendering and controller regression tests; build first
+npm run build        # Production output: frontend/dist/; all 19 existing page URLs
+npm start            # Express serves frontend/dist/ and /api
+npm run preview      # Frontend build preview (backend runs separately)
+npm test             # DOM/controller regressions; build first
+npm run test:setup   # Real frontend-directory server startup, styles and proxy checks
 npm run test:browser # Playwright browser checks; build first
-npm run test:api     # Existing API integration suite; requires backend/database
+npm run test:api     # Existing API suite; requires a configured backend/database
+npm run check        # Build + DOM tests + real frontend startup/proxy smoke test
 ```
 
-For browser tests, install Chromium once with `npx playwright install chromium`.
-CI installs it automatically. API tests and live persistence require your database configuration.
+Install browser-test Chromium once with `npx playwright install chromium`; CI installs
+it automatically. The frontend can render independently, while account operations and
+saved data require the configured backend and database.
 
 ## Project structure
 

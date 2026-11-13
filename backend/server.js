@@ -79,7 +79,7 @@ app.use('/api/planner', require('./server/routes/plannerRoutes'));
 app.use('/api/admin', require('./server/routes/adminRoutes'));
 
 // Serve the Vite production build; development uses Vite's /api proxy.
-const frontendPath = path.join(__dirname, '../dist');
+const frontendPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendPath));
 
 // 404 Handler for undefined API routes
