@@ -1,0 +1,305 @@
+{
+  "/404.html": {
+    "module": "NotFoundPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col justify-between antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": []
+  },
+  "/index.html": {
+    "module": "IndexPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      }
+    ]
+  },
+  "/pages/admin/admin-dsa.html": {
+    "module": "AdminDsaPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/dsa/dsa-engine.js"
+      },
+      {
+        "src": "/controllers/components/dsa/admin-dsa-studio.js"
+      }
+    ],
+    "initialize": "initAdminDSAStudio"
+  },
+  "/pages/admin/admin-hub.html": {
+    "module": "AdminHubPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "vendor": "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"
+      },
+      {
+        "vendor": "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+      },
+      {
+        "src": "/controllers/features/quiz/quiz.js"
+      },
+      {
+        "src": "/controllers/features/admin/hub.js"
+      }
+    ]
+  },
+  "/pages/admin/admin-resume-studio.html": {
+    "module": "AdminResumeStudioPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/resume/resume-engine.js"
+      },
+      {
+        "src": "/controllers/components/resume/admin-resume-studio-ui.js"
+      }
+    ],
+    "initialize": "initAdminResumeStudio"
+  },
+  "/pages/public/docs.html": {
+    "module": "DocsPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/public/dsa-sheets.html": {
+    "module": "DsaSheetsPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/public/login.html": {
+    "module": "AuthRedirectPage",
+    "bodyClass": "",
+    "scripts": [],
+    "redirect": "login"
+  },
+  "/pages/public/partners.html": {
+    "module": "PartnersPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/public/privacy.html": {
+    "module": "PrivacyPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/public/security.html": {
+    "module": "SecurityPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/public/signup.html": {
+    "module": "AuthRedirectPage",
+    "bodyClass": "",
+    "scripts": [],
+    "redirect": "signup"
+  },
+  "/pages/public/terms.html": {
+    "module": "TermsPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/ui.js"
+      }
+    ]
+  },
+  "/pages/user/dashboard.html": {
+    "module": "DashboardPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/components/user/user-sidebar.js"
+      },
+      {
+        "src": "/controllers/features/quiz/quiz.js"
+      },
+      {
+        "src": "/controllers/features/user/dashboard.js"
+      }
+    ]
+  },
+  "/pages/user/dsa-ide.html": {
+    "module": "DsaIdePage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/dsa/dsa-engine.js"
+      },
+      {
+        "src": "/controllers/components/dsa/dsa-editor.js"
+      }
+    ],
+    "initialize": "initDSAIDE"
+  },
+  "/pages/user/placements.html": {
+    "module": "PlacementsPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "vendor": "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"
+      },
+      {
+        "vendor": "https://cdn.jsdelivr.net/npm/chart.js"
+      },
+      {
+        "src": "/controllers/components/user/user-sidebar.js"
+      },
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/career/placements.js"
+      }
+    ]
+  },
+  "/pages/user/planner.html": {
+    "module": "PlannerPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/components/user/user-sidebar.js"
+      },
+      {
+        "vendor": "https://cdn.jsdelivr.net/npm/marked/marked.min.js"
+      },
+      {
+        "vendor": "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+      },
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/user/planner.js"
+      }
+    ]
+  },
+  "/pages/user/quiz-user.html": {
+    "module": "QuizUserPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 min-h-screen flex antialiased selection:bg-blue-500 selection:text-white bg-grid-pattern",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/features/quiz/quiz.js"
+      },
+      {
+        "src": "/controllers/features/dsa/dsa-engine.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/user/quiz-user.js"
+      }
+    ]
+  },
+  "/pages/user/resume-builder.html": {
+    "module": "ResumeBuilderPage",
+    "bodyClass": "bg-surface-primary text-neutral-900 dark:text-neutral-100 h-screen overflow-hidden flex flex-col antialiased selection:bg-blue-500 selection:text-white",
+    "scripts": [
+      {
+        "src": "/controllers/core/api.js"
+      },
+      {
+        "src": "/controllers/core/ui.js"
+      },
+      {
+        "src": "/controllers/core/auth.js"
+      },
+      {
+        "src": "/controllers/features/resume/resume-engine.js"
+      },
+      {
+        "src": "/controllers/components/resume/resume-builder-ui.js"
+      }
+    ],
+    "initialize": "initResumeBuilder"
+  }
+}

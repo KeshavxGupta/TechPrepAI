@@ -78,8 +78,8 @@ app.use('/api/dsa', require('./server/routes/dsaRoutes'));
 app.use('/api/planner', require('./server/routes/plannerRoutes'));
 app.use('/api/admin', require('./server/routes/adminRoutes'));
 
-// Static Frontend Hosting (Serving HTML, CSS, JS, Pages directly from frontend directory)
-const frontendPath = path.join(__dirname, '../frontend');
+// Serve the Vite production build; development uses Vite's /api proxy.
+const frontendPath = path.join(__dirname, '../frontend/dist');
 app.use(express.static(frontendPath));
 
 // 404 Handler for undefined API routes

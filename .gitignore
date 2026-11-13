@@ -9,3 +9,6 @@ Thumbs.db
 *.log
 POSTMAN_TESTING_GUIDE.md
 techprep_ai_postman_collection.json
+dist/
+playwright-report/
+test-results/

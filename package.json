@@ -4,13 +4,22 @@
   "description": "TechPrep AI - Full Stack Developer Platform",
   "scripts": {
     "start": "npm --prefix backend start",
-    "dev": "npm --prefix backend run dev",
+    "dev": "npm --prefix frontend run dev --",
     "seed": "npm --prefix backend run seed",
     "worker": "npm --prefix backend run worker",
-    "test": "npm --prefix backend run test",
+    "test": "node --test tests/dom/*.test.mjs",
     "test:api": "npm --prefix backend run test:api",
     "install:backend": "npm --prefix backend install",
-    "build": "echo Static build ready"
+    "build": "npm --prefix frontend run build --",
+    "dev:backend": "npm --prefix backend run dev",
+    "preview": "npm --prefix frontend run preview --",
+    "test:ui": "playwright test --ui",
+    "check": "npm run build && npm test && npm run test:setup",
+    "test:browser": "playwright test",
+    "format": "prettier --write frontend/src tests frontend/vite.config.mjs playwright.config.mjs frontend/tailwind.config.cjs frontend/postcss.config.cjs",
+    "postinstall": "npm --prefix frontend ci",
+    "install:frontend": "npm --prefix frontend ci",
+    "test:setup": "node scripts/check-frontend-setup.mjs"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -20,5 +29,12 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "morgan": "^1.10.0"
-  }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "esbuild": "^0.25.12",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.10.1"
+  },
+  "private": true
 }
