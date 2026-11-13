@@ -28,3 +28,10 @@ npm run preview  # Preview the production build on port 4173
 in this folder. No root installation is needed for frontend-only development.
 The small HTML files preserve the existing page URLs. `src/` contains React and styles;
 `public/controllers/` contains the existing feature controllers required by those pages.
+
+## Windows Application Control
+
+Rollup uses its official WebAssembly package through an npm override, avoiding the
+platform-specific native `.node` addon. After pulling this update, run `npm ci` in this
+folder to replace an older native installation, then `npm run dev`. Do not disable
+Windows Application Control or change PowerShell execution policy for this error.

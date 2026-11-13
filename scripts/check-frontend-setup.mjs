@@ -1,16 +1,27 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { resolve, dirname } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
+const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '../frontend');
+// Assert Vite's actual dependency, including nested installs, uses the WASM build.
+const frontendRequire = createRequire(resolve(frontend, 'package.json'));
+const viteRequire = createRequire(frontendRequire.resolve('vite/package.json'));
+assert.equal(
+  viteRequire('rollup/package.json').name,
+  '@rollup/wasm-node',
+  'Vite must not load a native Rollup addon'
+);
+
 const backend = createServer((req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify({ source: 'frontend-setup-test', path: req.url }));
 });
 await new Promise((done) => backend.listen(0, '127.0.0.1', done));
-const frontend = resolve(dirname(fileURLToPath(import.meta.url)), '../frontend');
+
 const vite = spawn(
   process.execPath,
   [resolve(frontend, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1', '--port', '0'],
